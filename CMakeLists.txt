@@ -1,10 +1,12 @@
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.10)
 
 # Project properties
 set(PROJECT_NAMESPACE machines-in-motion)
 set(PROJECT_NAME mim_solvers)
 set(PROJECT_DESCRIPTION "Numerical solvers of the Machines in Motion Laboratory.")
 set(PROJECT_URL https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME})
+
+add_compile_options(--warn-no-conversion)
 
 # Project options
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)

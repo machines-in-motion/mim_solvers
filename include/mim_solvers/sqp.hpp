@@ -59,12 +59,14 @@ class SolverSQP : public crocoddyl::SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverSQP(boost::shared_ptr<ShootingProblem> problem);
+  explicit SolverSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverSQP();
 
-  virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = DEFAULT_VECTOR,
-                     const std::vector<Eigen::VectorXd>& init_us = DEFAULT_VECTOR, const std::size_t maxiter = 100,
-                     const bool is_feasible = false, const double regInit = 1e-9);
+  virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
+                     const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR, 
+                     const std::size_t maxiter = 100,
+                     const bool is_feasible = false, 
+                     const double regInit = 1e-9);
 
   /**
    * @copybrief SolverAbstract::expectedImprovement
@@ -101,19 +103,19 @@ class SolverSQP : public crocoddyl::SolverDDP {
   const std::vector<Eigen::VectorXd>& get_xs_try() const { return xs_try_; };
   const std::vector<Eigen::VectorXd>& get_us_try() const { return us_try_; };
   
-  const double get_gap_norm() const { return gap_norm_; };
-  const double get_xgrad_norm() const { return x_grad_norm_; };
-  const double get_ugrad_norm() const { return u_grad_norm_; };
-  const double get_merit() const { return merit_; };
-  const bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
-  const bool get_use_filter_line_search() const { return use_filter_line_search_; };
-  const double get_mu() const { return mu_; };
-  const double get_termination_tolerance() const { return termination_tol_; };
-  const std::size_t get_filter_size() const { return filter_size_; };
+  double get_gap_norm() const { return gap_norm_; };
+  double get_xgrad_norm() const { return x_grad_norm_; };
+  double get_ugrad_norm() const { return u_grad_norm_; };
+  double get_merit() const { return merit_; };
+  bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
+  bool get_use_filter_line_search() const { return use_filter_line_search_; };
+  double get_mu() const { return mu_; };
+  double get_termination_tolerance() const { return termination_tol_; };
+  std::size_t get_filter_size() const { return filter_size_; };
 
   void printCallbacks();
   void setCallbacks(bool inCallbacks);
-  const bool getCallbacks();
+  bool getCallbacks();
 
 
   void set_mu(double mu) { mu_ = mu; };

@@ -16,6 +16,8 @@
 #include <crocoddyl/core/utils/exception.hpp>
 #include "mim_solvers/sqp.hpp"
 
+using namespace crocoddyl;
+
 namespace mim_solvers {
 
 SolverSQP::SolverSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
@@ -71,6 +73,8 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
                        const std::size_t maxiter, const bool is_feasible, const double reginit) {
 
   START_PROFILER("SolverSQP::solve");
+  (void)is_feasible;
+  
   if (problem_->is_updated()) {
     resizeData();
   }
@@ -134,7 +138,7 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
       // Equivalent to heuristic cost_ > cost_try_ || gap_norm_ > gap_norm_try_ when filter_size=1
       if(use_filter_line_search_){
         is_worse_than_memory_ = false;
-        int count = 0.; 
+        std::size_t count = 0.; 
         while( count < filter_size_ && is_worse_than_memory_ == false and count <= iter_){
           is_worse_than_memory_ = cost_list_[filter_size_-1-count] < cost_try_ && gap_list_[filter_size_-1-count] < gap_norm_try_;
           count++;
@@ -235,8 +239,8 @@ void SolverSQP::forwardPass(){
     }
     lag_mul_.back() = Vxx_.back() * (dx_.back() - fs_.back()) + Vx_.back();
     x_grad_norm_ += dx_.back().lpNorm<1>(); // assuming that there is no gap in the initial state
-    x_grad_norm_ = x_grad_norm_/(T+1);
-    u_grad_norm_ = u_grad_norm_/T; 
+    x_grad_norm_ = x_grad_norm_/(double)(T+1);
+    u_grad_norm_ = u_grad_norm_/(double)T; 
     STOP_PROFILER("SolverSQP::forwardPass");
 
 }
@@ -327,7 +331,7 @@ void SolverSQP::setCallbacks(bool inCallbacks){
   with_callbacks_ = inCallbacks;
 }
 
-const bool SolverSQP::getCallbacks(){
+bool SolverSQP::getCallbacks(){
   return with_callbacks_;
 }
 // double SolverSQP::get_th_acceptnegstep() const { return th_acceptnegstep_; }

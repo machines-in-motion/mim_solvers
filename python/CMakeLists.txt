@@ -1,5 +1,6 @@
 set(${PY_NAME}_SOURCES
   sqp.cpp
+  main.cpp
   )
 
 add_library(${PY_NAME}_pywrap SHARED ${${PY_NAME}_SOURCES})

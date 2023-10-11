@@ -2,7 +2,7 @@
 
 BOOST_PYTHON_MODULE(mim_solvers_pywrap) { 
 
-    namespace bp = boost::python;
+    // namespace bp = boost::python;
 
     // bp::import("sobec");
 

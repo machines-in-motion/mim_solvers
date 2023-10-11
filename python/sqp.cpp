@@ -6,11 +6,12 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <python/crocoddyl/core/core.hpp>
+#include "mim_solvers/python.hpp"
 #include "mim_solvers/sqp.hpp"
 
 namespace mim_solvers {
-namespace python {
+
+namespace bp = boost::python;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverSQP_solves, SolverSQP::solve, 0, 5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverSQP_computeDirections, crocoddyl::SolverDDP::computeDirection, 0, 1)
@@ -76,5 +77,4 @@ void exposeSolverSQP() {
      
 }
 
-}  // namespace python
 }  // namespace mim_solvers
