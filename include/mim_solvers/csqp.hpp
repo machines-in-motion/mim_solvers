@@ -59,11 +59,11 @@ class SolverCSQP : public SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverCSQP(boost::shared_ptr<ShootingProblem> problem);
+  explicit SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverCSQP();
 
-  virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = DEFAULT_VECTOR,
-                     const std::vector<Eigen::VectorXd>& init_us = DEFAULT_VECTOR, const std::size_t maxiter = 100,
+  virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
+                     const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR, const std::size_t maxiter = 100,
                      const bool is_feasible = false, const double regInit = 1e-9);
 
   /**
@@ -126,36 +126,36 @@ class SolverCSQP : public SolverDDP {
 
 //   const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& get_constraints() const { return cmodels_; };
 
-  const double get_KKT_norm() const { return KKT_; };
-  const double get_gap_norm() const { return gap_norm_; };
-  const double get_constraint_norm() const { return constraint_norm_; };
-  const double get_qp_iters() const { return qp_iters_; };
-  const double get_xgrad_norm() const { return x_grad_norm_; };
-  const double get_ugrad_norm() const { return u_grad_norm_; };
-  const double get_merit() const { return merit_; };
-  const bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
-  const bool get_use_filter_line_search() const { return use_filter_line_search_; };
-  const double get_mu() const { return mu_; };
-  const double get_termination_tolerance() const { return termination_tol_; };
-  const int get_max_qp_iters(){ return max_qp_iters_; };
-  const double get_cost(){ return cost_;};
-  const bool get_warm_start() { return warm_start_; };
-  const std::size_t get_filter_size() const { return filter_size_; };
+  double get_KKT_norm() const { return KKT_; };
+  double get_gap_norm() const { return gap_norm_; };
+  double get_constraint_norm() const { return constraint_norm_; };
+  double get_qp_iters() const { return qp_iters_; };
+  double get_xgrad_norm() const { return x_grad_norm_; };
+  double get_ugrad_norm() const { return u_grad_norm_; };
+  double get_merit() const { return merit_; };
+  bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
+  bool get_use_filter_line_search() const { return use_filter_line_search_; };
+  double get_mu() const { return mu_; };
+  double get_termination_tolerance() const { return termination_tol_; };
+  int get_max_qp_iters(){ return max_qp_iters_; };
+  double get_cost(){ return cost_;};
+  bool get_warm_start() { return warm_start_; };
+  std::size_t get_filter_size() const { return filter_size_; };
 
 
-  const int get_rho_update_interval() { return rho_update_interval_; };
-  const int get_adaptive_rho_tolerance() { return adaptive_rho_tolerance_; };
-  const double get_alpha() { return alpha_; };
-  const double get_sigma() { return sigma_; };
-  const double get_rho_sparse() { return rho_sparse_;};
+  int get_rho_update_interval() { return rho_update_interval_; };
+  int get_adaptive_rho_tolerance() { return adaptive_rho_tolerance_; };
+  double get_alpha() { return alpha_; };
+  double get_sigma() { return sigma_; };
+  double get_rho_sparse() { return rho_sparse_;};
 
-  const double get_eps_abs() { return eps_abs_;};
-  const double get_eps_rel() { return eps_rel_;};
+  double get_eps_abs() { return eps_abs_;};
+  double get_eps_rel() { return eps_rel_;};
 
 
   void printCallbacks();
   void setCallbacks(bool inCallbacks);
-  const bool getCallbacks();
+  bool getCallbacks();
 
 
 
