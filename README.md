@@ -8,3 +8,20 @@ NOTE: currently, only the un-constrained solver is available (a.k.a. GNMS) . The
 - Pinocchio (rigid-body dynamics computations)
 - Crocoddyl (optimal control library)
 - ProxQP (quadratic programming) [OPTIONAL]
+
+# Installation
+First clone the repo :
+
+`git clone https://github.com/machines-in-motion/mim_solvers.git`
+
+  ## Using CMake
+`cd mim_solvers && mkdir build && cd build`
+
+`cmake .. [-DCMAKE_BUILD_TYPE=Release] [-DCMAKE_INSTALL_PREFIX=...]`
+
+`make [-j6] && make install`
+
+  ## Using colcon
+At the root of your workspace :
+
+`colcon build [optional args]`
