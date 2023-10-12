@@ -12,10 +12,8 @@
 #include <Eigen/Cholesky>
 #include <vector>
 #include <boost/circular_buffer.hpp>
-// #include <deque>
 
-#include <crocoddyl/core/solvers/ddp.hpp>
-
+#include "mim_solvers/ddp.hpp"
 
 namespace mim_solvers {
 
@@ -50,7 +48,7 @@ namespace mim_solvers {
  *
  * \sa `crocoddyl::SolverDDP()`, `backwardPass()`, `forwardPass()`, `expectedImprovement()` and `updateExpectedImprovement()`
  */
-class SolverSQP : public crocoddyl::SolverDDP {
+class SolverSQP : public SolverDDP {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -127,9 +125,9 @@ class SolverSQP : public crocoddyl::SolverDDP {
                                                          cost_list_.resize(filter_size_); };
   
  public:
-  using crocoddyl::SolverDDP::xs_try_;
-  using crocoddyl::SolverDDP::us_try_;
-  using crocoddyl::SolverDDP::cost_try_;
+  using SolverDDP::xs_try_;
+  using SolverDDP::us_try_;
+  using SolverDDP::cost_try_;
   std::vector<Eigen::VectorXd> fs_try_;                                //!< Gaps/defects between shooting nodes
   std::vector<Eigen::VectorXd> dx_;                                    //!< the descent direction for x
   std::vector<Eigen::VectorXd> du_;                                    //!< the descent direction for u

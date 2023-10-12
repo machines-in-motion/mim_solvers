@@ -1,4 +1,6 @@
 set(${PY_NAME}_SOURCES
+  ddp.cpp
+  fddp.cpp
   sqp.cpp
   main.cpp
   )

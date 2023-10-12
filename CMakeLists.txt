@@ -56,10 +56,14 @@ endif()
 
 # Main Library
 set(${PROJECT_NAME}_HEADERS
+  include/${PROJECT_NAME}/ddp.hpp
+  include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
+  src/ddp.cpp
+  src/fddp.cpp
   src/sqp.cpp
   )
 
