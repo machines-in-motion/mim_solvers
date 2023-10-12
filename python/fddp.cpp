@@ -7,22 +7,22 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "mim_solvers/python.hpp"
-#include "mim_solvers/sqp.hpp"
+#include "mim_solvers/fddp.hpp"
 
 namespace mim_solvers {
 
 namespace bp = boost::python;
 
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverSQP_solves, SolverSQP::solve, 0, 5)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverSQP_computeDirections, SolverSQP::computeDirection, 0, 1)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverFDDP_solves, SolverFDDP::solve, 0, 5)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverFDDP_computeDirections, SolverFDDP::computeDirection, 0, 1)
 
-void exposeSolverSQP() {
-  bp::register_ptr_to_python<boost::shared_ptr<SolverSQP> >();
+void exposeSolverFDDP() {
+  bp::register_ptr_to_python<boost::shared_ptr<SolverFDDP> >();
 
-  bp::class_<SolverSQP, bp::bases<SolverDDP> >(
-      "SolverSQP",
-      "SQP solver.\n\n"
-      "The SQP solver computes an optimal trajectory and control commands by iterates\n"
+  bp::class_<SolverFDDP, bp::bases<SolverDDP> >(
+      "SolverFDDP",
+      "Feasibility-driven DDP (FDDP) solver.\n\n"
+      "The FDDP solver computes an optimal trajectory and control commands by iterates\n"
       "running backward and forward passes. The backward-pass updates locally the\n"
       "quadratic approximation of the problem and computes descent direction,\n"
       "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
@@ -31,8 +31,8 @@ void exposeSolverSQP() {
       bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
-      .def("solve", &SolverSQP::solve,
-           SolverSQP_solves(
+      .def("solve", &SolverFDDP::solve,
+           SolverFDDP_solves(
                bp::args("self", "init_xs", "init_us", "maxiter", "isFeasible", "regInit"),
                "Compute the optimal trajectory xopt, uopt as lists of T+1 and T terms.\n\n"
                "From an initial guess init_xs,init_us (feasible or not), iterate\n"
@@ -47,34 +47,26 @@ void exposeSolverSQP() {
                ":param regInit: initial guess for the regularization value. Very low values are typical\n"
                "                used with very good guess points (init_xs, init_us) (default None).\n"
                ":returns the optimal trajectory xopt, uopt and a boolean that describes if convergence was reached."))
-     //  .def("updateExpectedImprovement", &SolverSQP::updateExpectedImprovement,
-     //       bp::return_value_policy<bp::copy_const_reference>(), bp::args("self"),
-     //       "Update the expected improvement model\n\n")
-     // .def("increaseRegularization", &solverFDDP::increaseRegularization, bp::args("self"),
-     //       "Increase regularization")
-      .def_readwrite("xs_try", &SolverSQP::xs_try_, "xs try")
-      .def_readwrite("us_try", &SolverSQP::us_try_, "us try")
-      .def_readwrite("cost_try", &SolverSQP::cost_try_, "cost try")
-      .def_readwrite("fs_try", &SolverSQP::fs_try_, "fs_try")
-      .def_readwrite("lag_mul", &SolverSQP::lag_mul_, "lagrange multipliers")
-      .def_readwrite("KKT", &SolverSQP::KKT_, "KKT residual")
-
-      .add_property("with_callbacks", bp::make_function(&SolverSQP::getCallbacks), bp::make_function(&SolverSQP::setCallbacks),
-                    "Activates the callbacks when true (default: False)")
-      .add_property("use_kkt_criteria", bp::make_function(&SolverSQP::set_use_kkt_criteria), bp::make_function(&SolverSQP::get_use_kkt_criteria),
+      .def("updateExpectedImprovement", &SolverFDDP::updateExpectedImprovement,
+           bp::return_value_policy<bp::copy_const_reference>(), bp::args("self"),
+           "Update the expected improvement model\n\n")
+      
+      .def_readwrite("lag_mul", &SolverFDDP::lag_mul_, "lagrange multipliers")
+      .def_readwrite("KKT", &SolverFDDP::KKT_, "KKT residual")
+      
+      .add_property("use_kkt_criteria", bp::make_function(&SolverFDDP::get_use_kkt_criteria), bp::make_function(&SolverFDDP::set_use_kkt_criteria),
                     "Use the KKT residual condition as a termination criteria (default: True)")
-      .add_property("mu", bp::make_function(&SolverSQP::get_mu), bp::make_function(&SolverSQP::set_mu),
-                    "Penalty term for dynamic violation in the merit function (default: 1.)")
-      .add_property("use_filter_line_search", bp::make_function(&SolverSQP::get_use_filter_line_search), bp::make_function(&SolverSQP::set_use_filter_line_search),
-                    "Use the filter line search criteria (default: False)")
-      .add_property("termination_tol", bp::make_function(&SolverSQP::get_termination_tolerance), bp::make_function(&SolverSQP::set_termination_tolerance),
+      .add_property("termination_tolerance", bp::make_function(&SolverFDDP::get_termination_tolerance), bp::make_function(&SolverFDDP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-8)")
-      .add_property("filter_size", bp::make_function(&SolverSQP::get_filter_size), bp::make_function(&SolverSQP::set_filter_size),
+      .add_property("th_acceptNegStep", bp::make_function(&SolverFDDP::get_th_acceptnegstep),
+                    bp::make_function(&SolverFDDP::set_th_acceptnegstep),
+                    "threshold for step acceptance in ascent direction")
+      .add_property("use_filter_line_search", bp::make_function(&SolverFDDP::get_use_filter_line_search), bp::make_function(&SolverFDDP::set_use_filter_line_search),
+                    "Use the filter line search criteria (default: False)")
+      .add_property("termination_tol", bp::make_function(&SolverFDDP::get_termination_tolerance), bp::make_function(&SolverFDDP::set_termination_tolerance),
+                    "Termination criteria to exit the iteration (default: 1e-8)")
+      .add_property("filter_size", bp::make_function(&SolverFDDP::get_filter_size), bp::make_function(&SolverFDDP::set_filter_size),
                     "filter size for the line-search (default: 10)");
-     //  .add_property("th_acceptNegStep", bp::make_function(&SolverSQP::get_th_acceptnegstep),
-     //                bp::make_function(&SolverSQP::set_th_acceptnegstep),
-     //                "threshold for step acceptance in ascent direction");
-     
 }
 
 }  // namespace mim_solvers

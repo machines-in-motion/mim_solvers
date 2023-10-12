@@ -21,7 +21,7 @@ using namespace crocoddyl;
 namespace mim_solvers {
 
 SolverSQP::SolverSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
-    : crocoddyl::SolverDDP(problem){
+    : SolverDDP(problem){
       
       const std::size_t T = this->problem_->get_T();
       const std::size_t ndx = problem_->get_ndx();

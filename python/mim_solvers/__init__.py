@@ -1,1 +1,3 @@
-from .mim_solvers_pywrap import SolverSQP
+from .mim_solvers_pywrap import SolverDDP, \
+                                SolverFDDP, \
+                                SolverSQP
