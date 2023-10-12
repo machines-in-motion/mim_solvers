@@ -11,4 +11,5 @@ BOOST_PYTHON_MODULE(mim_solvers_pywrap) {
     mim_solvers::exposeSolverDDP(); 
     mim_solvers::exposeSolverFDDP(); 
     mim_solvers::exposeSolverSQP(); 
+    mim_solvers::exposeSolverCSQP(); 
 }

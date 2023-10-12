@@ -14,6 +14,7 @@ namespace mim_solvers{
     void exposeSolverDDP();
     void exposeSolverFDDP();
     void exposeSolverSQP();
+    void exposeSolverCSQP();
 } // namespace mim_solvers
 
 #endif
