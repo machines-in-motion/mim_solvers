@@ -14,7 +14,7 @@ namespace mim_solvers {
 namespace bp = boost::python;
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_solves, SolverCSQP::solve, 0, 5)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections, SolverDDP::computeDirection, 0, 1)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections, SolverCSQP::computeDirection, 0, 1)
 
 void exposeSolverCSQP() {
   bp::register_ptr_to_python<boost::shared_ptr<SolverCSQP> >();
@@ -28,7 +28,7 @@ void exposeSolverCSQP() {
       "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
       "along a tuple of optimized control commands U*.\n"
       ":param shootingProblem: shooting problem (list of action models along trajectory.)",
-      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem>, std::vector<boost::shared_ptr<ConstraintModelAbstract>> >(bp::args("self", "problem", "constraint_models"),
+      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
       .def("solve", &SolverCSQP::solve,
@@ -98,9 +98,6 @@ void exposeSolverCSQP() {
       .add_property("dx_tilde", make_function(&SolverCSQP::get_xs_tilde, bp::return_value_policy<bp::copy_const_reference>()), "dx_tilde")
       .add_property("du_tilde", make_function(&SolverCSQP::get_us_tilde, bp::return_value_policy<bp::copy_const_reference>()), "du_tilde")
       
-
-      .add_property("cmodels", make_function(&SolverCSQP::get_constraints, bp::return_value_policy<bp::copy_const_reference>()),
-                    "Vector of constraint models")
 
 
       .add_property("constraint_norm", bp::make_function(&SolverCSQP::get_constraint_norm),

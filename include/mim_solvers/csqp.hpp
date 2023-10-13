@@ -13,8 +13,7 @@
 #include <vector>
 #include <boost/circular_buffer.hpp>
 
-#include "crocoddyl/core/solvers/ddp.hpp"
-#include "crocoddyl/core/constraint-base.hpp"
+#include "mim_solvers/ddp.hpp"
 
 
 namespace mim_solvers {
@@ -137,14 +136,14 @@ class SolverCSQP : public SolverDDP {
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
   double get_termination_tolerance() const { return termination_tol_; };
-  int get_max_qp_iters(){ return max_qp_iters_; };
+  std::size_t get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
   bool get_warm_start() { return warm_start_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
 
-  int get_rho_update_interval() { return rho_update_interval_; };
-  int get_adaptive_rho_tolerance() { return adaptive_rho_tolerance_; };
+  std::size_t get_rho_update_interval() { return rho_update_interval_; };
+  std::size_t get_adaptive_rho_tolerance() { return adaptive_rho_tolerance_; };
   double get_alpha() { return alpha_; };
   double get_sigma() { return sigma_; };
   double get_rho_sparse() { return rho_sparse_;};
@@ -159,8 +158,8 @@ class SolverCSQP : public SolverDDP {
 
 
 
-  void set_rho_update_interval(int interval) { rho_update_interval_ = interval; };
-  void set_adaptive_rho_tolerance(int tolerance) { adaptive_rho_tolerance_ = tolerance; };
+  void set_rho_update_interval(std::size_t interval) { rho_update_interval_ = interval; };
+  void set_adaptive_rho_tolerance(std::size_t tolerance) { adaptive_rho_tolerance_ = tolerance; };
 
   void set_mu(double mu) { mu_ = mu; };
   void set_alpha(double alpha) { alpha_ = alpha; };
@@ -237,15 +236,15 @@ class SolverCSQP : public SolverDDP {
   bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
   double sigma_ = 1e-6; // proximal term
   double alpha_ = 1.6; // relaxed step size
-  int max_qp_iters_ = 1000; // max qp iters
-  int qp_iters_ = 0;
+  std::size_t max_qp_iters_ = 1000; // max qp iters
+  std::size_t qp_iters_ = 0;
 
   double rho_estimate_sparse_ = 0.0; // rho estimate
   double rho_sparse_ = 1e-1; // rho
   double rho_sparse_base_;
   double rho_min_ = 1e-6; // rho min
   double rho_max_ = 1e3; //1e6; // rho max 
-  int rho_update_interval_ = 25; // frequency of update of rho
+  std::size_t rho_update_interval_ = 25; // frequency of update of rho
   double adaptive_rho_tolerance_ = 5; 
   double eps_abs_ = 1e-4; // absolute termination criteria
   double eps_rel_ = 1e-4; // relative termination criteria
