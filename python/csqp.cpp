@@ -1,0 +1,145 @@
+///////////////////////////////////////////////////////////////////////////////
+// BSD 3-Clause License
+//
+// Copyright (C) 2019-2020, LAAS-CNRS, The University of Edinburgh
+// Copyright note valid unless otherwise stated in individual files.
+// All rights reserved.
+///////////////////////////////////////////////////////////////////////////////
+
+#include "mim_solvers/python.hpp"
+#include "mim_solvers/csqp.hpp"
+
+namespace mim_solvers {
+
+namespace bp = boost::python;
+
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_solves, SolverCSQP::solve, 0, 5)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections, SolverCSQP::computeDirection, 0, 1)
+
+void exposeSolverCSQP() {
+  bp::register_ptr_to_python<boost::shared_ptr<SolverCSQP> >();
+
+  bp::class_<SolverCSQP, bp::bases<SolverDDP> >(
+      "SolverCSQP",
+      "CSQP solver.\n\n"
+      "The CSQP solver computes an optimal trajectory and control commands by iterates\n"
+      "running backward and forward passes. The backward-pass updates locally the\n"
+      "quadratic approximation of the problem and computes descent direction,\n"
+      "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
+      "along a tuple of optimized control commands U*.\n"
+      ":param shootingProblem: shooting problem (list of action models along trajectory.)",
+      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
+                                                    "Initialize the vector dimension.\n\n"
+                                                    ":param problem: shooting problem."))
+      .def("solve", &SolverCSQP::solve,
+           SolverCSQP_solves(
+               bp::args("self", "init_xs", "init_us", "maxiter", "isFeasible", "regInit"),
+               "Compute the optimal trajectory xopt, uopt as lists of T+1 and T terms.\n\n"
+               "From an initial guess init_xs,init_us (feasible or not), iterate\n"
+               "over computeDirection and tryStep until stoppingCriteria is below\n"
+               "threshold. It also describes the globalization strategy used\n"
+               "during the numerical optimization.\n"
+               ":param init_xs: initial guess for state trajectory with T+1 elements (default [])\n"
+               ":param init_us: initial guess for control trajectory with T elements (default []).\n"
+               ":param maxiter: maximum allowed number of iterations (default 100).\n"
+               ":param isFeasible: true if the init_xs are obtained from integrating the init_us (rollout) (default "
+               "False).\n"
+               ":param regInit: initial guess for the regularization value. Very low values are typical\n"
+               "                used with very good guess points (init_xs, init_us) (default None).\n"
+               ":returns the optimal trajectory xopt, uopt and a boolean that describes if convergence was reached."))
+     //  .def("updateExpectedImprovement", &SolverCSQP::updateExpectedImprovement,
+     //       bp::return_value_policy<bp::copy_const_reference>(), bp::args("self"),
+     //       "Update the expected improvement model\n\n")
+     // .def("increaseRegularization", &solverFDDP::increaseRegularization, bp::args("self"),
+     //       "Increase regularization")
+
+      .def("calc", &SolverCSQP::calc, bp::args("self", "recalc"),
+           "")
+      .def("update_lagrangian_parameters", &SolverCSQP::update_lagrangian_parameters, bp::args("self"),
+           "")
+      .def("forwardPass", &SolverCSQP::forwardPass, bp::args("self"),
+           "")
+      .def("backwardPass", &SolverCSQP::backwardPass, bp::args("self"),
+           "")
+      .def("backwardPass_without_constraints", &SolverCSQP::backwardPass_without_constraints, bp::args("self"),
+           "")
+      .def("backwardPass_without_rho_update", &SolverCSQP::backwardPass_without_rho_update, bp::args("self"),
+           "")
+      .def("update_rho_sparse", &SolverCSQP::update_rho_sparse, bp::args("self", "iter"),
+           "")
+      .def("computeDirection", &SolverCSQP::computeDirection, bp::args("self", "recalcDiff"),
+           "")
+      .def("checkKKTConditions", &SolverCSQP::checkKKTConditions, bp::args("self"),
+           "")
+      .def_readwrite("xs_try", &SolverCSQP::xs_try_, "xs try")
+      .def_readwrite("us_try", &SolverCSQP::us_try_, "us try")  
+      .def_readwrite("cost_try", &SolverCSQP::cost_try_, "cost try")
+      .def_readwrite("fs_try", &SolverCSQP::fs_try_, "fs_try")
+      .def_readwrite("lag_mul", &SolverCSQP::lag_mul_, "lagrange multipliers")
+      .def_readwrite("norm_primal", &SolverCSQP::norm_primal_, "norm_primal")
+      .def_readwrite("norm_dual", &SolverCSQP::norm_dual_, "norm_dual ")
+      .def_readwrite("norm_dual_rel", &SolverCSQP::norm_dual_rel_, "norm_dual_rel")
+      .def_readwrite("norm_primal_rel", &SolverCSQP::norm_primal_rel_, "norm_primal_rel")
+      .def_readwrite("rho_vec", &SolverCSQP::rho_vec_, "rho vector")
+      .def_readwrite("y", &SolverCSQP::y_, "y")
+      .def_readwrite("z", &SolverCSQP::z_, "z")
+      .def_readwrite("warm_start_y", &SolverCSQP::warm_start_y_, "Warm-start ADMM Lagrange multipliers with previous solution (default: False, i.e. reset to 0)")
+      .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. not reset to base values)")
+
+
+      .add_property("with_callbacks", bp::make_function(&SolverCSQP::getCallbacks), bp::make_function(&SolverCSQP::setCallbacks),
+                    "Activates the callbacks when true (default: False)")
+      .add_property("use_kkt_criteria", bp::make_function(&SolverCSQP::set_use_kkt_criteria), bp::make_function(&SolverCSQP::get_use_kkt_criteria),
+                    "Use the KKT residual condition as a termination criteria (default: True)")
+      .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
+                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("xs", make_function(&SolverCSQP::get_xs, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverCSQP::set_xs), "xs")
+      .add_property("us", make_function(&SolverCSQP::get_us, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverCSQP::set_us), "us")
+      .add_property("dx_tilde", make_function(&SolverCSQP::get_xs_tilde, bp::return_value_policy<bp::copy_const_reference>()), "dx_tilde")
+      .add_property("du_tilde", make_function(&SolverCSQP::get_us_tilde, bp::return_value_policy<bp::copy_const_reference>()), "du_tilde")
+      
+
+
+      .add_property("constraint_norm", bp::make_function(&SolverCSQP::get_constraint_norm),
+                    "Constraint norm")
+      .add_property("gap_norm", bp::make_function(&SolverCSQP::get_gap_norm), 
+                    "Gap norm")
+      .add_property("qp_iters", bp::make_function(&SolverCSQP::get_qp_iters),
+                    "Number of QP iterations")
+      .add_property("KKT_norm", bp::make_function(&SolverCSQP::get_KKT_norm),
+                    "KKT norm")
+                    
+      .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
+                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("eps_abs", bp::make_function(&SolverCSQP::get_eps_abs), bp::make_function(&SolverCSQP::set_eps_abs),
+                    "sets epsillon absolute termination criteria for qp solver")
+      .add_property("eps_rel", bp::make_function(&SolverCSQP::get_eps_rel), bp::make_function(&SolverCSQP::set_eps_rel),
+                    "sets epsillon relative termination criteria for qp solver")
+      .add_property("rho_sparse", bp::make_function(&SolverCSQP::get_rho_sparse), bp::make_function(&SolverCSQP::set_rho_sparse),
+                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("warm_start", bp::make_function(&SolverCSQP::get_warm_start), bp::make_function(&SolverCSQP::set_warm_start),
+                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("sigma", bp::make_function(&SolverCSQP::get_sigma), bp::make_function(&SolverCSQP::set_sigma),
+                    "get and set sigma")
+      .add_property("alpha", bp::make_function(&SolverCSQP::get_alpha), bp::make_function(&SolverCSQP::set_alpha),
+                    "get and set alpha (relaxed update)")
+
+      .add_property("use_filter_line_search", bp::make_function(&SolverCSQP::get_use_filter_line_search), bp::make_function(&SolverCSQP::set_use_filter_line_search),
+                    "Use the filter line search criteria (default: False)")
+      .add_property("termination_tolerance", bp::make_function(&SolverCSQP::get_termination_tolerance), bp::make_function(&SolverCSQP::set_termination_tolerance),
+                    "Termination criteria to exit the iteration (default: 1e-8)")
+      .add_property("max_qp_iters", bp::make_function(&SolverCSQP::get_max_qp_iters), bp::make_function(&SolverCSQP::set_max_qp_iters),
+                    "get and set max qp iters")
+      .add_property("rho_update_interval", bp::make_function(&SolverCSQP::get_rho_update_interval), bp::make_function(&SolverCSQP::set_rho_update_interval),
+                    "get and set rho update interval")
+     .add_property("filter_size", bp::make_function(&SolverCSQP::get_filter_size), bp::make_function(&SolverCSQP::set_filter_size),
+                    "filter size for the line-search (default: 10)")
+      .add_property("adaptive_rho_tolerance", bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance), bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
+                    "get and set adaptive rho tolerance");
+     //  .add_property("th_acceptNegStep", bp::make_function(&SolverCSQP::get_th_acceptnegstep),
+     //                bp::make_function(&SolverCSQP::set_th_acceptnegstep),
+     //                "threshold for step acceptance in ascent direction");
+     
+}
+
+}  // namespace mim_solvers

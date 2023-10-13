@@ -3,7 +3,6 @@
 
 #include <pinocchio/multibody/fwd.hpp>  // Must be included first!
 #include <boost/python.hpp>
-// #include <eigenpy/eigenpy.hpp>
 
 #include "mim_solvers/ddp.hpp"
 #include "mim_solvers/fddp.hpp"
@@ -14,6 +13,7 @@ namespace mim_solvers{
     void exposeSolverDDP();
     void exposeSolverFDDP();
     void exposeSolverSQP();
+    void exposeSolverCSQP();
 } // namespace mim_solvers
 
 #endif
