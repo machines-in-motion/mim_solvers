@@ -10,7 +10,7 @@ Solvers from Crocoddyl are also available, namely DDP and FDDP, but with modifie
 # Installation
 First clone the repo :
 
-`git clone https://github.com/machines-in-motion/mim_solvers.git`
+`git clone --recursive https://github.com/machines-in-motion/mim_solvers.git`
 
   ## Using CMake
 `cd mim_solvers && mkdir build && cd build`
