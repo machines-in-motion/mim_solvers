@@ -61,7 +61,7 @@ class SQP(SolverAbstract):
             self.gap[t] = model.state.diff(self.xs[t+1], data.xnext) #gaps
             self.cost += data.cost
         
-        self.gap_norm = sum(np.linalg.norm(self.gap, 1, axis = 1))
+        self.gap_norm = sum(np.linalg.norm(self.gap.copy(), 1, axis = 1))
 
         self.cost += self.problem.terminalData.cost 
         self.merit =  self.cost + self.mu*self.gap_norm
@@ -92,7 +92,7 @@ class SQP(SolverAbstract):
             self.KKT = max(self.KKT, max(abs(data.Lu + data.Fu.T @ self.lag_mul[t+1])))
 
         self.KKT = max(self.KKT, max(abs(self.problem.terminalData.Lx - self.lag_mul[-1])))
-        self.KKT = max(self.KKT, max(abs(np.array(self.fs).flatten())))
+        self.KKT = max(self.KKT, max(abs(np.array(self.gap).flatten())))
 
 
     def computeUpdates(self): 
@@ -115,7 +115,6 @@ class SQP(SolverAbstract):
         self.lag_mul[-1] = self.S[-1] @ self.dx[-1] + self.s[-1]
         self.x_grad_norm = sum(np.linalg.norm(self.dx, 1, axis = 1))/(self.problem.T+1)
         self.u_grad_norm = sum(np.linalg.norm(self.du, 1, axis = 1))/self.problem.T
-        # print("x_norm", self.x_grad_norm,"u_norm", self.u_grad_norm )
 
 
     def compute_expected_decrease(self):
@@ -132,12 +131,7 @@ class SQP(SolverAbstract):
         self.expected_decrease += q.T@self.dx[-1] 
         
         hess_decrease = self.dx[-1].T@data.Lxx@self.dx[-1]
-        # if hess_decrease > 0:
-        #     self.expected_decrease += 0.5*hess_decrease
         tmp_mu = self.expected_decrease/((1 - self.rho)*self.gap_norm)
-        if(self.VERBOSE):
-            print(self.expected_decrease, (1 - self.rho)*self.gap_norm)
-            print(tmp_mu)
         self.mu = tmp_mu
 
     def tryStep(self, alpha):
@@ -204,7 +198,7 @@ class SQP(SolverAbstract):
             self.l[t][:] = -1*scl.cho_solve(Lb_uu, h)
             
             self.S[t] = Q + A.T @ (self.S[t+1])@A - self.L[t].T@H@self.L[t] 
-            self.S[t] = (self.S[t] + self.S[t].T) / 2 
+            self.S[t] = 0.5*(self.S[t] + self.S[t].T)
             self.s[t] = q + A.T @ (self.S[t+1] @ self.gap[t] + self.s[t+1]) + G.T@self.l[t][:]+ self.L[t].T@(h + H@self.l[t][:])
 
     def solve(self, init_xs=None, init_us=None, maxiter=100, isFeasible=False, regInit=None):
@@ -221,7 +215,7 @@ class SQP(SolverAbstract):
         if (self.VERBOSE):
             headings = ["iter", "merit", "cost", "grad", "step", "||gaps||", "KKT"]
             
-            print("{:>5} {:>10} {:>8} {:>8} {:>8} {:>10} {:>6}".format(*headings))
+            print("{:>3} {:>9} {:>10} {:>11} {:>8} {:>11} {:>8}".format(*headings))
         for iter in range(maxiter):
             recalc = True   # this will recalculated derivatives in Compute Direction 
             self.computeDirection(recalc=recalc)
@@ -257,7 +251,7 @@ class SQP(SolverAbstract):
                 return True
             
             if(self.VERBOSE):
-                print("{:.2e} {:.2e} {:.2e} {:.2e} {:.2e} {:.2e} {:.2e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
+                print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
 
         return False 
 
@@ -305,8 +299,6 @@ class SQP(SolverAbstract):
             P = data.Lxu.T
             A = data.Fx
             B = data.Fu 
-
-            # print(self.gap[t].shape, np.shape(self.S[t+1]))
 
             h = r + B.T@(self.s[t+1] + self.S[t+1]@self.gap[t])
             G = P + B.T@self.S[t+1]@A

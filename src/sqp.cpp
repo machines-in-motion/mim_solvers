@@ -78,8 +78,8 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
   if (problem_->is_updated()) {
     resizeData();
   }
-  xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
   setCandidate(init_xs, init_us, false);
+  xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
 
   if (std::isnan(reginit)) {
     xreg_ = reg_min_;
@@ -88,9 +88,7 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     xreg_ = reginit;
     ureg_ = reginit;
   }
-
   
-
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
 
 
@@ -115,8 +113,6 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
 
     // KKT termination criteria
     if(use_kkt_criteria_){
-      // KKT_ = 0.;
-      // checkKKTConditions();
       if (KKT_  <= termination_tol_) {
         STOP_PROFILER("SolverSQP::solve");
         return true;
