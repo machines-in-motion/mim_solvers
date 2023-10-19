@@ -41,6 +41,7 @@ project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 # Project dependencies
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
+find_package(crocoddyl REQUIRED)
 
 add_project_dependency(pinocchio REQUIRED)
 add_project_dependency(crocoddyl REQUIRED)

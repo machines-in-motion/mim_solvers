@@ -18,6 +18,10 @@
   <depend condition="$ROS_PYTHON_VERSION == 3">python3</depend>
   <depend>boost</depend>
 
+  <depend>pinocchio</depend>
+  <depend>crocoddyl</depend>
+  <depend>eigenpy</depend>
+
   <buildtool_depend>cmake</buildtool_depend>
   <export>
     <build_type>cmake</build_type>
