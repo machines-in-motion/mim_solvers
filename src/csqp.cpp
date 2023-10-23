@@ -86,12 +86,12 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
               rho_vec_[t][k] = rho_min_;
               inv_rho_vec_[t][k] = 1.0/rho_min_;
           }
-          else if (lb[k] == ub[k]){
+          else if (abs(lb[k] - ub[k]) <= 1e-6){
               rho_vec_[t][k] = 1e3 * rho_sparse_;
               inv_rho_vec_[t][k] = 1/(1e3 * rho_sparse_);
 
           }
-          else if (lb[k] != ub[k]){
+          else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
               inv_rho_vec_[t][k] = rho_sparse_;
 
@@ -125,11 +125,11 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
             rho_vec_.back()[k] = rho_min_;
             inv_rho_vec_.back()[k] = 1/rho_min_;
         }
-        else if (lb[k] == ub[k]){
+        else if (abs(lb[k] - ub[k]) <= 1e-6){
             rho_vec_.back()[k] = 1e3 * rho_sparse_;
             inv_rho_vec_.back()[k] = 1/(1e3 * rho_sparse_);
         }
-        else if (lb[k] != ub[k]){
+        else if (lb[k] < ub[k]){
             rho_vec_.back()[k] = rho_sparse_;
             inv_rho_vec_.back()[k] = 1/rho_sparse_;
         }
@@ -179,11 +179,11 @@ void SolverCSQP::reset_params(){
               inv_rho_vec_[t][k] = 1/rho_min_;
 
           }
-          else if (lb[k] == ub[k]){
+          else if (abs(lb[k] - ub[k]) <= 1e-6){
               rho_vec_[t][k] = 1e3 * rho_sparse_;
               inv_rho_vec_[t][k] = 1.0/(1e3 * rho_sparse_);
           }
-          else if (lb[k] != ub[k]){
+          else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
               inv_rho_vec_[t][k] = 1/rho_sparse_;
 
@@ -212,11 +212,11 @@ void SolverCSQP::reset_params(){
             rho_vec_.back()[k] = rho_min_;
             inv_rho_vec_.back()[k] = 1/rho_min_;
         }
-        else if (lb[k] == ub[k]){
+        else if (abs(lb[k] - ub[k]) <= 1e-6){
             rho_vec_.back()[k] = 1e3 * rho_sparse_;
             inv_rho_vec_.back()[k] = 1/(1e3 * rho_sparse_);
         }
-        else if (lb[k] != ub[k]){
+        else if (lb[k] < ub[k]){
             rho_vec_.back()[k] = rho_sparse_;
             inv_rho_vec_.back()[k] = 1/rho_sparse_;
         }
@@ -452,11 +452,11 @@ void SolverCSQP::update_rho_sparse(int iter){
               rho_vec_[t][k] = rho_min_;
               inv_rho_vec_[t][k] = 1/rho_min_;
           }
-          else if (abs(lb[k] - ub[k]) < 1e-3) {
+          else if (abs(lb[k] - ub[k]) < 1e-6) {
               rho_vec_[t][k] = 1e3 * rho_sparse_;
               inv_rho_vec_[t][k] = 1/(1e3 * rho_sparse_);
           }
-          else if (lb[k] != ub[k]){
+          else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
               inv_rho_vec_[t][k] = 1/rho_sparse_;
           }
@@ -474,11 +474,11 @@ void SolverCSQP::update_rho_sparse(int iter){
             rho_vec_.back()[k] = rho_min_;
             inv_rho_vec_.back()[k] = 1/rho_min_;
         }
-        else if (abs(lb[k] - ub[k]) < 1e-3) {
+        else if (abs(lb[k] - ub[k]) < 1e-6) {
             rho_vec_.back()[k] = 1e3 * rho_sparse_;
             inv_rho_vec_.back()[k] = 1/(1e3 * rho_sparse_);
         }
-        else if (lb[k] != ub[k]){
+        else if (lb[k] < ub[k]){
             rho_vec_.back()[k] = rho_sparse_;
             inv_rho_vec_.back()[k] = 1/rho_sparse_;
         }
