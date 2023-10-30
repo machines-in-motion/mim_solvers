@@ -42,11 +42,12 @@ project(${PROJECT_NAME} ${PROJECT_ARGS})
 # Project dependencies
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(crocoddyl REQUIRED)
+find_package(eigenpy REQUIRED)
 
-add_project_dependency(pinocchio REQUIRED)
 add_project_dependency(crocoddyl REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
 # find_package(proxsuite REQUIRED)
+find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 if(BUILD_PYTHON_INTERFACE)
   FINDPYTHON()
@@ -78,11 +79,7 @@ if(SUFFIX_SO_VERSION)
 endif()
 
 # Main Executable
-add_executable(${PROJECT_NAMESPACE}-${PROJECT_NAME} src/main.cpp)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} pinocchio::pinocchio)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} crocoddyl::crocoddyl)
-# target_link_libraries(${PROJECT_NAME} proxsuite::proxsuite)
-target_link_libraries(${PROJECT_NAMESPACE}-${PROJECT_NAME} ${PROJECT_NAME})
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 # Python Bindings
@@ -95,5 +92,4 @@ add_subdirectory(tests)
 
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
-install(TARGETS ${PROJECT_NAMESPACE}-${PROJECT_NAME} RUNTIME DESTINATION bin)
 install(FILES package.xml DESTINATION share/${PROJECT_NAME})
