@@ -47,11 +47,6 @@ void exposeSolverCSQP() {
                ":param regInit: initial guess for the regularization value. Very low values are typical\n"
                "                used with very good guess points (init_xs, init_us) (default None).\n"
                ":returns the optimal trajectory xopt, uopt and a boolean that describes if convergence was reached."))
-     //  .def("updateExpectedImprovement", &SolverCSQP::updateExpectedImprovement,
-     //       bp::return_value_policy<bp::copy_const_reference>(), bp::args("self"),
-     //       "Update the expected improvement model\n\n")
-     // .def("increaseRegularization", &solverFDDP::increaseRegularization, bp::args("self"),
-     //       "Increase regularization")
 
       .def("calc", &SolverCSQP::calc, bp::args("self", "recalc"),
            "")
@@ -136,9 +131,6 @@ void exposeSolverCSQP() {
                     "filter size for the line-search (default: 10)")
       .add_property("adaptive_rho_tolerance", bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance), bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
                     "get and set adaptive rho tolerance");
-     //  .add_property("th_acceptNegStep", bp::make_function(&SolverCSQP::get_th_acceptnegstep),
-     //                bp::make_function(&SolverCSQP::set_th_acceptnegstep),
-     //                "threshold for step acceptance in ascent direction");
      
 }
 

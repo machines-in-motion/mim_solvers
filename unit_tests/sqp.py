@@ -32,7 +32,7 @@ for problem in problems:
     solverSQP = mim_solvers.SolverSQP(problem)
     solverSQP.xs = [solverSQP.problem.x0] * (solverSQP.problem.T + 1)  
     solverSQP.us = solverSQP.problem.quasiStatic([solverSQP.problem.x0] * solverSQP.problem.T)
-    solverSQP.termination_tol        = TOL
+    solverSQP.termination_tolerance  = TOL
     solverSQP.use_filter_line_search = True
     solverSQP.filter_size            = MAXITER
     solverSQP.with_callbacks         = CALLBACKS
@@ -41,7 +41,7 @@ for problem in problems:
 
     # Create python solver
     pysolverSQP = SQP(problem, VERBOSE = CALLBACKS)
-    pysolverSQP.termination_tol             = TOL
+    pysolverSQP.termination_tolerance  = TOL
 
     # SQP    
     solverSQP.xs = [x0] * (problem.T + 1)

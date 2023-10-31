@@ -32,7 +32,7 @@ class SQP(SolverAbstract):
         self.regMax = 1e9
         self.regMin = 1e-9
         self.mu = 1e0
-        self.termination_tol = 1e-8
+        self.termination_tolerance = 1e-8
 
 
         self.use_filter_ls = use_filter_ls
@@ -247,7 +247,7 @@ class SQP(SolverAbstract):
                 alpha *= 0.5
 
             # self.check_optimality()
-            if self.KKT < self.termination_tol:
+            if self.KKT < self.termination_tolerance:
                 return True
             
             if(self.VERBOSE):

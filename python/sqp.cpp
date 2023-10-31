@@ -47,11 +47,6 @@ void exposeSolverSQP() {
                ":param regInit: initial guess for the regularization value. Very low values are typical\n"
                "                used with very good guess points (init_xs, init_us) (default None).\n"
                ":returns the optimal trajectory xopt, uopt and a boolean that describes if convergence was reached."))
-     //  .def("updateExpectedImprovement", &SolverSQP::updateExpectedImprovement,
-     //       bp::return_value_policy<bp::copy_const_reference>(), bp::args("self"),
-     //       "Update the expected improvement model\n\n")
-     // .def("increaseRegularization", &solverFDDP::increaseRegularization, bp::args("self"),
-     //       "Increase regularization")
       .def_readwrite("xs_try", &SolverSQP::xs_try_, "xs try")
       .def_readwrite("us_try", &SolverSQP::us_try_, "us try")
       .def_readwrite("cost_try", &SolverSQP::cost_try_, "cost try")
@@ -67,13 +62,10 @@ void exposeSolverSQP() {
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
       .add_property("use_filter_line_search", bp::make_function(&SolverSQP::get_use_filter_line_search), bp::make_function(&SolverSQP::set_use_filter_line_search),
                     "Use the filter line search criteria (default: False)")
-      .add_property("termination_tol", bp::make_function(&SolverSQP::get_termination_tolerance), bp::make_function(&SolverSQP::set_termination_tolerance),
+      .add_property("termination_tolerance", bp::make_function(&SolverSQP::get_termination_tolerance), bp::make_function(&SolverSQP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-8)")
       .add_property("filter_size", bp::make_function(&SolverSQP::get_filter_size), bp::make_function(&SolverSQP::set_filter_size),
                     "filter size for the line-search (default: 10)");
-     //  .add_property("th_acceptNegStep", bp::make_function(&SolverSQP::get_th_acceptnegstep),
-     //                bp::make_function(&SolverSQP::set_th_acceptnegstep),
-     //                "threshold for step acceptance in ascent direction");
      
 }
 
