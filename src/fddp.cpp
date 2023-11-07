@@ -104,7 +104,7 @@ bool SolverFDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         is_worse_than_memory_ = false;
         std::size_t count = 0.; 
         while( count < filter_size_ && is_worse_than_memory_ == false and count <= iter_){
-          is_worse_than_memory_ = cost_list_[filter_size_-1-count] < cost_try_ && gap_list_[filter_size_-1-count] < gap_norm_try_;
+          is_worse_than_memory_ = cost_list_[filter_size_-1-count] <= cost_try_ && gap_list_[filter_size_-1-count] <= gap_norm_try_;
           count++;
         }
         if( is_worse_than_memory_ == false ) {

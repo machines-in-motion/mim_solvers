@@ -59,14 +59,14 @@ void exposeSolverFDDP() {
       .add_property("use_kkt_criteria", bp::make_function(&SolverFDDP::get_use_kkt_criteria), bp::make_function(&SolverFDDP::set_use_kkt_criteria),
                     "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverFDDP::get_termination_tolerance), bp::make_function(&SolverFDDP::set_termination_tolerance),
-                    "Termination criteria to exit the iteration (default: 1e-8)")
+                    "Termination criteria to exit the iteration (default: 1e-6)")
       .add_property("th_acceptNegStep", bp::make_function(&SolverFDDP::get_th_acceptnegstep),
                     bp::make_function(&SolverFDDP::set_th_acceptnegstep),
                     "threshold for step acceptance in ascent direction")
       .add_property("use_filter_line_search", bp::make_function(&SolverFDDP::get_use_filter_line_search), bp::make_function(&SolverFDDP::set_use_filter_line_search),
                     "Use the filter line search criteria (default: False)")
       .add_property("filter_size", bp::make_function(&SolverFDDP::get_filter_size), bp::make_function(&SolverFDDP::set_filter_size),
-                    "filter size for the line-search (default: 10)");
+                    "filter size for the line-search (default: 1)");
 }
 
 }  // namespace mim_solvers

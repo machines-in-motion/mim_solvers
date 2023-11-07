@@ -101,7 +101,6 @@ void exposeSolverCSQP() {
                     "Gap norm")
       .add_property("qp_iters", bp::make_function(&SolverCSQP::get_qp_iters),
                     "Number of QP iterations")
-                    
       .add_property("KKT", bp::make_function(&SolverCSQP::get_KKT),
                     "KKT residual norm")
                     
@@ -123,13 +122,13 @@ void exposeSolverCSQP() {
       .add_property("use_filter_line_search", bp::make_function(&SolverCSQP::get_use_filter_line_search), bp::make_function(&SolverCSQP::set_use_filter_line_search),
                     "Use the filter line search criteria (default: False)")
       .add_property("termination_tolerance", bp::make_function(&SolverCSQP::get_termination_tolerance), bp::make_function(&SolverCSQP::set_termination_tolerance),
-                    "Termination criteria to exit the iteration (default: 1e-8)")
+                    "Termination criteria to exit the iteration (default: 1e-6)")
       .add_property("max_qp_iters", bp::make_function(&SolverCSQP::get_max_qp_iters), bp::make_function(&SolverCSQP::set_max_qp_iters),
                     "get and set max qp iters")
       .add_property("rho_update_interval", bp::make_function(&SolverCSQP::get_rho_update_interval), bp::make_function(&SolverCSQP::set_rho_update_interval),
                     "get and set rho update interval")
      .add_property("filter_size", bp::make_function(&SolverCSQP::get_filter_size), bp::make_function(&SolverCSQP::set_filter_size),
-                    "filter size for the line-search (default: 10)")
+                    "filter size for the line-search (default: 1)")
       .add_property("adaptive_rho_tolerance", bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance), bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
                     "get and set adaptive rho tolerance");
      
