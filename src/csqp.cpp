@@ -37,7 +37,6 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       fs_flat_.setZero();
       lag_mul_.resize(T+1);
       du_.resize(T);
-      KKT_ = 0.;
       
       dx_.resize(T+1); dxtilde_.resize(T+1);
       du_.resize(T); dutilde_.resize(T);
@@ -386,7 +385,6 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     calc(recalcDiff);
   }
   if(use_kkt_criteria_){
-    KKT_ = 0.;
     checkKKTConditions();
   }
 
@@ -488,6 +486,7 @@ void SolverCSQP::update_rho_sparse(int iter){
 }
 
 void SolverCSQP::checkKKTConditions(){
+  KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();

@@ -32,7 +32,6 @@ SolverSQP::SolverSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       dx_.resize(T+1);
       lag_mul_.resize(T+1);
       du_.resize(T);
-      KKT_ = 0.;
       gap_list_.resize(filter_size_);
       cost_list_.resize(filter_size_);
       const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
@@ -191,7 +190,6 @@ void SolverSQP::computeDirection(const bool recalcDiff){
 
   // KKT termination criteria
   if(use_kkt_criteria_){
-    KKT_ = 0.;
     checkKKTConditions();
   }  
 
@@ -203,6 +201,7 @@ void SolverSQP::computeDirection(const bool recalcDiff){
 }
 
 void SolverSQP::checkKKTConditions(){
+  KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();

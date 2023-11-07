@@ -125,7 +125,7 @@ class SolverCSQP : public SolverDDP {
 
 //   const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& get_constraints() const { return cmodels_; };
 
-  double get_KKT_norm() const { return KKT_; };
+  double get_KKT() const { return KKT_; };
   double get_gap_norm() const { return gap_norm_; };
   double get_constraint_norm() const { return constraint_norm_; };
   double get_qp_iters() const { return qp_iters_; };
@@ -186,35 +186,34 @@ class SolverCSQP : public SolverDDP {
   void set_eps_rel(double eps_rel) { eps_rel_ = eps_rel;};
 
  public:
-  boost::circular_buffer<double> constraint_list_;                      //!< memory buffer of constraint norms (used in filter line-search)
-  boost::circular_buffer<double> gap_list_;                            //!< memory buffer of gap norms (used in filter line-search)
-  boost::circular_buffer<double> cost_list_;                           //!< memory buffer of gap norms (used in filter line-search)
+  boost::circular_buffer<double> constraint_list_;             //!< memory buffer of constraint norms (used in filter line-search)
+  boost::circular_buffer<double> gap_list_;                    //!< memory buffer of gap norms (used in filter line-search)
+  boost::circular_buffer<double> cost_list_;                   //!< memory buffer of gap norms (used in filter line-search)
   using SolverDDP::xs_try_;
   using SolverDDP::us_try_;
   using SolverDDP::cost_try_;
-  std::vector<Eigen::VectorXd> fs_try_;                                //!< Gaps/defects between shooting nodes
-  std::vector<Eigen::VectorXd> dx_;                                    //!< the descent direction for x
-  std::vector<Eigen::VectorXd> du_;                                    //!< the descent direction for u
-  std::vector<Eigen::VectorXd> lag_mul_;                               //!< the Lagrange multiplier of the dynamics constraint
-  Eigen::VectorXd fs_flat_;                                            //!< Gaps/defects between shooting nodes (1D array)
-  double KKT_ = std::numeric_limits<double>::infinity();               //!< KKT conditions residual
-  bool use_filter_line_search_ = false;                             //!< Use filter line search
+  std::vector<Eigen::VectorXd> fs_try_;                        //!< Gaps/defects between shooting nodes
+  std::vector<Eigen::VectorXd> dx_;                            //!< the descent direction for x
+  std::vector<Eigen::VectorXd> du_;                            //!< the descent direction for u
+  std::vector<Eigen::VectorXd> lag_mul_;                       //!< the Lagrange multiplier of the dynamics constraint
+  Eigen::VectorXd fs_flat_;                                    //!< Gaps/defects between shooting nodes (1D array)
+  bool use_filter_line_search_ = true;                         //!< Use filter line search
 
-  std::vector<Eigen::VectorXd> dxtilde_;                                    //!< the descent direction for x
-  std::vector<Eigen::VectorXd> dutilde_;                                    //!< the descent direction for u
+  std::vector<Eigen::VectorXd> dxtilde_;                       //!< the descent direction for x
+  std::vector<Eigen::VectorXd> dutilde_;                       //!< the descent direction for u
 
   // ADMM parameters
-  std::vector<Eigen::VectorXd> y_;                                    //!< lagrangian dual variable
-  std::vector<Eigen::VectorXd> z_;                                    //!< second admm variable
-  std::vector<Eigen::VectorXd> z_prev_;                               //!< second admm variable previous
-  std::vector<Eigen::VectorXd> z_relaxed_;                           //!< relaxed step of z
-  std::vector<Eigen::VectorXd> rho_vec_;                              //!< rho vector
-  std::vector<Eigen::VectorXd> inv_rho_vec_;                              //!< rho vector
+  std::vector<Eigen::VectorXd> y_;                             //!< lagrangian dual variable
+  std::vector<Eigen::VectorXd> z_;                             //!< second admm variable
+  std::vector<Eigen::VectorXd> z_prev_;                        //!< second admm variable previous
+  std::vector<Eigen::VectorXd> z_relaxed_;                     //!< relaxed step of z
+  std::vector<Eigen::VectorXd> rho_vec_;                       //!< rho vector
+  std::vector<Eigen::VectorXd> inv_rho_vec_;                   //!< rho vector
 
-  double norm_primal_ = 0.0; // norm primal residual
-  double norm_dual_ = 0.0; // norm dual residual
-  double norm_primal_rel_ = 0.0; // norm primal relative residual
-  double norm_dual_rel_ = 0.0; // norm dual relative residual
+  double norm_primal_ = 0.0;                                   //!< norm primal residual
+  double norm_dual_ = 0.0;                                     //!< norm dual residual
+  double norm_primal_rel_ = 0.0;                               //!< norm primal relative residual
+  double norm_dual_rel_ = 0.0;                                 //!< norm dual relative residual
 
   bool warm_start_y_ = false;
   bool reset_rho_ = false;
@@ -226,44 +225,41 @@ class SolverCSQP : public SolverDDP {
   double u_grad_norm_ = 0;                                     //!< 1 norm of the delta u
   double gap_norm_ = 0;                                        //!< 1 norm of the gaps
   double constraint_norm_ = 0;                                 //!< 1 norm of constraint violation
-  double constraint_norm_try_ = 0;                                 //!< 1 norm of constraint violation try
+  double constraint_norm_try_ = 0;                             //!< 1 norm of constraint violation try
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double cost_ = 0.0;                                            //!< cost function
+  double cost_ = 0.0;                                          //!< cost function
   double mu_ = 1e1;                                            //!< penalty no constraint violation
-  double mu2_ = 1e1;                                            //!< penalty no constraint violation
-  double termination_tol_ = 1e-8;                              //!< Termination tolerance
+  double mu2_ = 1e1;                                           //!< penalty no constraint violation
+  double termination_tol_ = 1e-6;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
   bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
-  double sigma_ = 1e-6; // proximal term
-  double alpha_ = 1.6; // relaxed step size
-  std::size_t max_qp_iters_ = 1000; // max qp iters
+  double sigma_ = 1e-6;                                        //!< proximal term
+  double alpha_ = 1.6;                                         //!< relaxed step size
+  std::size_t max_qp_iters_ = 1000;                            //!< max qp iters
   std::size_t qp_iters_ = 0;
 
-  double rho_estimate_sparse_ = 0.0; // rho estimate
-  double rho_sparse_ = 1e-1; // rho
+  double rho_estimate_sparse_ = 0.0;                          //!< rho estimate
+  double rho_sparse_ = 1e-1;                                  //!< rho
   double rho_sparse_base_;
-  double rho_min_ = 1e-6; // rho min
-  double rho_max_ = 1e3; //1e6; // rho max 
-  std::size_t rho_update_interval_ = 25; // frequency of update of rho
+  double rho_min_ = 1e-6;                                     //!< rho min
+  double rho_max_ = 1e3;                                      //!< rho max 
+  std::size_t rho_update_interval_ = 25;                      //!< frequency of update of rho
   double adaptive_rho_tolerance_ = 5; 
-  double eps_abs_ = 1e-4; // absolute termination criteria
-  double eps_rel_ = 1e-4; // relative termination criteria
-
+  double eps_abs_ = 1e-4;                                     //!< absolute termination criteria
+  double eps_rel_ = 1e-4;                                     //!< relative termination criteria
   double warm_start_ = true;
-  std::size_t filter_size_ = 1;                                //!< Filter size for line-search (do not change the default value !)
-
+  std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
+  double KKT_ = std::numeric_limits<double>::infinity();      //!< KKT conditions residual
 
  private:
-  double th_acceptnegstep_;  //!< Threshold used for accepting step along ascent direction
-//   const std::vector<boost::shared_ptr<ConstraintModelAbstract>> cmodels_;
-//   std::vector<boost::shared_ptr<ConstraintDataAbstract>> cdatas_;
+  double th_acceptnegstep_;                                   //!< Threshold used for accepting step along ascent direction
   Eigen::VectorXd dual_vecx;
   Eigen::VectorXd dual_vecu;
 
-  Eigen::MatrixXd sigma_diag_x; // This is the sigma * eye(ndx)
-  std::vector<Eigen::MatrixXd> sigma_diag_u; // This is the sigma * eye(nu)
+  Eigen::MatrixXd sigma_diag_x;                // This is the sigma * eye(ndx)
+  std::vector<Eigen::MatrixXd> sigma_diag_u;   // This is the sigma * eye(nu)
   std::vector<Eigen::VectorXd> Cdx_Cdu;
-  bool is_worse_than_memory_ = false; //!< Boolean for filter line-search criteria 
+  bool is_worse_than_memory_ = false;          //!< Boolean for filter line-search criteria 
 
 };
 

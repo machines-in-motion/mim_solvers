@@ -297,12 +297,14 @@ class SolverDDP : public crocoddyl::SolverAbstract {
    * @brief Compute the KKT conditions residual
    */
   virtual void checkKKTConditions();
-
+  
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
 
   double get_termination_tolerance() const { return termination_tol_; };
   bool get_use_kkt_criteria() const { return use_kkt_criteria_; }
+
+  double get_KKT() const { return KKT_; };
 
  protected:
   double reg_incfactor_;  //!< Regularization factor used to increase the damping value
@@ -330,21 +332,21 @@ class SolverDDP : public crocoddyl::SolverAbstract {
   Eigen::VectorXd xnext_;      //!< Next state \f$\mathbf{x}^{'}\f$
   MatrixXdRowMajor FxTVxx_p_;  //!< Store the value of \f$\mathbf{f_x}^T\mathbf{V_{xx}}^{'}\f$
   std::vector<MatrixXdRowMajor>
-      FuTVxx_p_;             //!< Store the values of \f$\mathbf{f_u}^T\mathbf{V_{xx}}^{'}\f$ per each running node
-  Eigen::VectorXd fTVxx_p_;  //!< Store the value of \f$\mathbf{\bar{f}}^T\mathbf{V_{xx}}^{'}\f$
-  std::vector<Eigen::LLT<Eigen::MatrixXd> > Quu_llt_;  //!< Cholesky LLT solver
-  std::vector<Eigen::VectorXd> Quuk_;  //!< Store the values of \f$\mathbf{Q_{uu}\mathbf{k}} per each running node
-  std::vector<double> alphas_;         //!< Set of step lengths using by the line-search procedure
-  double th_grad_;                     //!< Tolerance of the expected gradient used for testing the step
-  double th_stepdec_;                  //!< Step-length threshold used to decrease regularization
-  double th_stepinc_;                  //!< Step-length threshold used to increase regularization
+      FuTVxx_p_;                                           //!< Store the values of \f$\mathbf{f_u}^T\mathbf{V_{xx}}^{'}\f$ per each running node
+  Eigen::VectorXd fTVxx_p_;                                //!< Store the value of \f$\mathbf{\bar{f}}^T\mathbf{V_{xx}}^{'}\f$
+  std::vector<Eigen::LLT<Eigen::MatrixXd> > Quu_llt_;      //!< Cholesky LLT solver
+  std::vector<Eigen::VectorXd> Quuk_;                      //!< Store the values of \f$\mathbf{Q_{uu}\mathbf{k}} per each running node
+  std::vector<double> alphas_;                             //!< Set of step lengths using by the line-search procedure
+  double th_grad_;                                         //!< Tolerance of the expected gradient used for testing the step
+  double th_stepdec_;                                      //!< Step-length threshold used to decrease regularization
+  double th_stepinc_;                                      //!< Step-length threshold used to increase regularization
+  double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
 
  public:
   std::vector<Eigen::VectorXd> lag_mul_;                   //!< the Lagrange multiplier of the dynamics constraint
-  double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
   bool use_kkt_criteria_ = true;                           //!< Use KKT conditions as termination criteria 
   Eigen::VectorXd fs_flat_;                                //!< Gaps/defects between shooting nodes (1D array)
-  double termination_tol_ = 1e-8;                          //!< Termination tolerance
+  double termination_tol_ = 1e-6;                          //!< Termination tolerance
 };
 
 }  // namespace mim_solvers

@@ -52,8 +52,10 @@ void exposeSolverFDDP() {
            "Update the expected improvement model\n\n")
       
       .def_readwrite("lag_mul", &SolverFDDP::lag_mul_, "lagrange multipliers")
-      .def_readwrite("KKT", &SolverFDDP::KKT_, "KKT residual")
       
+      .add_property("KKT", bp::make_function(&SolverFDDP::get_KKT),
+                    "KKT residual norm")
+
       .add_property("use_kkt_criteria", bp::make_function(&SolverFDDP::get_use_kkt_criteria), bp::make_function(&SolverFDDP::set_use_kkt_criteria),
                     "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverFDDP::get_termination_tolerance), bp::make_function(&SolverFDDP::set_termination_tolerance),

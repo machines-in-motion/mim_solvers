@@ -52,7 +52,9 @@ void exposeSolverSQP() {
       .def_readwrite("cost_try", &SolverSQP::cost_try_, "cost try")
       .def_readwrite("fs_try", &SolverSQP::fs_try_, "fs_try")
       .def_readwrite("lag_mul", &SolverSQP::lag_mul_, "lagrange multipliers")
-      .def_readwrite("KKT", &SolverSQP::KKT_, "KKT residual")
+
+      .add_property("KKT", bp::make_function(&SolverSQP::get_KKT),
+                    "KKT residual norm")
 
       .add_property("with_callbacks", bp::make_function(&SolverSQP::getCallbacks), bp::make_function(&SolverSQP::setCallbacks),
                     "Activates the callbacks when true (default: False)")
