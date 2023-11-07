@@ -41,7 +41,6 @@ SolverDDP::SolverDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
   const std::size_t T = this->problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
   lag_mul_.resize(T+1);
-  KKT_ = 0.;
   fs_flat_.resize(ndx*(T + 1));
   fs_flat_.setZero();
   for (std::size_t t = 0; t < T; ++t) {
@@ -92,8 +91,6 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
 
     // KKT termination criteria
     if(use_kkt_criteria_){
-      // KKT_ = 0.;
-      // checkKKTConditions();
       if (KKT_  <= termination_tol_) {
         STOP_PROFILER("SolverDDP::solve");
         return true;
@@ -157,7 +154,6 @@ void SolverDDP::computeDirection(const bool recalcDiff) {
   }
   // KKT termination criteria
   if(use_kkt_criteria_){
-    KKT_ = 0.;
     checkKKTConditions();
   }  
   backwardPass();
@@ -172,6 +168,7 @@ double SolverDDP::tryStep(const double steplength) {
 }
 
 void SolverDDP::checkKKTConditions(){
+  KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();

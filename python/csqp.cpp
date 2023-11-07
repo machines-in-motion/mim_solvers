@@ -101,8 +101,9 @@ void exposeSolverCSQP() {
                     "Gap norm")
       .add_property("qp_iters", bp::make_function(&SolverCSQP::get_qp_iters),
                     "Number of QP iterations")
-      .add_property("KKT_norm", bp::make_function(&SolverCSQP::get_KKT_norm),
-                    "KKT norm")
+                    
+      .add_property("KKT", bp::make_function(&SolverCSQP::get_KKT),
+                    "KKT residual norm")
                     
       .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")

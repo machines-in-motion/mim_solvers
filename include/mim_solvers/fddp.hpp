@@ -103,7 +103,7 @@ class SolverFDDP : public SolverDDP {
    * @brief Compute the KKT conditions residual
    */
   virtual void checkKKTConditions();
-  
+    
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
 
@@ -117,28 +117,29 @@ class SolverFDDP : public SolverDDP {
                                                          gap_list_.resize(filter_size_); 
                                                          cost_list_.resize(filter_size_); };
   double get_gap_norm() const { return gap_norm_; };
+  double get_KKT() const { return KKT_; };
 
   boost::circular_buffer<double> gap_list_;                //!< memory buffer of gap norms (used in filter line-search)
   boost::circular_buffer<double> cost_list_;               //!< memory buffer of gap norms (used in filter line-search)
-  bool use_filter_line_search_ = false;                    //!< Use filter line search
+  bool use_filter_line_search_ = true;                    //!< Use filter line search
   std::size_t filter_size_ = 1;                            //!< Filter size for line-search (do not change the default value !)
   bool is_worse_than_memory_ = false;                      //!< Boolean for filter line-search criteria 
                          
   std::vector<Eigen::VectorXd> lag_mul_;                   //!< the Lagrange multiplier of the dynamics constraint
-  double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
   bool use_kkt_criteria_ = true;                           //!< Use KKT conditions as termination criteria 
   Eigen::VectorXd fs_flat_;                                //!< Gaps/defects between shooting nodes (1D array)
-  double termination_tol_ = 1e-8;                          //!< Termination tolerance
+  double termination_tol_ = 1e-6;                          //!< Termination tolerance
 
-  std::vector<Eigen::VectorXd> fs_try_;                                //!< Gaps/defects between shooting nodes
+  std::vector<Eigen::VectorXd> fs_try_;                    //!< Gaps/defects between shooting nodes
 
-  double gap_norm_ = 0;                                        //!< 1 norm of the gaps
-  double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
+  double gap_norm_ = 0;                                    //!< 1 norm of the gaps
+  double gap_norm_try_ = 0;                                //!< 1 norm of the gaps
 
  protected:
-  double dg_;  //!< Internal data for computing the expected improvement
-  double dq_;  //!< Internal data for computing the expected improvement
-  double dv_;  //!< Internal data for computing the expected improvement
+  double dg_;                                              //!< Internal data for computing the expected improvement
+  double dq_;                                              //!< Internal data for computing the expected improvement
+  double dv_;                                              //!< Internal data for computing the expected improvement
+  double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
 
  private:
   double th_acceptnegstep_;  //!< Threshold used for accepting step along ascent direction
