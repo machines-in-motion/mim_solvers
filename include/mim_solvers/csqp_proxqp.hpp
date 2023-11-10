@@ -14,6 +14,7 @@
 
 #include "mim_solvers/ddp.hpp"
 
+#include <boost/circular_buffer.hpp>
 #include <proxsuite/proxqp/sparse/sparse.hpp>
 
 
@@ -126,11 +127,12 @@ class SolverPROXQP : public SolverDDP {
   double get_ugrad_norm() const { return u_grad_norm_; };
   double get_merit() const { return merit_; };
   bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
-  bool get_use_heuristic_line_search() const { return use_heuristic_line_search_; };
+  bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
   double get_termination_tolerance() const { return termination_tol_; };
   int get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
+  std::size_t get_filter_size() const { return filter_size_; };
 
   void printCallbacks();
   void setCallbacks(bool inCallbacks);
@@ -138,8 +140,13 @@ class SolverPROXQP : public SolverDDP {
 
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
-  void set_use_heuristic_line_search(bool inBool) { use_heuristic_line_search_ = inBool; };
-  
+  void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
+  void set_filter_size(const std::size_t inFilterSize) { filter_size_ = inFilterSize; 
+                                                        gap_list_.resize(filter_size_); 
+                                                        constraint_list_.resize(filter_size_); 
+                                                        cost_list_.resize(filter_size_); };
+
+
   void set_max_qp_iters(int iters){ max_qp_iters_ = iters; };
 
   const Eigen::MatrixXd& get_P() const {return P_;};
@@ -150,7 +157,11 @@ class SolverPROXQP : public SolverDDP {
   const Eigen::VectorXd& get_l() const {return l_;};
   const Eigen::VectorXd& get_u() const {return u_;};
 
- public:
+ public:  
+  boost::circular_buffer<double> constraint_list_;             //!< memory buffer of constraint norms (used in filter line-search)
+  boost::circular_buffer<double> gap_list_;                    //!< memory buffer of gap norms (used in filter line-search)
+  boost::circular_buffer<double> cost_list_;                   //!< memory buffer of gap norms (used in filter line-search)
+  
   using SolverDDP::xs_try_;
   using SolverDDP::us_try_;
   using SolverDDP::cost_try_;
@@ -162,7 +173,7 @@ class SolverPROXQP : public SolverDDP {
   
   Eigen::VectorXd fs_flat_;                                            //!< Gaps/defects between shooting nodes (1D array)
   double KKT_ = std::numeric_limits<double>::infinity();               //!< KKT conditions residual
-  bool use_heuristic_line_search_ = false;                              //!< Use heuristic line search
+  bool use_filter_line_search_ = true;                         //!< Use filter line search
 
  protected:
   double merit_ = 0;                                           //!< merit function at nominal traj
@@ -185,6 +196,7 @@ class SolverPROXQP : public SolverDDP {
   int qp_iters_ = 0;
 
   double eps_abs_ = 1e-4; // absolute termination criteria
+  std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
 
   double norm_primal_ = 0.0; // norm primal residual
   double norm_dual_ = 0.0; // norm dual residual
@@ -214,6 +226,7 @@ class SolverPROXQP : public SolverDDP {
   double th_acceptnegstep_;  //!< Threshold used for accepting step along ascent direction
   Eigen::VectorXd dual_vecx;
   Eigen::VectorXd dual_vecu;
+  bool is_worse_than_memory_ = false;          //!< Boolean for filter line-search criteria 
 
 };
 

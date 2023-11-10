@@ -27,7 +27,9 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       // std::cout << tmp << std::endl;
       const std::size_t T = this->problem_->get_T();
       const std::size_t ndx = problem_->get_ndx();
-      // std::cout << "ndx" << ndx << std::endl;
+      constraint_list_.resize(filter_size_);
+      gap_list_.resize(filter_size_);
+      cost_list_.resize(filter_size_);
       fs_try_.resize(T + 1);
       fs_flat_.resize(ndx*(T + 1));
       fs_flat_.setZero();
@@ -148,26 +150,42 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
       }
       break;
     }
-    if(with_callbacks_){
-      printCallbacks();
+
+    // KKT termination criteria
+    if(use_kkt_criteria_){
+      std::cout << KKT_ << std::endl;
+      if (KKT_  <= termination_tol_) {
+        STOP_PROFILER("SolverPROXQP::solve");
+        return true;
+      }
     }
+
+    constraint_list_.push_back(constraint_norm_);
+    gap_list_.push_back(gap_norm_);
+    cost_list_.push_back(cost_);
 
     // We need to recalculate the derivatives when the step length passes
     for (std::vector<double>::const_iterator it = alphas_.begin(); it != alphas_.end(); ++it) {
       steplength_ = *it;
-
       try {
         merit_try_ = tryStep(steplength_);
       } catch (std::exception& e) {
         continue;
       }
-      // Heuristic line search criteria
-      if(use_heuristic_line_search_){
-        if (cost_ > cost_try_ || gap_norm_ > gap_norm_try_ || constraint_norm_ > constraint_norm_try_) {
+      // Filter line search criteria 
+      // Equivalent to heuristic cost_ > cost_try_ || gap_norm_ > gap_norm_try_ when filter_size=1
+      if(use_filter_line_search_){
+        is_worse_than_memory_ = false;
+        std::size_t count = 0.; 
+        while( count < filter_size_ && is_worse_than_memory_ == false and count <= iter_){
+          is_worse_than_memory_ = cost_list_[filter_size_-1-count] <= cost_try_ && gap_list_[filter_size_-1-count] <= gap_norm_try_ && constraint_list_[filter_size_-1-count] <= constraint_norm_try_;
+          count++;
+        }
+        if( is_worse_than_memory_ == false ) {
           setCandidate(xs_try_, us_try_, false);
           recalcDiff = true;
           break;
-        }
+        } 
       }
       // Line-search criteria using merit function
       else{
@@ -189,19 +207,8 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
         return false;
       }
     }
-    // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        STOP_PROFILER("SolverPROXQP::solve");
-        return true;
-      }
-    }  
-    // Old criteria
-    else {
-      if (x_grad_norm_  +  u_grad_norm_ < termination_tol_ ){
-        STOP_PROFILER("SolverPROXQP::solve");
-        return true;
-      }
+    if(with_callbacks_){
+      printCallbacks();
     }
   }
   STOP_PROFILER("SolverPROXQP::solve");

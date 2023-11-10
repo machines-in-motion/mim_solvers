@@ -90,15 +90,12 @@ void exposeSolverPROXQP() {
       .add_property("lag_mul", make_function(&SolverPROXQP::get_lag_mul, bp::return_value_policy<bp::copy_const_reference>()), "lag_mul")
       .add_property("fs", make_function(&SolverPROXQP::get_fs, bp::return_value_policy<bp::copy_const_reference>()), "fs")
 
-      .add_property("use_heuristic_line_search", bp::make_function(&SolverPROXQP::get_use_heuristic_line_search), bp::make_function(&SolverPROXQP::set_use_heuristic_line_search),
-                    "Use the heuristic line search criteria (default: False)")
+      .add_property("use_filter_line_search", bp::make_function(&SolverPROXQP::get_use_filter_line_search), bp::make_function(&SolverPROXQP::set_use_filter_line_search),
+                    "Use the filter line search criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverPROXQP::get_termination_tolerance), bp::make_function(&SolverPROXQP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-8)")
       .add_property("max_qp_iters", bp::make_function(&SolverPROXQP::get_max_qp_iters), bp::make_function(&SolverPROXQP::set_max_qp_iters),
                     "get and set max qp iters");
-     //  .add_property("th_acceptNegStep", bp::make_function(&SolverPROXQP::get_th_acceptnegstep),
-     //                bp::make_function(&SolverPROXQP::set_th_acceptnegstep),
-     //                "threshold for step acceptance in ascent direction");
      
 }
 

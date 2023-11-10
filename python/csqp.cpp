@@ -120,7 +120,7 @@ void exposeSolverCSQP() {
                     "get and set alpha (relaxed update)")
 
       .add_property("use_filter_line_search", bp::make_function(&SolverCSQP::get_use_filter_line_search), bp::make_function(&SolverCSQP::set_use_filter_line_search),
-                    "Use the filter line search criteria (default: False)")
+                    "Use the filter line search criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverCSQP::get_termination_tolerance), bp::make_function(&SolverCSQP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-6)")
       .add_property("max_qp_iters", bp::make_function(&SolverCSQP::get_max_qp_iters), bp::make_function(&SolverCSQP::set_max_qp_iters),
