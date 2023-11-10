@@ -72,7 +72,7 @@ void exposeSolverPROXQP() {
 
       .add_property("with_callbacks", bp::make_function(&SolverPROXQP::getCallbacks), bp::make_function(&SolverPROXQP::setCallbacks),
                     "Activates the callbacks when true (default: False)")
-      .add_property("use_kkt_criteria", bp::make_function(&SolverPROXQP::set_use_kkt_criteria), bp::make_function(&SolverPROXQP::get_use_kkt_criteria),
+      .add_property("use_kkt_criteria", bp::make_function(&SolverPROXQP::get_use_kkt_criteria), bp::make_function(&SolverPROXQP::set_use_kkt_criteria),
                     "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("xs", make_function(&SolverPROXQP::get_xs, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverPROXQP::set_xs), "xs")
       .add_property("us", make_function(&SolverPROXQP::get_us, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverPROXQP::set_us), "us")

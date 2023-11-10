@@ -84,7 +84,7 @@ void exposeSolverCSQP() {
 
       .add_property("with_callbacks", bp::make_function(&SolverCSQP::getCallbacks), bp::make_function(&SolverCSQP::setCallbacks),
                     "Activates the callbacks when true (default: False)")
-      .add_property("use_kkt_criteria", bp::make_function(&SolverCSQP::set_use_kkt_criteria), bp::make_function(&SolverCSQP::get_use_kkt_criteria),
+      .add_property("use_kkt_criteria", bp::make_function(&SolverCSQP::get_use_kkt_criteria), bp::make_function(&SolverCSQP::set_use_kkt_criteria),
                     "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
