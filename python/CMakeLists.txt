@@ -3,6 +3,7 @@ set(${PY_NAME}_SOURCES
   fddp.cpp
   sqp.cpp
   csqp.cpp
+  csqp_proxqp.cpp
   main.cpp
   )
 

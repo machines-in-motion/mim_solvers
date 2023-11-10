@@ -62,6 +62,7 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
+  include/${PROJECT_NAME}/csqp_proxqp.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
@@ -69,6 +70,7 @@ set(${PROJECT_NAME}_SOURCES
   src/fddp.cpp
   src/sqp.cpp
   src/csqp.cpp
+  src/csqp_proxqp.cpp
   )
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})
