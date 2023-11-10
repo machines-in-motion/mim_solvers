@@ -44,7 +44,7 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(crocoddyl REQUIRED)
 find_package(eigenpy REQUIRED)
 
-add_project_dependency(crocoddyl REQUIRED)
+add_project_dependency(crocoddyl 2.0.0 REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
 # find_package(proxsuite REQUIRED)
 find_package(OpenMP REQUIRED COMPONENTS CXX)
