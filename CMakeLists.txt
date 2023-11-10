@@ -44,7 +44,7 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 find_package(crocoddyl REQUIRED)
 find_package(eigenpy REQUIRED)
 
-add_project_dependency(crocoddyl REQUIRED)
+add_project_dependency(crocoddyl 2.0.0 REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
 # find_package(proxsuite REQUIRED)
 find_package(OpenMP REQUIRED COMPONENTS CXX)
@@ -62,6 +62,7 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
+  include/${PROJECT_NAME}/csqp_proxqp.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
@@ -69,6 +70,7 @@ set(${PROJECT_NAME}_SOURCES
   src/fddp.cpp
   src/sqp.cpp
   src/csqp.cpp
+  src/csqp_proxqp.cpp
   )
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})

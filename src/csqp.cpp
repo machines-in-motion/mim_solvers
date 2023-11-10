@@ -20,7 +20,7 @@ using namespace crocoddyl;
 
 namespace mim_solvers {
 
-// const std::vector<boost::shared_ptr<ConstraintModelAbstract> >& constraint_models
+
 SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverDDP(problem){
       

@@ -6,6 +6,8 @@
 #include "mim_solvers/ddp.hpp"
 #include "mim_solvers/fddp.hpp"
 #include "mim_solvers/sqp.hpp"
+#include "mim_solvers/csqp.hpp"
+#include "mim_solvers/csqp_proxqp.hpp"
 
 
 namespace mim_solvers{
@@ -13,6 +15,7 @@ namespace mim_solvers{
     void exposeSolverFDDP();
     void exposeSolverSQP();
     void exposeSolverCSQP();
+    void exposeSolverPROXQP();
 } // namespace mim_solvers
 
 #endif
