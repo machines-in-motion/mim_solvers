@@ -153,7 +153,6 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
 
     // KKT termination criteria
     if(use_kkt_criteria_){
-      std::cout << KKT_ << std::endl;
       if (KKT_  <= termination_tol_) {
         STOP_PROFILER("SolverPROXQP::solve");
         return true;
@@ -327,12 +326,12 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   proxsuite::proxqp::sparse::QP<double, long long> qp(n_vars, n_eq, n_in);
   qp.init(Psp_, q_, Asp_, b_, Csp_, l_, u_);
 
+  // std::cout << "max qp iter = " << eps_abs_ << std::endl;
+  // std::cout << "was set from = " << qp.settings.eps_abs << std::endl;
   qp.settings.eps_abs = eps_abs_;
-  // std::cout << "max qp iter = " << max_qp_iters_ << std::endl;
+  // std::cout << "was set in to = " << qp.settings.eps_abs << std::endl;
   qp.settings.max_iter = max_qp_iters_;
   qp.settings.max_iter_in = max_qp_iters_;
-  // std::cout << "was set to = " << qp.settings.max_iter << std::endl;
-  // std::cout << "was set in to = " << qp.settings.max_iter_in << std::endl;
   qp.solve(); 
   auto res = qp.results.x;
   qp_iters_ = qp.results.info.iter;

@@ -134,6 +134,8 @@ class SolverPROXQP : public SolverDDP {
   double get_cost(){ return cost_;};
   std::size_t get_filter_size() const { return filter_size_; };
 
+  double get_eps_abs() { return eps_abs_;};
+
   void printCallbacks();
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
@@ -156,6 +158,9 @@ class SolverPROXQP : public SolverDDP {
   const Eigen::VectorXd& get_b() const {return b_;};
   const Eigen::VectorXd& get_l() const {return l_;};
   const Eigen::VectorXd& get_u() const {return u_;};
+
+  void set_eps_abs(double eps_abs) { eps_abs_ = eps_abs;};
+
 
  public:  
   boost::circular_buffer<double> constraint_list_;             //!< memory buffer of constraint norms (used in filter line-search)

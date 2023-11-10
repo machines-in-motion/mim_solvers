@@ -90,6 +90,9 @@ void exposeSolverPROXQP() {
       .add_property("lag_mul", make_function(&SolverPROXQP::get_lag_mul, bp::return_value_policy<bp::copy_const_reference>()), "lag_mul")
       .add_property("fs", make_function(&SolverPROXQP::get_fs, bp::return_value_policy<bp::copy_const_reference>()), "fs")
 
+      .add_property("eps_abs", bp::make_function(&SolverPROXQP::get_eps_abs), bp::make_function(&SolverPROXQP::set_eps_abs),
+                    "sets epsillon absolute termination criteria for qp solver")
+
       .add_property("use_filter_line_search", bp::make_function(&SolverPROXQP::get_use_filter_line_search), bp::make_function(&SolverPROXQP::set_use_filter_line_search),
                     "Use the filter line search criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverPROXQP::get_termination_tolerance), bp::make_function(&SolverPROXQP::set_termination_tolerance),
