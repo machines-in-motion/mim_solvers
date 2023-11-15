@@ -7,10 +7,13 @@ set(PROJECT_DESCRIPTION "Numerical solvers of the Machines in Motion Laboratory.
 set(PROJECT_URL https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME})
 
 add_compile_options(--warn-no-conversion)
+add_compile_options("-Wno-deprecated-declarations")
 
 # Project options
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
+option(BUILD_WITH_HPIPM "Build the HPIPM-based SQP solver" ON)
+option(BUILD_WITH_PROXQP "Build the ProxQP-based SQP solver" ON)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -46,7 +49,19 @@ find_package(eigenpy REQUIRED)
 
 add_project_dependency(crocoddyl 2.0.0 REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
-# find_package(proxsuite REQUIRED)
+
+if(BUILD_WITH_PROXQP)
+  find_package(proxsuite REQUIRED)
+  add_project_dependency(proxsuite REQUIRED)
+endif()
+
+if(BUILD_WITH_HPIPM)
+  set(blasfeo_INCLUDE_DIRS /opt/blasfeo/include)
+  set(blasfeo_LIBRARIES /opt/blasfeo/lib/libblasfeo.so)
+  set(hpipm_INCLUDE_DIRS /opt/hpipm/include)
+  set(hpipm_LIBRARIES /opt/hpipm/lib/libhpipm.so)
+endif()
+
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 if(BUILD_PYTHON_INTERFACE)
@@ -63,6 +78,7 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
   include/${PROJECT_NAME}/csqp_proxqp.hpp
+  include/${PROJECT_NAME}/csqp_hpipm.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
@@ -71,10 +87,15 @@ set(${PROJECT_NAME}_SOURCES
   src/sqp.cpp
   src/csqp.cpp
   src/csqp_proxqp.cpp
+  src/csqp_hpipm.cpp
   )
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})
 target_include_directories(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include>)
+if(BUILD_WITH_HPIPM)
+  target_include_directories(${PROJECT_NAME} PUBLIC ${hpipm_INCLUDE_DIRS})
+  target_include_directories(${PROJECT_NAME} PUBLIC ${blasfeo_INCLUDE_DIRS})
+endif()
 
 if(SUFFIX_SO_VERSION)
   set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION ${PROJECT_VERSION})
@@ -82,6 +103,13 @@ endif()
 
 # Main Executable
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} crocoddyl::crocoddyl)
+if(BUILD_WITH_PROXQP)
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} proxsuite::proxsuite)
+endif()
+if(BUILD_WITH_HPIPM)
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${hpipm_LIBRARIES})
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${blasfeo_LIBRARIES})
+endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 # Python Bindings
