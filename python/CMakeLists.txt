@@ -4,6 +4,7 @@ set(${PY_NAME}_SOURCES
   sqp.cpp
   csqp.cpp
   csqp_proxqp.cpp
+  csqp_hpipm.cpp
   main.cpp
   )
 

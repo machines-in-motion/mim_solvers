@@ -241,6 +241,31 @@ class SolverHPIPM : public SolverDDP {
   Eigen::VectorXd dual_vecu;
   bool is_worse_than_memory_ = false;          //!< Boolean for filter line-search criteria 
 
+    /* iter_max */
+  int iter_max_ = 20;
+  /* alpha_min */
+  double alpha_min_ = 1.000000000000000e-12;
+  /* mu0 */
+  double mu0_ = 1.000000000000000e+01;
+  /* tol_stat */
+  double tol_stat_ = 1.000000000000000e-12;
+  /* tol_eq */
+  double tol_eq_ = 1.000000000000000e-12;
+  /* tol_ineq */
+  double tol_ineq_ = 1.000000000000000e-12;
+  /* tol_comp */
+  double tol_comp_ = 1.000000000000000e-12;
+  /* reg_prim */
+  double reg_prim_ = 1.000000000000000e-15;
+  /* reg_dual */
+  double reg_dual_ = 1.000000000000000e-15;
+  /* warm_start */
+  int warm_start_ = 0;
+  /* pred_corr */
+  int pred_corr_ = 1;
+  /* split_step */
+  int split_step_ = 1;
+
 };
 
 }  // namespace mim_solvers

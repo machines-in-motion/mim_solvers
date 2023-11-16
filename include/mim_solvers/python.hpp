@@ -8,6 +8,7 @@
 #include "mim_solvers/sqp.hpp"
 #include "mim_solvers/csqp.hpp"
 #include "mim_solvers/csqp_proxqp.hpp"
+#include "mim_solvers/csqp_hpipm.hpp"
 
 
 namespace mim_solvers{
@@ -16,6 +17,7 @@ namespace mim_solvers{
     void exposeSolverSQP();
     void exposeSolverCSQP();
     void exposeSolverPROXQP();
+    void exposeSolverHPIPM();
 } // namespace mim_solvers
 
 #endif

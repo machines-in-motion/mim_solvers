@@ -320,6 +320,110 @@ void SolverHPIPM::computeDirection(const bool recalcDiff){
     checkKKTConditions();
   }
 
+  // HPIPM
+
+  hpipm_size_t dim_size = d_dense_qp_dim_memsize();
+	void *dim_mem = malloc(dim_size);
+
+	struct d_dense_qp_dim dim;
+	d_dense_qp_dim_create(&dim, dim_mem);
+  d_dense_qp_dim_set_nv(n_vars, &dim); 
+	d_dense_qp_dim_set_ne(n_eq, &dim); // number of equality constraints
+	d_dense_qp_dim_set_nb(0, &dim); // number of box constraints
+	d_dense_qp_dim_set_ng(n_in, &dim); //number of general inequality constraints
+	d_dense_qp_dim_set_nsb(0, &dim);
+	d_dense_qp_dim_set_nsg(0, &dim);
+  
+  // setting up QP
+  hpipm_size_t qp_size = d_dense_qp_memsize(&dim);
+	void *qp_mem = malloc(qp_size);
+
+  std::cout << "setting up hpipm" << std::endl;
+	struct d_dense_qp qp_hpipm;
+	d_dense_qp_create(&dim, &qp_hpipm, qp_mem);
+  d_dense_qp_set_H(P_.data(), &qp_hpipm);
+	d_dense_qp_set_g(q_.data(), &qp_hpipm);
+	d_dense_qp_set_A(A_.data(), &qp_hpipm);
+	d_dense_qp_set_b(b_.data(), &qp_hpipm); 
+  d_dense_qp_set_idxb({}, &qp_hpipm);
+	d_dense_qp_set_lb({}, &qp_hpipm);
+	d_dense_qp_set_ub({}, &qp_hpipm);
+	d_dense_qp_set_lb_mask({}, &qp_hpipm);
+	d_dense_qp_set_ub_mask({}, &qp_hpipm);
+	d_dense_qp_set_C(C_.data(), &qp_hpipm);
+	d_dense_qp_set_lg(l_.data(), &qp_hpipm);
+	d_dense_qp_set_ug(u_.data(), &qp_hpipm);
+  d_dense_qp_set_Zl({}, &qp_hpipm);
+	d_dense_qp_set_Zu({}, &qp_hpipm);
+	d_dense_qp_set_zl({}, &qp_hpipm);
+	d_dense_qp_set_zu({}, &qp_hpipm);
+	d_dense_qp_set_lls({}, &qp_hpipm);
+	d_dense_qp_set_lus({}, &qp_hpipm);
+	d_dense_qp_set_lls_mask({}, &qp_hpipm);
+	d_dense_qp_set_lus_mask({}, &qp_hpipm);
+	// d_dense_qp_set_idxs_rev({}, &qp_hpipm);
+
+  hpipm_size_t qp_sol_size = d_dense_qp_sol_memsize(&dim);
+	void *qp_sol_mem = malloc(qp_sol_size);
+
+	struct d_dense_qp_sol qp_sol;
+	d_dense_qp_sol_create(&dim, &qp_sol, qp_sol_mem);
+
+
+  // arguments 
+
+  hpipm_size_t ipm_arg_size = d_dense_qp_ipm_arg_memsize(&dim);
+	void *ipm_arg_mem = malloc(ipm_arg_size);
+
+	struct d_dense_qp_ipm_arg arg;
+	d_dense_qp_ipm_arg_create(&dim, &arg, ipm_arg_mem);
+
+	d_dense_qp_ipm_arg_set_iter_max(&iter_max_, &arg);
+	d_dense_qp_ipm_arg_set_alpha_min(&alpha_min_, &arg);
+	d_dense_qp_ipm_arg_set_mu0(&mu0_, &arg);
+	d_dense_qp_ipm_arg_set_tol_stat(&tol_stat_, &arg);
+	d_dense_qp_ipm_arg_set_tol_eq(&tol_eq_, &arg);
+	d_dense_qp_ipm_arg_set_tol_ineq(&tol_ineq_, &arg);
+	d_dense_qp_ipm_arg_set_tol_comp(&tol_comp_, &arg);
+	d_dense_qp_ipm_arg_set_reg_prim(&reg_prim_, &arg);
+	d_dense_qp_ipm_arg_set_reg_dual(&reg_dual_, &arg);
+	d_dense_qp_ipm_arg_set_warm_start(&warm_start_, &arg);
+	d_dense_qp_ipm_arg_set_pred_corr(&pred_corr_, &arg);
+	d_dense_qp_ipm_arg_set_split_step(&split_step_, &arg);
+
+
+  // workspace
+  hpipm_size_t ipm_size = d_dense_qp_ipm_ws_memsize(&dim, &arg);
+	void *ipm_mem = malloc(ipm_size);
+
+	struct d_dense_qp_ipm_ws workspace;
+  int hpipm_status;
+  d_dense_qp_ipm_ws_create(&dim, &arg, &workspace, ipm_mem);
+
+  d_dense_qp_ipm_solve(&qp_hpipm, &qp_sol, &arg, &workspace);
+  d_dense_qp_ipm_get_status(&workspace, &hpipm_status);
+
+  std::cout << "no seg fault" << std::endl;
+  if (hpipm_status < 2){
+    std::cout << "solved " << std::endl;
+    Eigen::VectorXd res_hpipm; res_hpipm.resize(n_vars); res_hpipm.setZero();
+    d_dense_qp_sol_get_v(&qp_sol, res_hpipm.data());
+  }
+  else if(hpipm_status==2)
+		{
+        printf("\n -> Solver failed! Minimum step lenght reached\n");
+		}
+	else if(hpipm_status==3)
+		{
+        printf("\n -> Solver failed! NaN in computations\n");
+		}
+	else
+		{
+        printf("\n -> Solver failed! Unknown return flag\n");
+		}
+
+  /////////////////////////////////////////////////
+
   // proxsuite::proxqp::dense::QP<double> qp(n_vars, n_eq, n_in);
   // qp.init(P_, q_, A_, b_, C_, l_, u_);
 

@@ -57,9 +57,9 @@ endif()
 
 if(BUILD_WITH_HPIPM)
   set(blasfeo_INCLUDE_DIRS /opt/blasfeo/include)
-  set(blasfeo_LIBRARIES /opt/blasfeo/lib/libblasfeo.so)
+  set(blasfeo_LIBRARIES /opt/blasfeo/lib/libblasfeo.a)
   set(hpipm_INCLUDE_DIRS /opt/hpipm/include)
-  set(hpipm_LIBRARIES /opt/hpipm/lib/libhpipm.so)
+  set(hpipm_LIBRARIES /opt/hpipm/lib/libhpipm.a)
 endif()
 
 find_package(OpenMP REQUIRED COMPONENTS CXX)
