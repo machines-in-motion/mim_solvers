@@ -9,6 +9,7 @@ set(${PY_NAME}_SOURCES
 add_library(${PY_NAME}_pywrap SHARED ${${PY_NAME}_SOURCES})
 MODERNIZE_TARGET_LINK_LIBRARIES(${PY_NAME}_pywrap SCOPE PUBLIC TARGETS eigenpy::eigenpy)
 target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME})
+target_link_libraries(${PY_NAME}_pywrap PUBLIC crocoddyl::crocoddyl)
 target_include_directories(${PY_NAME}_pywrap SYSTEM PRIVATE ${PYTHON_INCLUDE_DIR})
 set_target_properties(${PY_NAME}_pywrap PROPERTIES
   INSTALL_RPATH "\$ORIGIN/../../.."
