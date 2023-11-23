@@ -1,4 +1,7 @@
 include("../cmake/python-helpers.cmake")
+if(GENERATE_PYTHON_STUBS)
+  include(${PROJECT_SOURCE_DIR}/cmake/stubs.cmake)
+endif(GENERATE_PYTHON_STUBS)
 
 set(${PY_NAME}_SOURCES
   ddp.cpp
@@ -20,8 +23,12 @@ set_target_properties(${PY_NAME}_pywrap PROPERTIES
   PREFIX ""
   SUFFIX ${PYTHON_EXT_SUFFIX})
 
-set(${PY_NAME}_PYTHON
-  mim_solvers/__init__.py)
+if(GENERATE_PYTHON_STUBS)
+  load_stubgen()
+  generate_stubs(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_NAME} ${PYTHON_SITELIB} ${${PY_NAME}_pywrap})
+endif(GENERATE_PYTHON_STUBS)
+
+set(${PY_NAME}_PYTHON mim_solvers/__init__.py)
 
 SET(PYLIB_INSTALL_DIR ${PYTHON_SITELIB}/mim_solvers)
 GET_RELATIVE_RPATH(${PYLIB_INSTALL_DIR} PYLIB_RPATH)
@@ -30,6 +37,4 @@ IF(UNIX)
 ENDIF()
 
 install(TARGETS ${PY_NAME}_pywrap LIBRARY DESTINATION ${PYLIB_INSTALL_DIR})
-INSTALL(FILES "${${PY_NAME}_PYTHON}"
-  DESTINATION ${PYLIB_INSTALL_DIR}
-)
+install(FILES "${${PY_NAME}_PYTHON}" DESTINATION ${PYLIB_INSTALL_DIR})
