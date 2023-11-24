@@ -25,7 +25,7 @@ set_target_properties(${PY_NAME}_pywrap PROPERTIES
 
 if(GENERATE_PYTHON_STUBS)
   load_stubgen()
-  generate_stubs(${CMAKE_CURRENT_BINARY_DIR} ${PROJECT_NAME} ${PYTHON_SITELIB} ${${PY_NAME}_pywrap})
+  generate_stubs(${CMAKE_CURRENT_BINARY_DIR} ${PY_NAME}_pywrap ${PYTHON_SITELIB} ${PY_NAME}_pywrap)
 endif(GENERATE_PYTHON_STUBS)
 
 set(${PY_NAME}_PYTHON mim_solvers/__init__.py)
