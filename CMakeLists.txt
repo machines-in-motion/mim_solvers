@@ -5,6 +5,12 @@ set(PROJECT_NAMESPACE machines-in-motion)
 set(PROJECT_NAME mim_solvers)
 set(PROJECT_DESCRIPTION "Numerical solvers of the Machines in Motion Laboratory.")
 set(PROJECT_URL https://github.com/${PROJECT_NAMESPACE}/${PROJECT_NAME})
+SET(PROJECT_CUSTOM_HEADER_EXTENSION "hpp")
+SET(PROJECT_USE_CMAKE_EXPORT TRUE)
+SET(PROJECT_USE_KEYWORD_LINK_LIBRARIES TRUE)
+
+SET(CXX_DISABLE_WERROR True)
+SET(CMAKE_VERBOSE_MAKEFILE True)
 
 add_compile_options(--warn-no-conversion)
 
@@ -19,25 +25,24 @@ set(CUSTOM_HEADER_DIR ${PROJECT_NAME})
 # Check if the submodule cmake have been initialized
 set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
 IF(NOT EXISTS "${CMAKE_SOURCE_DIR}/cmake/base.cmake")
-  IF(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-    MESSAGE(FATAL_ERROR "\nPlease run the following command first:\ngit submodule update --init\n")
-  ELSE()
-    include(FetchContent)
-    FetchContent_Declare("jrl-cmakemodules"
-      GIT_REPOSITORY "https://github.com/jrl-umi3218/jrl-cmakemodules.git")
-    FetchContent_MakeAvailable("jrl-cmakemodules")
-    FetchContent_GetProperties("jrl-cmakemodules" SOURCE_DIR JRL_CMAKE_MODULES)
-  ENDIF()
+  MESSAGE(FATAL_ERROR "\ncmake/base.cmake not found. Please run the following command first:\ngit submodule update --init\n")
 ENDIF()
 
 # JRL-cmakemodule setup
-include("${JRL_CMAKE_MODULES}/base.cmake")
-include("${JRL_CMAKE_MODULES}/boost.cmake")
-include("${JRL_CMAKE_MODULES}/python.cmake")
-
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/base.cmake)
 # Project definition
 COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
+
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/boost.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/python.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/apple.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/ide.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/cmake/python-helpers.cmake)
+include(CMakeDependentOption)
+
+# If needed, fix CMake policy for APPLE systems
+APPLY_DEFAULT_APPLE_CONFIGURATION()
 
 # Project dependencies
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
