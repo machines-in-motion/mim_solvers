@@ -405,16 +405,14 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     forwardPass();
     update_lagrangian_parameters(true);
     update_rho_sparse(iter);
-    if(norm_primal_ < eps_abs_ + eps_rel_ * norm_primal_rel_ && norm_dual_ < eps_abs_ + eps_rel_ * norm_dual_rel_){
+    if(norm_primal_ <= eps_abs_ + eps_rel_ * norm_primal_rel_ && norm_dual_ <= eps_abs_ + eps_rel_ * norm_dual_rel_){
         qp_iters_ = iter;
         converged_ = true;
         break;
     }
 
-    // if (iter % rho_update_interval_ == 0 && iter > 1){
-    //   std::cout << "Iters " << iter << " res-primal " << norm_primal_ << " res-dual " << norm_dual_ << " optimal rho estimate " << rho_estimate_sparse_
-    //           << " rho " << rho_sparse_ << std::endl;
-    // }
+    // std::cout << "Iters " << iter << " res-primal " << norm_primal_ << " res-dual " << norm_dual_ << " optimal rho estimate " << rho_estimate_sparse_
+    //         << " rho " << rho_sparse_ << std::endl;
   }
 
   if (!converged_){
