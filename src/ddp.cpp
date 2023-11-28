@@ -1,7 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
+// 
+// This file is a modified version of SolverDDP from the Crocoddyl library
+// This modified version is used for benchmarking purposes only
+// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/src/core/solvers/ddp.cpp
+// 
 // BSD 3-Clause License
+// Copyright (C) 2023, New York University
 //
-// Copyright (C) 2019-2021, LAAS-CNRS, University of Edinburgh, University of Oxford
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
@@ -9,7 +14,6 @@
 #include <iostream>
 
 #include "mim_solvers/ddp.hpp"
-// #include <crocoddyl/core/utils/exception.hpp>
 
 using namespace crocoddyl;
 
