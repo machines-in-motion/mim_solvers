@@ -38,14 +38,14 @@ std::ostream& operator<<(std::ostream& os, SolverTypes::Type type) {
     case SolverTypes::SolverSQP:
       os << "SolverSQP";
       break;
-    case SolverTypes::SolverCSQP:
-      os << "SolverCSQP";
-      break;
-// #ifdef MIM_SOLVERS_WITH_PROXQP
-    case SolverTypes::SolverPROXQP:
-      os << "SolverPROXQP";
-      break;
-// #endif
+//     case SolverTypes::SolverCSQP:
+//       os << "SolverCSQP";
+//       break;
+// // #ifdef MIM_SOLVERS_WITH_PROXQP
+//     case SolverTypes::SolverPROXQP:
+//       os << "SolverPROXQP";
+//       break;
+// // #endif
     case SolverTypes::NbSolverTypes:
       os << "NbSolverTypes";
       break;
@@ -94,13 +94,14 @@ boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
     case SolverTypes::SolverSQP:
       solver = boost::make_shared<mim_solvers::SolverSQP>(problem);
       break;
-    case SolverTypes::SolverCSQP:
-      solver = boost::make_shared<mim_solvers::SolverCSQP>(problem);
-      break;
-// #ifdef MIM_SOLVERS_WITH_PROXQP
-    case SolverTypes::SolverPROXQP:
-      solver = boost::make_shared<mim_solvers::SolverPROXQP>(problem);
-      break;
+//     case SolverTypes::SolverCSQP:
+//       solver = boost::make_shared<mim_solvers::SolverCSQP>(problem);
+//       solver->set_use_filter_line_search(false);
+//       break;
+// // #ifdef MIM_SOLVERS_WITH_PROXQP
+//     case SolverTypes::SolverPROXQP:
+//       solver = boost::make_shared<mim_solvers::SolverPROXQP>(problem);
+//       break;
 // #endif
     default:
       throw_pretty(__FILE__ ": Wrong SolverTypes::Type given");

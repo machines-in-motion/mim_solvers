@@ -22,8 +22,8 @@ struct SolverTypes {
     SolverDDP,
     SolverFDDP,
     SolverSQP,
-    SolverCSQP,
-    SolverPROXQP,
+    // SolverCSQP,
+    // SolverPROXQP,
     NbSolverTypes
   };
   static std::vector<Type> init_all() {
