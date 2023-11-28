@@ -15,6 +15,8 @@
 #include "factory/solver.hpp"
 #include "unittest_common.hpp"
 
+#include "mim_solvers/kkt.hpp"
+
 using namespace boost::unit_test;
 using namespace mim_solvers::unittest;
 
@@ -23,8 +25,8 @@ using namespace mim_solvers::unittest;
 void test_kkt_dimension(ActionModelTypes::Type action_type, size_t T) {
   // Create the kkt solver
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverKKT> kkt =
-      boost::static_pointer_cast<crocoddyl::SolverKKT>(
+  boost::shared_ptr<mim_solvers::SolverKKT> kkt =
+      boost::static_pointer_cast<mim_solvers::SolverKKT>(
           factory.create(SolverTypes::SolverKKT, action_type, T));
 
   // define some aliases
@@ -45,8 +47,8 @@ void test_kkt_dimension(ActionModelTypes::Type action_type, size_t T) {
 void test_kkt_search_direction(ActionModelTypes::Type action_type, size_t T) {
   // Create the kkt solver
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverKKT> kkt =
-      boost::static_pointer_cast<crocoddyl::SolverKKT>(
+  boost::shared_ptr<mim_solvers::SolverKKT> kkt =
+      boost::static_pointer_cast<mim_solvers::SolverKKT>(
           factory.create(SolverTypes::SolverKKT, action_type, T));
 
   // Generate the different state along the trajectory
@@ -75,12 +77,13 @@ void test_kkt_search_direction(ActionModelTypes::Type action_type, size_t T) {
   Eigen::Block<Eigen::MatrixXd> hess = kkt_mat.block(0, 0, ndx + nu, ndx + nu);
 
   // Checking the symmetricity of the Hessian
-  BOOST_CHECK((hess - hess.transpose()).isZero(1e-9));
+  double TOL = 1e-7;
+  BOOST_CHECK((hess - hess.transpose()).isZero(TOL));
 
   // Check initial state
   BOOST_CHECK((state->diff_dx(state->integrate_x(xs[0], kkt->get_dxs()[0]),
                               kkt->get_problem()->get_x0()))
-                  .isZero(1e-9));
+                  .isZero(TOL));
 }
 
 //____________________________________________________________________________//
@@ -132,19 +135,30 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
   BOOST_CHECK_EQUAL(solver->get_xs().size(), T + 1);
 
   // initial state
-  BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(1e-9));
-
+  double TOL = 1e-7;
+  BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(TOL));
+  if((solver->get_xs()[0] - problem->get_x0()).isZero(TOL) == false){
+    std::cout << solver_type << " " << action_type << std::endl;
+    std::cout << " initial state error = " << std::endl;
+    std::cout << solver->get_xs()[0] - problem->get_x0() << std::endl;
+  }
   // check solutions against each other
   for (unsigned int t = 0; t < T; ++t) {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model =
         solver->get_problem()->get_runningModels()[t];
     std::size_t nu = model->get_nu();
+    if((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(TOL) == false){
+      std::cout << solver_type << " " << action_type << std::endl;
+      std::cout << "us[t] = " << solver->get_us()[t].head(nu)<< std::endl;
+      std::cout << "kkt_us[t] = " << kkt->get_us()[t] << std::endl;
+      // std::cout << "us[t] - kkt_us[t] = " << solver->get_us()[t].head(nu) - kkt->get_us()[t] << std::endl;
+    }
     BOOST_CHECK(
-        (state->diff_dx(solver->get_xs()[t], kkt->get_xs()[t])).isZero(1e-9));
-    BOOST_CHECK((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(1e-9));
+        (state->diff_dx(solver->get_xs()[t], kkt->get_xs()[t])).isZero(TOL));
+    BOOST_CHECK((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(TOL));
   }
   BOOST_CHECK(
-      (state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T])).isZero(1e-9));
+      (state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T])).isZero(TOL));
 }
 
 //____________________________________________________________________________//

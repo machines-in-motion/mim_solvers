@@ -12,7 +12,6 @@
 
 #include "crocoddyl/action.hpp"
 #include <crocoddyl/core/solver-base.hpp>
-#include <crocoddyl/core/solvers/kkt.hpp>
 
 namespace mim_solvers {
 namespace unittest {

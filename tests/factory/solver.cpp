@@ -9,6 +9,7 @@
 
 #include "solver.hpp"
 
+#include "mim_solvers/kkt.hpp"
 #include "mim_solvers/ddp.hpp"
 #include "mim_solvers/fddp.hpp"
 #include "mim_solvers/sqp.hpp"
@@ -82,7 +83,7 @@ boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
 
   switch (solver_type) {
     case SolverTypes::SolverKKT:
-      solver = boost::make_shared<crocoddyl::SolverKKT>(problem);
+      solver = boost::make_shared<mim_solvers::SolverKKT>(problem);
       break;
     case SolverTypes::SolverDDP:
       solver = boost::make_shared<mim_solvers::SolverDDP>(problem);
