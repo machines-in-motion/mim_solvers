@@ -1,6 +1,10 @@
-### This is a python implementation of stagewise SQP with crocoddyl with a different line search and step
-### Date : 17/02/2023
-## Authors : Armand, Sebastien, Avadesh
+"""__init__
+License: BSD 3-Clause License
+Copyright (C) 2023, New York University
+
+Copyright note valid unless otherwise stated in individual files.
+All rights reserved.
+"""
 
 import numpy as np
 from numpy import linalg

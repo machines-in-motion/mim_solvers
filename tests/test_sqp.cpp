@@ -6,9 +6,13 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <cstdlib>
-#include <iostream>
+#include <boost/test/unit_test.hpp>
+#include "mim_solvers/sqp.hpp"
 
-int main() {
-  return EXIT_SUCCESS;
+BOOST_AUTO_TEST_SUITE(BOOST_TEST_MODULE)
+
+BOOST_AUTO_TEST_CASE(test_boost_estimator) {
+    // To implement
 }
+
+BOOST_AUTO_TEST_SUITE_END()

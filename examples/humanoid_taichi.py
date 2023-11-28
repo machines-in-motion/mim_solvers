@@ -1,6 +1,16 @@
-### Example from https://github.com/loco-3d/crocoddyl/blob/master/examples/humanoid_taichi.py
-### The solver relies on mim_solvers by default
-### Run 'python humanoid_taichi.py use_fddp' to switch to fddp.
+"""__init__
+
+Example from https://github.com/loco-3d/crocoddyl/blob/master/examples/humanoid_taichi.py
+
+License: BSD 3-Clause License
+Copyright (C) 2023, New York University
+
+Copyright note valid unless otherwise stated in individual files.
+All rights reserved.
+"""
+
+# The solver relies on mim_solvers by default
+# Run 'python humanoid_taichi.py use_fddp' to switch to fddp.
 
 
 import os
