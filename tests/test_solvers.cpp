@@ -115,6 +115,9 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
   }
   xs.push_back(state->rand());
 
+  // // Force initial state to problem->get_x0()
+  // xs[0] = problem->get_x0();
+
   // Define the callback function
   std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract> > cbs;
   cbs.push_back(boost::make_shared<crocoddyl::CallbackVerbose>());
@@ -123,12 +126,17 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
 
   // Print the name of the action model for introspection
   std::cout << ActionModelTypes::all[action_type] << std::endl;
+  std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
+  std::cout << solver_type << " " << action_type << std::endl;
 
   // Solve the problem using the KKT solver
+  std::cout << " KKT solve..." << std::endl;
   kkt->solve(xs, us, 100);
 
   // Solve the problem using the solver in testing
+  std::cout << " SOLVER solve..." << std::endl;
   solver->solve(xs, us, 100);
+  std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
 
   // check trajectory dimensions
   BOOST_CHECK_EQUAL(solver->get_us().size(), T);
@@ -136,29 +144,13 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
 
   // initial state
   double TOL = 1e-7;
-  if(solver_type == SolverTypes::Type::SolverDDP || solver_type == SolverTypes::Type::SolverFDDP) {
-    BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(TOL));
-  }
-  // // if((solver->get_xs()[0] - problem->get_x0()).isZero(TOL) == false){
-  // std::cout << solver_type << " " << action_type << std::endl;
-  // std::cout << " initial state error = " << std::endl;
-  // std::cout << " solver->xs[0] = " << solver->get_xs()[0] << std::endl;
-  // std::cout << " problem->x0   = " << problem->get_x0() << std::endl;
-  //   // std::cout << solver->get_xs()[0] - problem->get_x0() << std::endl;
-  // // }
+  BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(TOL));
+
   // check solutions against each other
   for (unsigned int t = 0; t < T; ++t) {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model =
         solver->get_problem()->get_runningModels()[t];
     std::size_t nu = model->get_nu();
-    // if((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(TOL) == false){
-    std::cout << solver_type << " " << action_type << std::endl;
-    // std::cout << "us[t] = " << solver->get_us()[t].head(nu)<< std::endl;
-    // std::cout << "kkt_us[t] = " << kkt->get_us()[t] << std::endl;
-    std::cout << "xs[t] = " << solver->get_xs()[t] << std::endl;
-    std::cout << "kkt_xs[t] = " << kkt->get_xs()[t] << std::endl;
-      // std::cout << "us[t] - kkt_us[t] = " << solver->get_us()[t].head(nu) - kkt->get_us()[t] << std::endl;
-    // }
     BOOST_CHECK((state->diff_dx(solver->get_xs()[t], kkt->get_xs()[t])).isZero(TOL));
     BOOST_CHECK((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(TOL));
   }
