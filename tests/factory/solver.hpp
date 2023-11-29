@@ -1,8 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
+// 
+// This file is a modified version of the solvers unittests from the Crocoddyl library
+// This modified version is used to test our solvers (mim_solvers repository)
+// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/solver.hpp
+// 
 // BSD 3-Clause License
+// Copyright (C) 2023, New York University
 //
-// Copyright (C) 2019-2021, University of Edinburgh, LAAS-CNRS,
-//                          New York University, Max Planck Gesellschaft
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////

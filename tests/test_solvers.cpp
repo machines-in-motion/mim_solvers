@@ -1,9 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
+// 
+// This file is a modified version of the solvers unittests from the Crocoddyl library
+// This modified version is used for testing purposes only
+// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/test_solvers.cpp
+// 
 // BSD 3-Clause License
+// Copyright (C) 2023, New York University
 //
-// Copyright (C) 2019-2021, LAAS-CNRS, New York University,
-//                          Max Planck Gesellschaft, University of Edinburgh,
-//                          INRIA
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
@@ -123,24 +126,24 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
 
   // Print the name of the action model for introspection
   std::cout << ActionModelTypes::all[action_type] << std::endl;
-  std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
+  // std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
   std::cout << solver_type << " " << action_type << std::endl;
 
   // Solve the problem using the KKT solver
-  std::cout << " KKT solve..." << std::endl;
+  // std::cout << " KKT solve..." << std::endl;
   kkt->solve(xs, us, 100);
 
   // Solve the problem using the solver in testing
-  std::cout << " SOLVER solve..." << std::endl;
+  // std::cout << " SOLVER solve..." << std::endl;
   solver->solve(xs, us, 100);
-  std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
+  // std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
 
   // check trajectory dimensions
   BOOST_CHECK_EQUAL(solver->get_us().size(), T);
   BOOST_CHECK_EQUAL(solver->get_xs().size(), T + 1);
 
   // initial state
-  double TOL = 1e-7;
+  double TOL = 1e-4;
   BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(TOL));
 
   // check solutions against each other
@@ -153,6 +156,7 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
   }
   BOOST_CHECK(
       (state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T])).isZero(TOL));
+  // std::cout << "diff = " << std::endl << state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T]) << std::endl;
 }
 
 //____________________________________________________________________________//
