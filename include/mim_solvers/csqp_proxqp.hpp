@@ -195,7 +195,7 @@ class SolverPROXQP : public SolverDDP {
   double mu_ = 1e1;                                            //!< penalty no constraint violation
   double mu2_ = 1e1;                                            //!< penalty no constraint violation
   double termination_tol_ = 1e-8;                              //!< Termination tolerance
-  bool with_callbacks_ = false;                                //!< With callbacks
+  bool with_callbacks_ = true;                                //!< With callbacks
   bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
   double sigma_ = 1e-6; // proximal term
   double alpha_ = 1.6; // relaxed step size

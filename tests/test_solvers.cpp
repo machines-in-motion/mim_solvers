@@ -115,9 +115,6 @@ void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
   }
   xs.push_back(state->rand());
 
-  // // Force initial state to problem->get_x0()
-  // xs[0] = problem->get_x0();
-
   // Define the callback function
   std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract> > cbs;
   cbs.push_back(boost::make_shared<crocoddyl::CallbackVerbose>());
