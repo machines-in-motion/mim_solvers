@@ -20,6 +20,7 @@
 
   <depend>crocoddyl</depend>
   <depend>eigenpy</depend>
+  <depend>example-robot-data</depend>
 
   <buildtool_depend>cmake</buildtool_depend>
   <export>

@@ -6,6 +6,7 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
+// #ifdef MIM_SOLVERS_WITH_PROXQP
 
 #ifdef CROCODDYL_WITH_MULTITHREADING
 #include <omp.h>
@@ -44,17 +45,25 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       xs_try_.resize(T+1); us_try_.resize(T);
 
       const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-      const std::size_t nx = models[0]->get_state()->get_nx();
-      const std::size_t nu = models[0]->get_nu();
-      // NOTE : Assuming nx and nu don't change with time
-      n_vars = T*(nx + nu);
+      // We allow nx and nu to change with time
+      n_vars = 0;
+      n_eq = 0;
+      for (std::size_t t = 0; t < T; ++t){
+        if(t < T-1){
+          n_vars += models[t+1]->get_state()->get_nx();
+          n_eq += models[t+1]->get_state()->get_nx();
+        }
+        n_vars += models[t]->get_nu();
+      }
+      n_vars += problem_->get_terminalModel()->get_state()->get_nx();
+      n_eq += problem_->get_terminalModel()->get_state()->get_nx();
       P_.resize(n_vars, n_vars); P_.setZero();
       q_.resize(n_vars), q_.setZero();
-      A_.resize(T*nx, n_vars); A_.setZero();
-      b_.resize(T*nx); b_.setZero();
+      A_.resize(n_eq, n_vars); A_.setZero();
+      b_.resize(n_eq); b_.setZero();
 
       Psp_.resize(n_vars, n_vars);
-      Asp_.resize(T*nx, n_vars);
+      Asp_.resize(n_eq, n_vars);
       
       for (std::size_t t = 0; t < T; ++t) {
         const boost::shared_ptr<ActionModelAbstract>& model = models[t];
@@ -86,13 +95,13 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       int nc = problem_->get_terminalModel()->get_ng();
       y_.back().resize(nc); y_.back().setZero();
       n_in += nc;
-      n_eq = T* nx;
+      // n_eq = T* nx;
 
-      C_.resize(n_in, T*(nx + nu)); C_.setZero();
+      C_.resize(n_in, n_vars); C_.setZero();
       l_.resize(n_in); l_.setZero();
       u_.resize(n_in); u_.setZero();
       
-      Csp_.resize(n_in, T*(nx + nu));
+      Csp_.resize(n_in, n_vars);
 
       const std::size_t n_alphas = 10;
       alphas_.resize(n_alphas);
@@ -118,8 +127,10 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
   if (problem_->is_updated()) {
     resizeData();
   }
-  xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
   setCandidate(init_xs, init_us, false);
+  xs_[0] = problem_->get_x0();      // Otherwise xs[0] is overwritten by init_xs inside setCandidate()
+  xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
+
 
   if (std::isnan(reginit)) {
     xreg_ = reg_min_;
@@ -230,6 +241,7 @@ void SolverPROXQP::calc(const bool recalc){
   const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
 
+  double index_u = n_eq;
   for (std::size_t t = 0; t < T; ++t) {
 
     const boost::shared_ptr<ActionModelAbstract>& m = models[t];
@@ -247,8 +259,7 @@ void SolverPROXQP::calc(const bool recalc){
     constraint_norm_ += (lb - d->g).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
     constraint_norm_ += (d->g - ub).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
-    // creating matrices
-    const double index_u = T * nx + t*nu;
+    // creating matrices    
     if(t>0){
       const double index_x = (t-1)*nx;
       P_.middleCols(index_x, nx).middleRows(index_x, nx) = d->Lxx;
@@ -277,6 +288,8 @@ void SolverPROXQP::calc(const bool recalc){
     // make faster
     A_.middleCols(t*nx,nx).middleRows(t*nx,nx) = Eigen::MatrixXd::Identity(nx, nx);
     b_.segment(t*nx, nx) = fs_[t+1];
+    
+    index_u += nu;
 
   }
 
@@ -339,6 +352,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   x_grad_norm_ = 0; u_grad_norm_ = 0;
   double nin_count = 0;
+  double index_u = n_eq;
   for (std::size_t t = 0; t < T; ++t){
     const boost::shared_ptr<ActionModelAbstract>& m = models[t];
     const int nx = m->get_state()->get_nx();
@@ -346,7 +360,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     int nc = m->get_ng();
 
     dx_[t+1] = res.segment(t * nx, nx);
-    double index_u = T *nx + t * nu;
+    // double index_u = T *nx + t * nu;
     du_[t] = res.segment(index_u, nu);
     x_grad_norm_ += dx_[t+1].lpNorm<1>(); // assuming that there is no gap in the initial state
     u_grad_norm_ += du_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
@@ -356,6 +370,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     lag_mul_[t+1] = -qp.results.y.segment(t* nx, nx);
     y_[t] = qp.results.z.segment(nin_count, nc);
     nin_count += nc;
+    index_u += nu;
   }
   x_grad_norm_ = x_grad_norm_/(T+1);
   u_grad_norm_ = u_grad_norm_/T; 
@@ -498,3 +513,5 @@ bool SolverPROXQP::getCallbacks(){
 }
 
 }  // namespace mim_solvers
+
+// #endif // MIM_SOLVERS_WITH_PROXQP

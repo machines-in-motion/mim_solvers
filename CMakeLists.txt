@@ -17,6 +17,7 @@ add_compile_options(--warn-no-conversion)
 # Project options
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
+option(BUILD_WITH_PROXQP "Build the ProxQP-based SQP solver" ON)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -51,7 +52,15 @@ find_package(eigenpy REQUIRED)
 
 add_project_dependency(crocoddyl 2.0.0 REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
-# find_package(proxsuite REQUIRED)
+add_project_dependency(example-robot-data 4.0.7 REQUIRED PKG_CONFIG_REQUIRES
+"example-robot-data >= 4.0.7")
+
+if(BUILD_WITH_PROXQP)
+  find_package(proxsuite REQUIRED)
+  add_project_dependency(proxsuite REQUIRED)
+  add_definitions(-DMIM_SOLVERS_WITH_PROXQP)
+endif()
+
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 if(BUILD_PYTHON_INTERFACE)
@@ -63,6 +72,7 @@ endif()
 
 # Main Library
 set(${PROJECT_NAME}_HEADERS
+  include/${PROJECT_NAME}/kkt.hpp
   include/${PROJECT_NAME}/ddp.hpp
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
@@ -71,6 +81,7 @@ set(${PROJECT_NAME}_HEADERS
   )
 
 set(${PROJECT_NAME}_SOURCES
+  src/kkt.cpp
   src/ddp.cpp
   src/fddp.cpp
   src/sqp.cpp
@@ -87,6 +98,9 @@ endif()
 
 # Main Executable
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} crocoddyl::crocoddyl)
+if(BUILD_WITH_PROXQP)
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} proxsuite::proxsuite)
+endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 # Python Bindings
