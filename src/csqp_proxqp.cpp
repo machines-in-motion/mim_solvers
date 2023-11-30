@@ -49,10 +49,14 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       n_vars = 0;
       n_eq = 0;
       for (std::size_t t = 0; t < T; ++t){
-        n_vars += models[t]->get_state()->get_nx();
+        if(t < T-1){
+          n_vars += models[t+1]->get_state()->get_nx();
+          n_eq += models[t+1]->get_state()->get_nx();
+        }
         n_vars += models[t]->get_nu();
-        n_eq += models[t]->get_state()->get_nx();
       }
+      n_vars += problem_->get_terminalModel()->get_state()->get_nx();
+      n_eq += problem_->get_terminalModel()->get_state()->get_nx();
       P_.resize(n_vars, n_vars); P_.setZero();
       q_.resize(n_vars), q_.setZero();
       A_.resize(n_eq, n_vars); A_.setZero();
