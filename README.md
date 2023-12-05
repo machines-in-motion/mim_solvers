@@ -14,18 +14,29 @@ Examples of how to use the solvers can be found in the `examples` directory.
 - ProxQP (quadratic programming) [OPTIONAL]
 
 # Installation
-First clone the repo :
 
-`git clone --recursive https://github.com/machines-in-motion/mim_solvers.git`
+  ## Using conda
+
+`conda install mim-solvers --channel conda-forge`
+
 
   ## Using CMake
+`git clone --recursive https://github.com/machines-in-motion/mim_solvers.git`
+
 `cd mim_solvers && mkdir build && cd build`
 
 `cmake .. [-DCMAKE_BUILD_TYPE=Release] [-DCMAKE_INSTALL_PREFIX=...]`
 
 `make [-j6] && make install`
 
-  ## Using colcon
-At the root of your workspace :
 
-`colcon build [optional args]`
+# Contributors
+
+-   [Armand Jordana](https://github.com/ajordana) (NYU): main developer and manager of the project
+-   [Sébastien Kleff](https://github.com/skleff1994) (NYU): main developer and manager of the project
+-   [Avadesh Meduri](https://github.com/avadesh02) (NYU): main developer and manager of the project
+-   [Ludovic Righetti](https://engineering.nyu.edu/faculty/ludovic-righetti) (NYU): project instructor
+-   [Justin Carpentier](https://jcarpent.github.io) (INRIA): project instructor
+-   [Nicolas Mansard](http://projects.laas.fr/gepetto/index.php/Members/NicolasMansard) (LAAS-CNRS): project instructor
+-   [Yann de Mont-Marin](https://github.com/ymontmarin) (INRIA): Conda integration and support
+
