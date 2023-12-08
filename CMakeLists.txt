@@ -47,16 +47,12 @@ APPLY_DEFAULT_APPLE_CONFIGURATION()
 
 # Project dependencies
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-find_package(crocoddyl REQUIRED)
-find_package(eigenpy REQUIRED)
-
 add_project_dependency(crocoddyl 2.0.0 REQUIRED)
 add_project_dependency(eigenpy 2.7.10 REQUIRED)
 add_project_dependency(example-robot-data 4.0.7 REQUIRED PKG_CONFIG_REQUIRES
 "example-robot-data >= 4.0.7")
 
 if(BUILD_WITH_PROXQP)
-  find_package(proxsuite REQUIRED)
   add_project_dependency(proxsuite REQUIRED)
   add_definitions(-DMIM_SOLVERS_WITH_PROXQP)
 endif()
@@ -64,10 +60,8 @@ endif()
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 if(BUILD_PYTHON_INTERFACE)
-  FINDPYTHON()
   string(REGEX REPLACE "-" "_" PY_NAME ${PROJECT_NAME})
   set(${PY_NAME}_INSTALL_DIR ${PYTHON_SITELIB}/${PY_NAME})
-  SEARCH_FOR_BOOST_PYTHON()
 endif()
 
 # Main Library

@@ -1,4 +1,3 @@
-include("../cmake/python-helpers.cmake")
 if(GENERATE_PYTHON_STUBS)
   include(${PROJECT_SOURCE_DIR}/cmake/stubs.cmake)
 endif(GENERATE_PYTHON_STUBS)
@@ -13,12 +12,9 @@ set(${PY_NAME}_SOURCES
   )
 
 add_library(${PY_NAME}_pywrap SHARED ${${PY_NAME}_SOURCES})
-MODERNIZE_TARGET_LINK_LIBRARIES(${PY_NAME}_pywrap SCOPE PUBLIC TARGETS eigenpy::eigenpy)
-target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME})
-target_link_libraries(${PY_NAME}_pywrap PUBLIC crocoddyl::crocoddyl)
+target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME} eigenpy::eigenpy)
 
 set_target_properties(${PY_NAME}_pywrap PROPERTIES
-  INSTALL_RPATH "\$ORIGIN/../../.."
   LIBRARY_OUTPUT_DIRECTORY ${PY_NAME}_pywrap
   PREFIX ""
   SUFFIX ${PYTHON_EXT_SUFFIX})
@@ -31,8 +27,8 @@ endif(GENERATE_PYTHON_STUBS)
 set(${PY_NAME}_PYTHON mim_solvers/__init__.py)
 
 SET(PYLIB_INSTALL_DIR ${PYTHON_SITELIB}/mim_solvers)
-GET_RELATIVE_RPATH(${PYLIB_INSTALL_DIR} PYLIB_RPATH)
 IF(UNIX)
+  GET_RELATIVE_RPATH(${PYLIB_INSTALL_DIR} PYLIB_RPATH)
   SET_TARGET_PROPERTIES(${${PY_NAME}_pywrap} PROPERTIES INSTALL_RPATH ${PYLIB_RPATH})
 ENDIF()
 
