@@ -17,7 +17,7 @@ add_compile_options(--warn-no-conversion)
 # Project options
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
-option(BUILD_WITH_PROXQP "Build the ProxQP-based SQP solver" ON)
+option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -55,7 +55,7 @@ add_project_dependency(eigenpy 2.7.10 REQUIRED)
 add_project_dependency(example-robot-data 4.0.7 REQUIRED PKG_CONFIG_REQUIRES
 "example-robot-data >= 4.0.7")
 
-if(BUILD_WITH_PROXQP)
+if(BUILD_WITH_PROXSUITE)
   find_package(proxsuite REQUIRED)
   add_project_dependency(proxsuite REQUIRED)
   add_definitions(-DMIM_SOLVERS_WITH_PROXQP)
@@ -77,7 +77,6 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
-  include/${PROJECT_NAME}/csqp_proxqp.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
@@ -86,8 +85,12 @@ set(${PROJECT_NAME}_SOURCES
   src/fddp.cpp
   src/sqp.cpp
   src/csqp.cpp
-  src/csqp_proxqp.cpp
   )
+
+if(BUILD_WITH_PROXSUITE)
+  list(APPEND ${PROJECT_NAME}_HEADERS include/${PROJECT_NAME}/csqp_proxqp.hpp)
+  list(APPEND ${PROJECT_NAME}_SOURCES src/csqp_proxqp.cpp)
+endif(BUILD_WITH_PROXSUITE)
 
 add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES} ${${PROJECT_NAME}_HEADERS})
 target_include_directories(${PROJECT_NAME} PUBLIC $<INSTALL_INTERFACE:include>)
@@ -98,7 +101,7 @@ endif()
 
 # Main Executable
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} crocoddyl::crocoddyl)
-if(BUILD_WITH_PROXQP)
+if(BUILD_WITH_PROXSUITE)
   TARGET_LINK_LIBRARIES(${PROJECT_NAME} proxsuite::proxsuite)
 endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
@@ -109,7 +112,9 @@ if(BUILD_PYTHON_INTERFACE)
 endif()
 
 # Unit tests
-add_subdirectory(tests)
+if(BUILD_TESTING)
+  add_subdirectory(tests)
+endif(BUILD_TESTING)
 
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
