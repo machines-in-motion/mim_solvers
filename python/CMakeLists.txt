@@ -1,4 +1,5 @@
 include("../cmake/python-helpers.cmake")
+
 if(GENERATE_PYTHON_STUBS)
   include(${PROJECT_SOURCE_DIR}/cmake/stubs.cmake)
 endif(GENERATE_PYTHON_STUBS)
@@ -8,11 +9,14 @@ set(${PY_NAME}_SOURCES
   fddp.cpp
   sqp.cpp
   csqp.cpp
-  csqp_proxqp.cpp
   main.cpp
   )
 
-add_library(${PY_NAME}_pywrap SHARED ${${PY_NAME}_SOURCES})
+if(BUILD_WITH_PROXSUITE)
+  list(APPEND ${PY_NAME}_SOURCES csqp_proxqp.cpp)
+endif(BUILD_WITH_PROXSUITE)
+
+add_library(${PY_NAME}_pywrap MODULE ${${PY_NAME}_SOURCES})
 MODERNIZE_TARGET_LINK_LIBRARIES(${PY_NAME}_pywrap SCOPE PUBLIC TARGETS eigenpy::eigenpy)
 target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME})
 target_link_libraries(${PY_NAME}_pywrap PUBLIC crocoddyl::crocoddyl)

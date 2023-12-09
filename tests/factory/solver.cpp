@@ -18,9 +18,9 @@
 #include "mim_solvers/fddp.hpp"
 #include "mim_solvers/sqp.hpp"
 #include "mim_solvers/csqp.hpp"
-// #ifdef MIM_SOLVERS_WITH_IPOPT
-#include "mim_solvers/csqp_proxqp.hpp"
-// #endif
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  #include "mim_solvers/csqp_proxqp.hpp"
+#endif
 #include <crocoddyl/core/utils/exception.hpp>
 
 namespace mim_solvers {
@@ -45,11 +45,11 @@ std::ostream& operator<<(std::ostream& os, SolverTypes::Type type) {
     case SolverTypes::SolverCSQP:
       os << "SolverCSQP";
       break;
-// #ifdef MIM_SOLVERS_WITH_PROXQP
+#ifdef MIM_SOLVERS_WITH_PROXQP
     case SolverTypes::SolverPROXQP:
       os << "SolverPROXQP";
       break;
-// #endif
+#endif
     case SolverTypes::NbSolverTypes:
       os << "NbSolverTypes";
       break;
@@ -101,11 +101,11 @@ boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
     case SolverTypes::SolverCSQP:
       solver = boost::make_shared<mim_solvers::SolverCSQP>(problem);
       break;
-// #ifdef MIM_SOLVERS_WITH_PROXQP
+#ifdef MIM_SOLVERS_WITH_PROXQP
     case SolverTypes::SolverPROXQP:
       solver = boost::make_shared<mim_solvers::SolverPROXQP>(problem);
       break;
-// #endif
+#endif
     default:
       throw_pretty(__FILE__ ": Wrong SolverTypes::Type given");
       break;

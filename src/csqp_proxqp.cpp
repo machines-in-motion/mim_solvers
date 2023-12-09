@@ -6,8 +6,6 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-// #ifdef MIM_SOLVERS_WITH_PROXQP
-
 #ifdef CROCODDYL_WITH_MULTITHREADING
 #include <omp.h>
 #endif  // CROCODDYL_WITH_MULTITHREADING
@@ -513,5 +511,3 @@ bool SolverPROXQP::getCallbacks(){
 }
 
 }  // namespace mim_solvers
-
-// #endif // MIM_SOLVERS_WITH_PROXQP

@@ -18,5 +18,7 @@ BOOST_PYTHON_MODULE(mim_solvers_pywrap) {
     mim_solvers::exposeSolverFDDP(); 
     mim_solvers::exposeSolverSQP(); 
     mim_solvers::exposeSolverCSQP(); 
+#ifdef MIM_SOLVERS_WITH_PROXQP
     mim_solvers::exposeSolverPROXQP();
+#endif
 }
