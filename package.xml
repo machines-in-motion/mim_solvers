@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="3">
   <name>mim_solvers</name>
-  <version>0.0.1</version>
+  <version>0.0.2</version>
   <description>Numerical solvers of the Machines in Motion Laboratory.</description>
   <maintainer email="sk8001@nyu.edu">Sébastien Kleff</maintainer>
   <author email="sk8001@nyu.edu">Sébastien Kleff</author>
