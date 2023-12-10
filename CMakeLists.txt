@@ -36,10 +36,8 @@ COMPUTE_PROJECT_ARGS(PROJECT_ARGS LANGUAGES CXX)
 project(${PROJECT_NAME} ${PROJECT_ARGS})
 
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/boost.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/python.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/apple.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/ide.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/cmake/python-helpers.cmake)
 include(CMakeDependentOption)
 
 # If needed, fix CMake policy for APPLE systems
