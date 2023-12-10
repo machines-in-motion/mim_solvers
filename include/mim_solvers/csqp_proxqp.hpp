@@ -6,7 +6,6 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-// #ifdef MIM_SOLVERS_WITH_PROXQP
 
 #ifndef MIM_SOLVERS_CSQP_PROXQP_HPP_
 #define MIM_SOLVERS_CSQP_PROXQP_HPP_
@@ -240,4 +239,3 @@ class SolverPROXQP : public SolverDDP {
 }  // namespace mim_solvers
 
 #endif  // MIM_SOLVERS_CSQP_PROXQP_HPP_
-// #endif  // MIM_SOLVERS_WITH_PROXQP

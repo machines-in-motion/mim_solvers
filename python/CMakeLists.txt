@@ -7,11 +7,14 @@ set(${PY_NAME}_SOURCES
   fddp.cpp
   sqp.cpp
   csqp.cpp
-  csqp_proxqp.cpp
   main.cpp
   )
 
-add_library(${PY_NAME}_pywrap SHARED ${${PY_NAME}_SOURCES})
+if(BUILD_WITH_PROXSUITE)
+  list(APPEND ${PY_NAME}_SOURCES csqp_proxqp.cpp)
+endif(BUILD_WITH_PROXSUITE)
+
+add_library(${PY_NAME}_pywrap MODULE ${${PY_NAME}_SOURCES})
 target_link_libraries(${PY_NAME}_pywrap PUBLIC ${PROJECT_NAME} eigenpy::eigenpy)
 
 set_target_properties(${PY_NAME}_pywrap PROPERTIES

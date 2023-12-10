@@ -1,17 +1,17 @@
 # mim_solvers
 Implementation of numerical solvers used in the Machines in Motion Laboratory. 
-In particular, the Sequential Quadratic Programming (SQP) solver decribed in [arxiv] that solves efficiently nonlinear constrained OCPs.
+In particular, the Sequential Quadratic Programming (SQP) solver described in [this paper](https://laas.hal.science/hal-04330251) solves nonlinear constrained OCPs efficiently.
 
 All solvers are implemented by using [Crocoddyl](https://github.com/loco-3d/crocoddyl/tree/devel) (v2.0) as the base software. 
-Consquently, Crocoddyl users can use our efficient solvers while constructing their OCPs using the same API they are used to. 
+Consequently, Crocoddyl users can use our efficient solvers while constructing their OCPs using the same API they are used to. 
 The default solvers of Crocoddyl are also re-implemented for benchmarking purposes (namely DDP and FDDP) but with modified termination criteria and line-search.
 
-Examples of how to use the solvers can be found in the `examples` directory.
+Examples on how to use the solvers can be found in the `examples` directory.
 
 # Dependencies
-- Pinocchio (rigid-body dynamics computations)
-- Crocoddyl (optimal control library)
-- ProxQP (quadratic programming) [OPTIONAL]
+- [Pinocchio](https://github.com/stack-of-tasks/pinocchio) (rigid-body dynamics computations)
+- [Crocoddyl](https://github.com/loco-3d/crocoddyl) (optimal control library)
+- [ProxSuite](https://github.com/Simple-Robotics/proxsuite) (quadratic programming) [OPTIONAL]
 
 # Installation
 
