@@ -64,7 +64,7 @@ class SolverSQP : public SolverDDP {
                      const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR, 
                      const std::size_t maxiter = 100,
                      const bool is_feasible = false, 
-                     const double regInit = 1e-9);
+                     const double regInit = NAN);
 
   /**
    * @copybrief SolverAbstract::expectedImprovement

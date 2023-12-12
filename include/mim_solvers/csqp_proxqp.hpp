@@ -66,7 +66,7 @@ class SolverPROXQP : public SolverDDP {
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
                      const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR, const std::size_t maxiter = 100,
-                     const bool is_feasible = false, const double regInit = 1e-9);
+                     const bool is_feasible = false, const double regInit = NAN);
 
   /**
    * @copybrief SolverAbstract::expectedImprovement
