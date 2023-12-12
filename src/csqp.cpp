@@ -241,11 +241,11 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
 
   // REMOVED REGULARIZATION : 
   // if (std::isnan(reginit)) {
-  //   xreg_ = reg_min_;
-  //   ureg_ = reg_min_;
+  //   preg_ = reg_min_;
+  //   dreg_ = reg_min_;
   // } else {
-  //   xreg_ = reginit;
-  //   ureg_ = reginit;
+  //   preg_ = reginit;
+  //   dreg_ = reginit;
   // }
 
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
@@ -262,7 +262,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       catch (std::exception& e) {
         recalcDiff = false;
         increaseRegularization();
-        if (xreg_ == reg_max_) {
+        if (preg_ == reg_max_) {
           return false;
         } else {
           continue;
@@ -321,7 +321,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     }
     if (steplength_ <= th_stepinc_) {
       increaseRegularization();
-      if (xreg_ == reg_max_) {
+      if (preg_ == reg_max_) {
         STOP_PROFILER("SolverCSQP::solve");
         return false;
       }
@@ -543,8 +543,8 @@ void SolverCSQP::backwardPass() {
     Vxx_.back().noalias() += d_T->Gx.transpose() * rho_vec_.back().asDiagonal() * d_T->Gx;
     Vx_.back() += d_T->Gx.transpose() * (y_.back() - rho_vec_.back().cwiseProduct(z_.back()));
   }
-  if (!std::isnan(xreg_)) {
-    Vxx_.back().diagonal().array() += xreg_;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   // if (!is_feasible_) {
@@ -611,8 +611,8 @@ void SolverCSQP::backwardPass() {
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
       STOP_PROFILER("SolverCSQP::Qxu");
 
-      if (!std::isnan(ureg_)) {
-        Quu_[t].diagonal().array() += ureg_;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
     }
     computeGains(t);
@@ -627,8 +627,8 @@ void SolverCSQP::backwardPass() {
     }
     Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
     Vxx_[t] = Vxx_tmp_;
-    if (!std::isnan(xreg_)) {
-      Vxx_[t].diagonal().array() += xreg_;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
 
     // Compute and store the Vx gradient at end of the interval (rollout state)
@@ -654,8 +654,8 @@ void SolverCSQP::backwardPass_without_constraints() {
   Vxx_.back() = d_T->Lxx;
   Vx_.back() = d_T->Lx ;
 
-  if (!std::isnan(xreg_)) {
-    Vxx_.back().diagonal().array() += xreg_;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   // if (!is_feasible_) {
@@ -697,8 +697,8 @@ void SolverCSQP::backwardPass_without_constraints() {
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
       STOP_PROFILER("SolverCSQP::Qxu");
 
-      if (!std::isnan(ureg_)) {
-        Quu_[t].diagonal().array() += ureg_;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
     }
 
@@ -716,8 +716,8 @@ void SolverCSQP::backwardPass_without_constraints() {
     Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
     Vxx_[t] = Vxx_tmp_;
 
-    if (!std::isnan(xreg_)) {
-      Vxx_[t].diagonal().array() += xreg_;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
 
     // Compute and store the Vx gradient at end of the interval (rollout state)

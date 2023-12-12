@@ -131,11 +131,11 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
 
 
   if (std::isnan(reginit)) {
-    xreg_ = reg_min_;
-    ureg_ = reg_min_;
+    preg_ = reg_min_;
+    dreg_ = reg_min_;
   } else {
-    xreg_ = reginit;
-    ureg_ = reginit;
+    preg_ = reginit;
+    dreg_ = reginit;
   }
 
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
@@ -151,7 +151,7 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
       catch (std::exception& e) {
         recalcDiff = false;
         increaseRegularization();
-        if (xreg_ == reg_max_) {
+        if (preg_ == reg_max_) {
           return false;
         } else {
           continue;
@@ -210,7 +210,7 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
     }
     if (steplength_ <= th_stepinc_) {
       increaseRegularization();
-      if (xreg_ == reg_max_) {
+      if (preg_ == reg_max_) {
         STOP_PROFILER("SolverPROXQP::solve");
         return false;
       }

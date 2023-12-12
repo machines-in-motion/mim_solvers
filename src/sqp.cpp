@@ -82,11 +82,11 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
   xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
 
   if (std::isnan(reginit)) {
-    xreg_ = reg_min_;
-    ureg_ = reg_min_;
+    preg_ = reg_min_;
+    dreg_ = reg_min_;
   } else {
-    xreg_ = reginit;
-    ureg_ = reginit;
+    preg_ = reginit;
+    dreg_ = reginit;
   }
   
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
@@ -102,7 +102,7 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
       catch (std::exception& e) {
         recalcDiff = false;
         increaseRegularization();
-        if (xreg_ == reg_max_) {
+        if (preg_ == reg_max_) {
           return false;
         } else {
           continue;
@@ -160,7 +160,7 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     }
     if (steplength_ <= th_stepinc_) {
       increaseRegularization();
-      if (xreg_ == reg_max_) {
+      if (preg_ == reg_max_) {
         STOP_PROFILER("SolverSQP::solve");
         return false;
       }
