@@ -16,7 +16,6 @@
 #include <crocoddyl/core/states/euclidean.hpp>
 #include <crocoddyl/core/utils/exception.hpp>
 #include <crocoddyl/multibody/states/multibody.hpp>
-#include <example-robot-data/path.hpp>
 #include <pinocchio/fwd.hpp>
 #include <pinocchio/parsers/sample-models.hpp>
 #include <pinocchio/parsers/urdf.hpp>
