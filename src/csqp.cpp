@@ -852,7 +852,8 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       }
 
       z_prev_[t] = z_[t];
-      Cdx_Cdu[t] = d->Gx * dxtilde_[t] + d->Gu * dutilde_[t];
+      Cdx_Cdu[t].noalias() = d->Gx * dxtilde_[t];
+      Cdx_Cdu[t].noalias() += d->Gu * dutilde_[t];
       z_relaxed_[t] = alpha_ * Cdx_Cdu[t] + (1 - alpha_) * z_[t];
 
       const auto ub = m->get_g_ub(); 
@@ -875,8 +876,10 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       norm_primal_ = std::max(norm_primal_, (Cdx_Cdu[t] - z_[t]).lpNorm<Eigen::Infinity>());
       norm_primal_rel_= std::max(norm_primal_rel_, Cdx_Cdu[t].lpNorm<Eigen::Infinity>());
       norm_primal_rel_= std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
-      norm_dual_rel_ = std::max(norm_dual_rel_, (d->Gx.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
-      norm_dual_rel_ = std::max(norm_dual_rel_, (d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+      dual_vecx = d->Gx.transpose() * y_[t];
+      dual_vecu = d->Gu.transpose() * y_[t];
+      norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecx.lpNorm<Eigen::Infinity>());
+      norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecu.lpNorm<Eigen::Infinity>());
     }
 
   dx_.back() = dxtilde_.back();
@@ -907,7 +910,8 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
     norm_primal_ = std::max(norm_primal_, (Cdx_Cdu.back() - z_.back()).lpNorm<Eigen::Infinity>());
     norm_primal_rel_= std::max(norm_primal_rel_, Cdx_Cdu.back().lpNorm<Eigen::Infinity>());
     norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-    norm_dual_rel_ = std::max(norm_dual_rel_, (d_T->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
+    dual_vecx = d_T->Gx.transpose() * y_.back();
+    norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecx.lpNorm<Eigen::Infinity>());
   }
 
 }
