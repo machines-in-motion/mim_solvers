@@ -513,10 +513,17 @@ void SolverCSQP::forwardPass(){
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
     for (std::size_t t = 0; t < T; ++t) {
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-      lag_mul_[t] = Vxx_[t] * dxtilde_[t] + Vx_[t];
-      dutilde_[t].noalias() = -K_[t]*(dxtilde_[t]) - k_[t];
-      dxtilde_[t+1].noalias() = (d->Fx - (d->Fu * K_[t]))*(dxtilde_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
-      
+      lag_mul_[t].noalias() = Vxx_[t] * dxtilde_[t];
+      lag_mul_[t] += Vx_[t];
+
+      dutilde_[t].noalias() = -K_[t]*dxtilde_[t];
+      dutilde_[t] -= k_[t];
+      // dxtilde_[t+1].noalias() = (d->Fx - (d->Fu * K_[t]))*(dxtilde_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
+      // dxtilde_[t+1].noalias() = d->Fx * (dxtilde_[t]) - d->Fu * (K_[t]*dxtilde_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
+      dxtilde_[t+1].noalias() = d->Fx * dxtilde_[t];
+      dxtilde_[t+1].noalias() += d->Fu * dutilde_[t];
+      dxtilde_[t+1] += fs_[t+1];
+
       x_grad_norm_ += dxtilde_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
       u_grad_norm_ += dutilde_[t].lpNorm<1>();
     }
@@ -668,7 +675,7 @@ void SolverCSQP::backwardPass_without_constraints() {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
-    const Eigen::VectorXd& Vx_p = Vx_[t + 1] + Vxx_[t+1] * fs_[t+1];;
+    const Eigen::VectorXd& Vx_p = Vx_[t + 1] + Vxx_[t+1] * fs_[t+1];
     const std::size_t nu = m->get_nu();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
     START_PROFILER("SolverCSQP::Qx");
