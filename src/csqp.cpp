@@ -49,6 +49,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
 
 
       Vx_tmp = Eigen::VectorXd::Zero(ndx);
+      dual_cwise_prod = Eigen::VectorXd::Zero(ndx);
 
       const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
       for (std::size_t t = 0; t < T; ++t) {
@@ -556,7 +557,8 @@ void SolverCSQP::backwardPass() {
   if (problem_->get_terminalModel()->get_ng()){ // constraint model
     // TODO : make sure this is not used later
     Vxx_.back().noalias() += d_T->Gx.transpose() * rho_vec_.back().asDiagonal() * d_T->Gx;
-    Vx_.back() += d_T->Gx.transpose() * (y_.back() - rho_vec_.back().cwiseProduct(z_.back()));
+    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back() += d_T->Gx.transpose() * (y_.back() - dual_cwise_prod);
   }
   if (!std::isnan(preg_)) {
     Vxx_.back().diagonal().array() += preg_;
@@ -582,7 +584,8 @@ void SolverCSQP::backwardPass() {
     Qx_[t] = d->Lx - sigma_ * dx_[t];
 
     if (t > 0 && nc != 0){ //constraint model
-      Qx_[t] += d->Gx.transpose() * (y_[t] -  rho_vec_[t].cwiseProduct(z_[t]));
+      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
+      Qx_[t] += d->Gx.transpose() * (y_[t] -  dual_cwise_prod);
     }
     
     Qx_[t].noalias() += d->Fx.transpose() * Vx_p;
@@ -601,7 +604,8 @@ void SolverCSQP::backwardPass() {
       START_PROFILER("SolverCSQP::Qu");
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0){ //constraint model
-        Qu_[t] += d->Gu.transpose() * (y_[t] - rho_vec_[t].cwiseProduct(z_[t]));
+        dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
+        Qu_[t] += d->Gu.transpose() * (y_[t] - dual_cwise_prod);
       }
       
 
@@ -760,7 +764,8 @@ void SolverCSQP::backwardPass_without_rho_update() {
   Vx_.back() = d_T->Lx - sigma_ * dx_.back();
 
   if (m_T->get_ng()){ // constraint model
-    Vx_.back().noalias() += d_T->Gx.transpose() * (y_.back() - rho_vec_.back().cwiseProduct(z_.back()));
+    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back().noalias() += d_T->Gx.transpose() * (y_.back() - dual_cwise_prod);
   }
 
   // if (!is_feasible_) {
@@ -779,7 +784,8 @@ void SolverCSQP::backwardPass_without_rho_update() {
     Qx_[t] = d->Lx - sigma_ * dx_[t];
 
     if (t > 0 && nc != 0){ //constraint model
-      Qx_[t].noalias() += d->Gx.transpose() * (y_[t] - rho_vec_[t].cwiseProduct(z_[t]));
+      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
+      Qx_[t].noalias() += d->Gx.transpose() * (y_[t] - dual_cwise_prod);
     }
 
     Qx_[t].noalias() += d->Fx.transpose() * Vx_tmp;
@@ -789,7 +795,8 @@ void SolverCSQP::backwardPass_without_rho_update() {
       START_PROFILER("SolverCSQP::Qu");
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0){ //constraint model
-        Qu_[t].noalias() += d->Gu.transpose() * (y_[t] - rho_vec_[t].cwiseProduct(z_[t]));
+        dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
+        Qu_[t].noalias() += d->Gu.transpose() * (y_[t] - dual_cwise_prod);
       }
 
       Qu_[t].noalias() += d->Fu.transpose() * Vx_tmp;
@@ -850,17 +857,19 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
 
       const auto ub = m->get_g_ub(); 
       const auto lb = m->get_g_lb();
-      z_[t] = (z_relaxed_[t] + (y_[t].cwiseProduct(inv_rho_vec_[t])));
+      dual_cwise_prod = y_[t].cwiseProduct(inv_rho_vec_[t]);
+      z_[t] = (z_relaxed_[t] + dual_cwise_prod);
       z_[t] = z_[t].cwiseMax(lb - d->g).cwiseMin(ub - d->g);
      
       if (update_y){
-        y_[t] = y_[t] + rho_vec_[t].cwiseProduct(z_relaxed_[t] - z_[t]);
+        y_[t] += rho_vec_[t].cwiseProduct(z_relaxed_[t] - z_[t]);
       }
       dx_[t] = dxtilde_[t]; du_[t] = dutilde_[t];
 
       // operation repeated
-      dual_vecx = d->Gx.transpose() * (rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]));
-      dual_vecu = d->Gu.transpose() * (rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]));
+      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
+      dual_vecx = d->Gx.transpose() * dual_cwise_prod;
+      dual_vecu = d->Gu.transpose() * dual_cwise_prod;
 
       norm_dual_ = std::max(norm_dual_, std::max(dual_vecx.lpNorm<Eigen::Infinity>(), dual_vecu.lpNorm<Eigen::Infinity>()));
       norm_primal_ = std::max(norm_primal_, (Cdx_Cdu[t] - z_[t]).lpNorm<Eigen::Infinity>());
@@ -882,15 +891,17 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
     z_relaxed_.back() = alpha_ * Cdx_Cdu.back() + (1 - alpha_) * z_.back();
     auto ub = m_T->get_g_ub(); 
     auto lb = m_T->get_g_lb(); 
-    z_.back() = (z_relaxed_.back() + (y_.back().cwiseProduct(inv_rho_vec_.back())));
+    dual_cwise_prod = (y_.back().cwiseProduct(inv_rho_vec_.back()));
+    z_.back() = (z_relaxed_.back() + dual_cwise_prod);
     z_.back() = z_.back().cwiseMax(lb - d_T->g).cwiseMin(ub - d_T->g);
 
     if (update_y){
-      y_.back() = y_.back() + rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
+      y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
     }
     dx_.back() = dxtilde_.back();
 
-    dual_vecx = d_T->Gx.transpose() * rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
+    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
+    dual_vecx = d_T->Gx.transpose() * dual_cwise_prod;
 
     norm_dual_ = std::max(norm_dual_, dual_vecx.lpNorm<Eigen::Infinity>());
     norm_primal_ = std::max(norm_primal_, (Cdx_Cdu.back() - z_.back()).lpNorm<Eigen::Infinity>());
