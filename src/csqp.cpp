@@ -764,8 +764,9 @@ void SolverCSQP::backwardPass_without_rho_update() {
   Vx_.back() = d_T->Lx - sigma_ * dx_.back();
 
   if (m_T->get_ng()){ // constraint model
-    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back());
-    Vx_.back().noalias() += d_T->Gx.transpose() * (y_.back() - dual_cwise_prod);
+    dual_cwise_prod = y_.back();
+    dual_cwise_prod.noalias() -= rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back().noalias() += d_T->Gx.transpose() * dual_cwise_prod;
   }
 
   // if (!is_feasible_) {
@@ -777,15 +778,17 @@ void SolverCSQP::backwardPass_without_rho_update() {
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-    Vx_tmp = Vx_[t + 1] + Vxx_[t+1] * fs_[t+1];
+    Vx_tmp.noalias() = Vxx_[t+1] * fs_[t+1];
+    Vx_tmp.noalias() += Vx_[t + 1];
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     START_PROFILER("SolverCSQP::Qx");
     Qx_[t] = d->Lx - sigma_ * dx_[t];
 
     if (t > 0 && nc != 0){ //constraint model
-      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
-      Qx_[t].noalias() += d->Gx.transpose() * (y_[t] - dual_cwise_prod);
+      dual_cwise_prod = y_[t]; 
+      dual_cwise_prod.noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+      Qx_[t].noalias() += d->Gx.transpose() * dual_cwise_prod;
     }
 
     Qx_[t].noalias() += d->Fx.transpose() * Vx_tmp;
@@ -795,8 +798,9 @@ void SolverCSQP::backwardPass_without_rho_update() {
       START_PROFILER("SolverCSQP::Qu");
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0){ //constraint model
-        dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
-        Qu_[t].noalias() += d->Gu.transpose() * (y_[t] - dual_cwise_prod);
+        dual_cwise_prod = y_[t]; 
+        dual_cwise_prod.noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+        Qu_[t].noalias() += d->Gu.transpose() * dual_cwise_prod;
       }
 
       Qu_[t].noalias() += d->Fu.transpose() * Vx_tmp;
