@@ -21,8 +21,12 @@ target_link_libraries(
                                   example-robot-data::example-robot-data)
 
 add_unit_test(test_solvers test_solvers.cpp)
+add_unit_test(test_sqp test_sqp.cpp)
 target_link_libraries(test_solvers PUBLIC ${PROJECT_NAME}_unittest)
+target_link_libraries(test_sqp PUBLIC ${PROJECT_NAME}_unittest)
 
+add_executable(timings timings.cpp)
+target_link_libraries(timings PUBLIC ${PROJECT_NAME})
 
 # if(BUILD_PYTHON_INTERFACE)
 #   add_subdirectory(python)
