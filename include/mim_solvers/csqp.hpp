@@ -63,7 +63,7 @@ class SolverCSQP : public SolverDDP {
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
                      const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR, const std::size_t maxiter = 100,
-                     const bool is_feasible = false, const double regInit = 1e-9);
+                     const bool is_feasible = false, const double regInit = NAN);
 
   /**
    * @copybrief SolverAbstract::expectedImprovement
@@ -255,6 +255,8 @@ class SolverCSQP : public SolverDDP {
   double th_acceptnegstep_;                                   //!< Threshold used for accepting step along ascent direction
   Eigen::VectorXd dual_vecx;
   Eigen::VectorXd dual_vecu;
+  Eigen::VectorXd dual_cwise_prod;
+  Eigen::VectorXd Vx_tmp;
 
   Eigen::MatrixXd sigma_diag_x;                // This is the sigma * eye(ndx)
   std::vector<Eigen::MatrixXd> sigma_diag_u;   // This is the sigma * eye(nu)

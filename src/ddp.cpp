@@ -67,11 +67,11 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
   setCandidate(init_xs, init_us, is_feasible);
 
   if (std::isnan(reginit)) {
-    xreg_ = reg_min_;
-    ureg_ = reg_min_;
+    preg_ = reg_min_;
+    dreg_ = reg_min_;
   } else {
-    xreg_ = reginit;
-    ureg_ = reginit;
+    preg_ = reginit;
+    dreg_ = reginit;
   }
   was_feasible_ = false;
 
@@ -83,7 +83,7 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
       } catch (std::exception& e) {
         recalcDiff = false;
         increaseRegularization();
-        if (xreg_ == reg_max_) {
+        if (preg_ == reg_max_) {
           return false;
         } else {
           continue;
@@ -129,7 +129,7 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     }
     if (steplength_ <= th_stepinc_) {
       increaseRegularization();
-      if (xreg_ == reg_max_) {
+      if (preg_ == reg_max_) {
         STOP_PROFILER("SolverDDP::solve");
         return false;
       }
@@ -256,8 +256,8 @@ void SolverDDP::backwardPass() {
   Vxx_.back() = d_T->Lxx;
   Vx_.back() = d_T->Lx;
 
-  if (!std::isnan(xreg_)) {
-    Vxx_.back().diagonal().array() += xreg_;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   if (!is_feasible_) {
@@ -295,8 +295,8 @@ void SolverDDP::backwardPass() {
       Qxu_[t] = d->Lxu;
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
       STOP_PROFILER("SolverDDP::Qxu");
-      if (!std::isnan(ureg_)) {
-        Quu_[t].diagonal().array() += ureg_;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
     }
 
@@ -314,8 +314,8 @@ void SolverDDP::backwardPass() {
     Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
     Vxx_[t] = Vxx_tmp_;
 
-    if (!std::isnan(xreg_)) {
-      Vxx_[t].diagonal().array() += xreg_;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
 
     // Compute and store the Vx gradient at end of the interval (rollout state)
@@ -406,19 +406,19 @@ void SolverDDP::computeGains(const std::size_t t) {
 }
 
 void SolverDDP::increaseRegularization() {
-  xreg_ *= reg_incfactor_;
-  if (xreg_ > reg_max_) {
-    xreg_ = reg_max_;
+  preg_ *= reg_incfactor_;
+  if (preg_ > reg_max_) {
+    preg_ = reg_max_;
   }
-  ureg_ = xreg_;
+  dreg_ = preg_;
 }
 
 void SolverDDP::decreaseRegularization() {
-  xreg_ /= reg_decfactor_;
-  if (xreg_ < reg_min_) {
-    xreg_ = reg_min_;
+  preg_ /= reg_decfactor_;
+  if (preg_ < reg_min_) {
+    preg_ = reg_min_;
   }
-  ureg_ = xreg_;
+  dreg_ = preg_;
 }
 
 void SolverDDP::allocateData() {
