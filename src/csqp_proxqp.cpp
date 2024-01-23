@@ -163,6 +163,9 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
     // KKT termination criteria
     if(use_kkt_criteria_){
       if (KKT_  <= termination_tol_) {
+        if(with_callbacks_){
+          printCallbacks();
+        }
         STOP_PROFILER("SolverPROXQP::solve");
         return true;
       }
@@ -488,11 +491,19 @@ void SolverPROXQP::printCallbacks(){
     std::cout << "iter     merit        cost         grad       step     ||gaps||       KKT       Constraint Norms    QP Iters";
     std::cout << std::endl;
   }
-  std::cout << std::setw(4) << this->get_iter() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::setw(4) << "END" << "  ";
+  } else {
+    std::cout << std::setw(4) << this->get_iter()+1 << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_merit() << "  ";
   std::cout << std::scientific << std::setprecision(5) << this->get_cost() << "  ";
   std::cout << this->get_xgrad_norm() + this->get_ugrad_norm() << "  ";
-  std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::fixed << std::setprecision(4) << " ---- " << "  ";
+  } else {
+    std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_gap_norm() << "  ";
   std::cout << std::scientific << std::setprecision(5) << KKT_ << "    ";
   std::cout << std::scientific << std::setprecision(5) << constraint_norm_ << "         ";

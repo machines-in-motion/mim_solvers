@@ -257,9 +257,11 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     solver_cast->set_termination_tolerance(1e-4);
     solver_cast->set_eps_rel(0.);
     solver_cast->set_eps_abs(1e-8);
-    // solver_cast->set_max_qp_iters(1e4);
+    solver_cast->set_max_qp_iters(1e4);
     solver_cast->setCallbacks(true);
     solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 10);
+    std::cout << "kkt = " << solver_cast->get_KKT() << std::endl;
+    std::cout << "tol = " <<  solver_cast->get_termination_tolerance() << std::endl;
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
     break;
