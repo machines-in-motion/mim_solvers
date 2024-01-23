@@ -16,6 +16,9 @@
 
 #include <crocoddyl/core/solver-base.hpp>
 
+#include "mim_solvers/csqp.hpp"
+#include "mim_solvers/sqp.hpp"
+// #include "mim_solvers/cs.hpp"
 #include "problem.hpp"
 
 namespace mim_solvers {

@@ -38,7 +38,8 @@ DAMPointMass1D::DAMPointMass1D(const std::size_t ng,
   isTerminal_ = isTerminal;
   isInitial_ = isInitial;
   // Cost and dynamics parameters
-  gravity_ = Eigen::Vector2d(0,-9.81);
+  gravity_.resize(1);
+  gravity_ << -9.81;
   x_weights_terminal_ = Eigen::Vector2d(200.,10.);
   // Set constraints bounds
   has_x_cstr_ = false;
@@ -140,13 +141,9 @@ void DAMPointMass1D::costCalcDiff(const boost::shared_ptr<DifferentialActionData
       data->Lx[0] = x[0] - 1.;
       data->Lx[1] = x[1];
       data->Lu[0] = u[0];
-      data->Lu[1] = u[1];
-      data->Lxx(0,0) = 1.; 
-      data->Lxx(1,1) = 1.; 
-      data->Luu(0,0) = 1.;
+      data->Lxx.setIdentity(); 
+      data->Luu.setIdentity();
   }
-  data->Luu.setZero();
-  data->Lxu.setZero();
 }
 
 void DAMPointMass1D::constraintCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
@@ -305,12 +302,14 @@ void DAMPointMass2D::costCalc(const boost::shared_ptr<DifferentialActionDataAbst
                               const Eigen::Ref<const VectorXd>& x, 
                               const Eigen::Ref<const VectorXd>& u){
   if(isTerminal_){
-    data->cost = 0.5*pow(x_weights_terminal_[0]*(x[0] - 1.0), 2);
+    data->cost = 0.5*pow(x_weights_terminal_[0]*(x[0] - 1.0), 2); 
     data->cost += 0.5*pow(x_weights_terminal_[1]*x[1], 2);
+    data->cost += 0.5*pow(x_weights_terminal_[2]*x[2], 2);
+    data->cost += 0.5*pow(x_weights_terminal_[3]*x[3], 2);
   } 
   else {
-    data->cost = 0.5*pow((x[0] - 1.0), 2) + pow(x[1],2); 
-    data->cost += 0.5*pow(u[0], 2); 
+    data->cost = 0.5*pow((x[0] - 1.0), 2) + pow(x[1],2) + pow(x[2],2) + pow(x[3],2);  
+    data->cost += 0.5*pow(u[0], 2) + 0.5*pow(u[1], 2); 
   }
 }
 
@@ -323,20 +322,23 @@ void DAMPointMass2D::costCalcDiff(const boost::shared_ptr<DifferentialActionData
   if(isTerminal_){
       data->Lx[0] = x_weights_terminal_[0] * (x[0] - 1.);
       data->Lx[1] = x_weights_terminal_[1] * x[1];
+      data->Lx[2] = x_weights_terminal_[2] * x[2];
+      data->Lx[3] = x_weights_terminal_[3] * x[3];
       data->Lxx(0,0) = x_weights_terminal_[0];
       data->Lxx(1,1) = x_weights_terminal_[1];
+      data->Lxx(2,2) = x_weights_terminal_[2];
+      data->Lxx(3,3) = x_weights_terminal_[3];
   }
   else{
       data->Lx[0] = x[0] - 1.;
       data->Lx[1] = x[1];
+      data->Lx[2] = x[2];
+      data->Lx[3] = x[3];
       data->Lu[0] = u[0];
       data->Lu[1] = u[1];
-      data->Lxx(0,0) = 1.; 
-      data->Lxx(1,1) = 1.; 
-      data->Luu(0,0) = 1.;
+      data->Lxx.setIdentity(); 
+      data->Luu.setIdentity();
   }
-  data->Luu.setZero();
-  data->Lxu.setZero();
 }
 
 void DAMPointMass2D::constraintCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,

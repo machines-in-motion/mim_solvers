@@ -18,24 +18,29 @@
 #include "factory/solver.hpp"
 #include "unittest_common.hpp"
 
-// #include "mim_solvers/kkt.hpp"
-
 using namespace boost::unit_test;
 using namespace mim_solvers::unittest;
 
-// //____________________________________________________________________________//
+//____________________________________________________________________________//
 
 void test_solver_solutions(ProblemTypes::Type problem_type,
                            ModelTypes::Type model_type,
                            XConstraintType::Type x_cstr_type,
                            UConstraintType::Type u_cstr_type) {
   
-  // Create the kkt solver
+  const double TOL = 1e-6;
   SolverFactory factory;
-  factory.create(SolverTypes::SolverCSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
+  boost::shared_ptr<crocoddyl::SolverAbstract> solverCSQP = factory.create(SolverTypes::SolverCSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
   if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::None){
-    factory.create(SolverTypes::SolverSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
+    boost::shared_ptr<crocoddyl::SolverAbstract> solverSQP = factory.create(SolverTypes::SolverSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
+    solverCSQP->solve();
+    solverSQP->solve();
+    for(std::size_t t=0; t<solverCSQP->get_problem()->get_T(); t++){
+      BOOST_CHECK((solverCSQP->get_us()[t] - solverSQP->get_us()[t]).isZero(TOL));
+      BOOST_CHECK((solverCSQP->get_xs()[t] - solverSQP->get_xs()[t]).isZero(TOL));
+    }
   }
+
   // // define some aliases
   // const std::size_t ndx = kkt->get_ndx();
   // const std::size_t nu = kkt->get_nu();
@@ -49,7 +54,7 @@ void test_solver_solutions(ProblemTypes::Type problem_type,
   // BOOST_CHECK_EQUAL(kkt->get_xs().size(), T + 1);
 }
 
-// //____________________________________________________________________________//
+//____________________________________________________________________________//
 
 // void test_kkt_search_direction(ActionModelTypes::Type action_type, size_t T) {
 //   // Create the kkt solver
