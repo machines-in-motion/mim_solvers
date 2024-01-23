@@ -15,6 +15,7 @@
 #define MIM_SOLVERS_CONSTRAINTS_FACTORY_HPP_
 
 #include <vector>
+#include <ostream>
 
 namespace mim_solvers {
 namespace unittest {
@@ -39,6 +40,8 @@ struct XConstraintType {
   static const std::vector<Type> all;
 };
 
+std::ostream& operator<<(std::ostream& os, XConstraintType::Type type);
+
 struct UConstraintType {
   enum Type {
     AllEq,
@@ -56,6 +59,8 @@ struct UConstraintType {
   }
   static const std::vector<Type> all;
 };
+
+std::ostream& operator<<(std::ostream& os, UConstraintType::Type type);
 
 }  // namespace unittest
 }  // namespace mim_solvers

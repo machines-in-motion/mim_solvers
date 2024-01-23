@@ -13,18 +13,7 @@
 
 #include "model.hpp"
 
-// #include "crocoddyl/core/costs/residual.hpp"
-// #include "crocoddyl/core/residuals/control.hpp"
-// #include "crocoddyl/multibody/residuals/control-gravity.hpp"
-// #include "crocoddyl/multibody/residuals/state.hpp"
-// // #include "crocoddyl/multibody/residuals/centroidal-momentum.hpp"
-// #include "crocoddyl/core/activations/quadratic.hpp"
-// #include "crocoddyl/core/costs/cost-sum.hpp"
 #include "crocoddyl/core/utils/exception.hpp"
-// #include "crocoddyl/multibody/residuals/contact-friction-cone.hpp"
-// #include "crocoddyl/multibody/residuals/contact-wrench-cone.hpp"
-// #include "crocoddyl/multibody/residuals/frame-placement.hpp"
-// #include "crocoddyl/multibody/residuals/pair-collision.hpp"
 
 namespace mim_solvers {
 namespace unittest {

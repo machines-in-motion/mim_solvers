@@ -27,7 +27,7 @@ const std::vector<ProblemTypes::Type> ProblemTypes::all(
 std::ostream& operator<<(std::ostream& os, ProblemTypes::Type type) {
   switch (type) {
     case ProblemTypes::ShootingProblem:
-      os << "ShootingProblem";
+      os << "";
       break;
     // case ProblemTypes::ShootingProblem_Large:
     //   os << "ShootingProblem_Large";

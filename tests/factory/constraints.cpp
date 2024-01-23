@@ -24,19 +24,19 @@ const std::vector<XConstraintType::Type> XConstraintType::all(
 std::ostream& operator<<(std::ostream& os, XConstraintType::Type type) {
   switch (type) {
     case XConstraintType::AllEq:
-      os << "AllEq";
+      os << "X-Eq-All";
       break;
     case XConstraintType::AllIneq:
-      os << "AllIneq";
+      os << "X-Ineq-All";
       break;
     case XConstraintType::TermEq:
-      os << "TermEq";
+      os << "X-Eq-Term";
       break;
     case XConstraintType::TermIneq:
-      os << "TermIneq";
+      os << "X-Ineq-Term";
       break;
     case XConstraintType::None:
-      os << "None";
+      os << "X-None";
       break;
     case XConstraintType::NbXConstraintTypes:
       os << "NbXConstraintTypes";
@@ -53,13 +53,13 @@ const std::vector<UConstraintType::Type> UConstraintType::all(
 std::ostream& operator<<(std::ostream& os, UConstraintType::Type type) {
   switch (type) {
     case UConstraintType::AllEq:
-      os << "AllEq";
+      os << "U-Eq-All";
       break;
     case UConstraintType::AllIneq:
-      os << "AllIneq";
+      os << "U-Ineq-All";
       break;
     case UConstraintType::None:
-      os << "None";
+      os << "U-None";
       break;
     case UConstraintType::NbUConstraintTypes:
       os << "NbUConstraintTypes";

@@ -228,34 +228,60 @@ void test_csqp_core(){
   }
 #endif
 
-// //____________________________________________________________________________//
-// void test_solver_convergence(SolverTypes::Type solver_type,
-//                              ProblemTypes::Type problem_type,
-//                              ModelTypes::Type model_type,
-//                              XConstraintType::Type x_cstr_type,
-//                              UConstraintType::Type u_cstr_type) {
+//____________________________________________________________________________//
+void test_solver_convergence(SolverTypes::Type solver_type,
+                             ProblemTypes::Type problem_type,
+                             ModelTypes::Type model_type,
+                             XConstraintType::Type x_cstr_type,
+                             UConstraintType::Type u_cstr_type) {
   
-//   SolverFactory factory;
-//   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
+  SolverFactory factory;
+  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
   
-//   solver->solve();
+  // solver->setCallbacks(true);
+  // solver->solve();
 
-//   BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+  // BOOST_CHECK_EQUAL(solver->get_iter(), 1);
 
-//   // need to cast to get residual and tolerance
-//   switch (solver_type)
-//   {
-//   case SolverTypes::SolverSQP:
-//     boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
-//     break;
-//   case SolverTypes::SolverCSQP:
-  
-//   default:
-//     break;
-//   }
-//   BOOST_CHECK(solverCSQP_cast->get_KKT() <= solverCSQP_cast->get_termination_tolerance());
-
-// }
+  // need to cast to get residual and tolerance
+  switch (solver_type)
+  {
+  case SolverTypes::SolverSQP:
+  {
+    boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
+    solver_cast->set_termination_tolerance(1e-4);
+    solver_cast->setCallbacks(true);
+    solver_cast->solve();
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    break;
+  }
+  case SolverTypes::SolverCSQP:
+  {
+    boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
+    solver_cast->set_termination_tolerance(1e-4);
+    solver_cast->set_eps_rel(0.);
+    solver_cast->set_eps_abs(1e-6);
+    solver_cast->set_max_qp_iters(1e4);
+    solver_cast->setCallbacks(true);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 2);
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    break;
+  }
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  case SolverTypes::SolverPROXQP:
+  {
+    boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    break;
+  }
+#endif
+  default:
+    std::cerr << "Error: Unknown solver type" << std::endl; 
+    break;
+  }
+}
 
 // //____________________________________________________________________________//
 
@@ -386,19 +412,19 @@ void register_csqp_core_test() {
 
 //____________________________________________________________________________//
 
-//____________________________________________________________________________//
 
-// void register_solvers_test(ProblemTypes::Type problem_type,
-//                               ModelTypes::Type model_type,
-//                               XConstraintType::Type x_cstr_type,
-//                               UConstraintType::Type u_cstr_type) {
-//   boost::test_tools::output_test_stream test_name;
-//   test_name << "test_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type;
-//   test_suite* ts = BOOST_TEST_SUITE(test_name.str());
-//   std::cout << "Running " << test_name.str() << std::endl;
-//   ts->add(BOOST_TEST_CASE(boost::bind(&test_solver_convergence, problem_type, model_type, x_cstr_type, u_cstr_type)));
-//   framework::master_test_suite().add(ts);
-// }
+void register_convergence_test(SolverTypes::Type solver_type,
+                               ProblemTypes::Type problem_type,
+                               ModelTypes::Type model_type,
+                               XConstraintType::Type x_cstr_type,
+                               UConstraintType::Type u_cstr_type) {
+  boost::test_tools::output_test_stream test_name;
+  test_name << "test_" << solver_type << "_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type;
+  test_suite* ts = BOOST_TEST_SUITE(test_name.str());
+  std::cout << "Running " << test_name.str() << std::endl;
+  ts->add(BOOST_TEST_CASE(boost::bind(&test_solver_convergence, solver_type, problem_type, model_type, x_cstr_type, u_cstr_type)));
+  framework::master_test_suite().add(ts);
+}
 
 //____________________________________________________________________________//
 
@@ -412,21 +438,34 @@ bool init_function() {
 #endif
 
 
-  // // Test solvers convergence test 
-  // for (size_t i_pb = 0; i_pb < ProblemTypes::all.size(); ++i_pb) {
-  //   for (size_t i_md = 0; i_md < ModelTypes::all.size(); ++i_md) {
-  //     register_sqp_test(ProblemTypes::all[i_pb],
-  //                                   ModelTypes::all[i_md]);
-  //     for (size_t i_xc = 0; i_xc < XConstraintType::all.size(); ++i_xc) {
-  //       for (size_t i_uc = 0; i_uc < UConstraintType::all.size(); ++i_uc) {
-  //         register_csqp_convergence_test(ProblemTypes::all[i_pb],
-  //                                        ModelTypes::all[i_md],
-  //                                        XConstraintType::all[i_xc],
-  //                                        UConstraintType::all[i_uc]);
-  //       }
-  //     }
-  //   }
-  // }
+  // Test solvers convergence test 
+  for (size_t i_pb = 0; i_pb < ProblemTypes::all.size(); ++i_pb) {
+    for (size_t i_md = 0; i_md < ModelTypes::all.size(); ++i_md) {
+      if(ModelTypes::all[i_md] != ModelTypes::PointMass1D){
+        // Unconstrained problems only (SQP)
+        register_convergence_test(SolverTypes::SolverSQP,
+                                      ProblemTypes::all[i_pb],
+                                      ModelTypes::all[i_md],
+                                      XConstraintType::None,
+                                      UConstraintType::None);
+        // Unconstrained AND Constrained problems (CSQP, PROXQP)
+        for (size_t i_xc = 0; i_xc < XConstraintType::all.size(); ++i_xc) {
+          for (size_t i_uc = 0; i_uc < UConstraintType::all.size(); ++i_uc) {
+              register_convergence_test(SolverTypes::SolverCSQP,
+                                            ProblemTypes::all[i_pb],
+                                            ModelTypes::all[i_md],
+                                            XConstraintType::all[i_xc],
+                                            UConstraintType::all[i_uc]);
+              register_convergence_test(SolverTypes::SolverPROXQP,
+                                            ProblemTypes::all[i_pb],
+                                            ModelTypes::all[i_md],
+                                            XConstraintType::all[i_xc],
+                                            UConstraintType::all[i_uc]);
+          }
+        }
+      }
+    }
+  }
 
   return true;
 

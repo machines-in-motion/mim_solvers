@@ -72,25 +72,13 @@ class DAMPointMass1D
     void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x,
               const Eigen::Ref<const VectorXd>& u);
+    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+              const Eigen::Ref<const VectorXd>& x);
     void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x,
                   const Eigen::Ref<const VectorXd>& u);
-
-    // Cost & derivatives
-    void costCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                  const Eigen::Ref<const VectorXd>& x,
-                  const Eigen::Ref<const VectorXd>& u);
-    void costCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                      const Eigen::Ref<const VectorXd>& x,
-                      const Eigen::Ref<const VectorXd>& u); 
-
-    // Constraint & derivatives
-    void constraintCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                        const Eigen::Ref<const VectorXd>& x,
-                        const Eigen::Ref<const VectorXd>& u);
-    void constraintCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                            const Eigen::Ref<const VectorXd>& x,
-                            const Eigen::Ref<const VectorXd>& u); 
+    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                  const Eigen::Ref<const VectorXd>& x);
 
     virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
     virtual bool checkData(const boost::shared_ptr<DifferentialActionDataAbstract>& data);
@@ -103,6 +91,7 @@ class DAMPointMass1D
     using DAMBase::nh_;  //!< Number of equality constraints
     VectorXd gravity_;
     VectorXd x_weights_terminal_;
+    VectorXd target_;
   
     boost::shared_ptr<StateAbstract> state_;  //!< Model of the state
     using DAMBase::g_lb_;            //!< Lower bound of the inequality constraints
@@ -175,25 +164,13 @@ class DAMPointMass2D
     void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x,
               const Eigen::Ref<const VectorXd>& u);
+    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+              const Eigen::Ref<const VectorXd>& x);
     void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x,
                   const Eigen::Ref<const VectorXd>& u);
-
-    // Cost & derivatives
-    void costCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                  const Eigen::Ref<const VectorXd>& x,
-                  const Eigen::Ref<const VectorXd>& u);
-    void costCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                      const Eigen::Ref<const VectorXd>& x,
-                      const Eigen::Ref<const VectorXd>& u); 
-
-    // Constraint & derivatives
-    void constraintCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                        const Eigen::Ref<const VectorXd>& x,
-                        const Eigen::Ref<const VectorXd>& u);
-    void constraintCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
-                            const Eigen::Ref<const VectorXd>& x,
-                            const Eigen::Ref<const VectorXd>& u); 
+    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                  const Eigen::Ref<const VectorXd>& x);
 
     virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
     virtual bool checkData(const boost::shared_ptr<DifferentialActionDataAbstract>& data);
@@ -206,6 +183,7 @@ class DAMPointMass2D
     using DAMBase::nh_;  //!< Number of equality constraints
     VectorXd gravity_;
     VectorXd x_weights_terminal_;
+    VectorXd target_;
   
     boost::shared_ptr<StateAbstract> state_;  //!< Model of the state
     using DAMBase::g_lb_;            //!< Lower bound of the inequality constraints
