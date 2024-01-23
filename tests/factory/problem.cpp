@@ -75,7 +75,7 @@ boost::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
   switch (problem_type)
   {
   case ProblemTypes::ShootingProblem:
-    T = 10;
+    T = 100;
     DT = 0.1;
     break;
 //   case ProblemTypes::ShootingProblem_Large:
@@ -88,14 +88,16 @@ boost::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
   }
 
   // Construct OCP 
-  bool isInitial = true;
+  bool isInitial;
   for(std::size_t t=0; t<T; t++){
-      if(t > 0){
-          isInitial = false;
+      if(t == 0){
+        isInitial = true;
+      } else {
+        isInitial = false;
       }
       IAMs.push_back(boost::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, false), DT));
   }
-  IAMt = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, false), 0.);
+  IAMt = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, true), 0.);
   problem = boost::make_shared<crocoddyl::ShootingProblem>(x0, IAMs, IAMt);
   
   return problem;

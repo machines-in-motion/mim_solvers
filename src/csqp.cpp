@@ -98,7 +98,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
           }
           else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
-              inv_rho_vec_[t][k] = rho_sparse_;
+              inv_rho_vec_[t][k] = 1/rho_sparse_;
 
           }
         }

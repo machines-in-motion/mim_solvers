@@ -30,7 +30,7 @@ void test_sqp_core(){
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverSQP, 
                                                                        ProblemTypes::ShootingProblem, 
-                                                                       ModelTypes::PointMass1D, 
+                                                                       ModelTypes::PointMass2D, 
                                                                        XConstraintType::None, 
                                                                        UConstraintType::None);
   // Downcast
@@ -77,7 +77,7 @@ void test_csqp_core(){
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverCSQP, 
                                                                        ProblemTypes::ShootingProblem, 
-                                                                       ModelTypes::PointMass1D, 
+                                                                       ModelTypes::PointMass2D, 
                                                                        XConstraintType::AllIneq, 
                                                                        UConstraintType::AllEq);
   // Downcast
@@ -172,7 +172,7 @@ void test_csqp_core(){
     SolverFactory factory;
     boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverPROXQP, 
                                                                         ProblemTypes::ShootingProblem, 
-                                                                        ModelTypes::PointMass1D, 
+                                                                        ModelTypes::PointMass2D, 
                                                                         XConstraintType::AllIneq, 
                                                                         UConstraintType::AllEq);
     // Downcast
@@ -237,11 +237,6 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
-  
-  // solver->setCallbacks(true);
-  // solver->solve();
-
-  // BOOST_CHECK_EQUAL(solver->get_iter(), 1);
 
   // need to cast to get residual and tolerance
   switch (solver_type)
@@ -251,7 +246,7 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
     solver_cast->set_termination_tolerance(1e-4);
     solver_cast->setCallbacks(true);
-    solver_cast->solve();
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 10);
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
     break;
@@ -261,10 +256,10 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
     solver_cast->set_termination_tolerance(1e-4);
     solver_cast->set_eps_rel(0.);
-    solver_cast->set_eps_abs(1e-6);
-    solver_cast->set_max_qp_iters(1e4);
+    solver_cast->set_eps_abs(1e-8);
+    // solver_cast->set_max_qp_iters(1e4);
     solver_cast->setCallbacks(true);
-    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 2);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 10);
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
     break;
@@ -273,6 +268,12 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   case SolverTypes::SolverPROXQP:
   {
     boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    solver_cast->set_termination_tolerance(1e-4);
+    solver_cast->set_eps_abs(1e-8);
+    solver_cast->set_max_qp_iters(1e4);
+    solver_cast->setCallbacks(true);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 2);
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
     break;
   }

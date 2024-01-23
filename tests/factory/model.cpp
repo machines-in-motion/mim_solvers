@@ -84,7 +84,13 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
       if(u_eq || u_ineq){
         ng_u = 1;
       }
-      ng = ng_x + ng_u;
+      if(isTerminal){
+        ng = ng_x;
+      } else if(isInitial) {
+        ng = ng_u;
+      } else {
+        ng = ng_x + ng_u;
+      }
       model = boost::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     case ModelTypes::PointMass2D:
@@ -94,7 +100,13 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
       if(u_eq || u_ineq){
         ng_u = 2;
       }
-      ng = ng_x + ng_u;
+      if(isTerminal){
+        ng = ng_x;
+      } else if(isInitial) {
+        ng = ng_u;
+      } else {
+        ng = ng_x + ng_u;
+      }
       model = boost::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     default:
