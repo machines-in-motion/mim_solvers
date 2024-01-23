@@ -14,17 +14,15 @@
 #ifndef MIM_SOLVERS_SOLVER_FACTORY_HPP_
 #define MIM_SOLVERS_SOLVER_FACTORY_HPP_
 
-#include "crocoddyl/action.hpp"
 #include <crocoddyl/core/solver-base.hpp>
+
+#include "problem.hpp"
 
 namespace mim_solvers {
 namespace unittest {
 
 struct SolverTypes {
   enum Type {
-    SolverKKT,
-    SolverDDP,
-    SolverFDDP,
     SolverSQP,
     SolverCSQP,
     SolverPROXQP,
@@ -56,8 +54,11 @@ class SolverFactory {
   ~SolverFactory();
 
   boost::shared_ptr<crocoddyl::SolverAbstract> create(
-      SolverTypes::Type solver_type, ActionModelTypes::Type action_type,
-      size_t T) const;
+      SolverTypes::Type solver_type, 
+      ProblemTypes::Type problem_type,
+      ModelTypes::Type model_type,
+      XConstraintType::Type x_cstr_type,
+      UConstraintType::Type u_cstr_type) const;
 };
 
 }  // namespace unittest

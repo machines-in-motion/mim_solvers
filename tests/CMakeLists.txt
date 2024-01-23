@@ -1,10 +1,14 @@
 set(${PROJECT_NAME}_FACTORY_TEST
-  # factory/solver.hpp
-  # factory/solver.cpp
-  # factory/model.hpp
-  # factory/model.cpp
+  factory/constraints.hpp
+  factory/constraints.cpp
   factory/point-mass.hpp
   factory/point-mass.cpp
+  factory/model.hpp
+  factory/model.cpp
+  factory/problem.hpp
+  factory/problem.cpp
+  factory/solver.hpp
+  factory/solver.cpp
   )
 
 add_library(${PROJECT_NAME}_unittest SHARED ${${PROJECT_NAME}_FACTORY_TEST})

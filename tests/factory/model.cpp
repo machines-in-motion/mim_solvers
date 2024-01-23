@@ -20,7 +20,7 @@
 // // #include "crocoddyl/multibody/residuals/centroidal-momentum.hpp"
 // #include "crocoddyl/core/activations/quadratic.hpp"
 // #include "crocoddyl/core/costs/cost-sum.hpp"
-// #include "crocoddyl/core/utils/exception.hpp"
+#include "crocoddyl/core/utils/exception.hpp"
 // #include "crocoddyl/multibody/residuals/contact-friction-cone.hpp"
 // #include "crocoddyl/multibody/residuals/contact-wrench-cone.hpp"
 // #include "crocoddyl/multibody/residuals/frame-placement.hpp"
@@ -57,47 +57,61 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type,
-      bool is_terminal) const {
+      bool isInitial,
+      bool isTerminal) const {
   
+  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> model;
+
+  bool x_eq = false;
+  bool x_ineq = false;
+  bool u_eq = false;
+  bool u_ineq = false;
+
+  // state equality constraint
+  if((x_cstr_type==XConstraintType::AllEq && isInitial==false) || (x_cstr_type==XConstraintType::TermEq && isTerminal==true)){
+    x_eq = true;
+  }
+  // state inequality constraint
+  if((x_cstr_type==XConstraintType::AllIneq && isInitial==false) || (x_cstr_type==XConstraintType::TermIneq && isTerminal==true)){
+    x_ineq = true;
+  } 
+  // control equality constraint
+  if(u_cstr_type==UConstraintType::AllEq && isTerminal==false){
+    u_eq = true;
+  }
+  // control inequality constraint
+  if(u_cstr_type==UConstraintType::AllIneq && isTerminal==false){
+    u_ineq = true;
+  }
+
+  std::size_t ng_x = 0;
+  std::size_t ng_u = 0;
+  std::size_t ng = 0;
   switch(model_type) {
     case ModelTypes::PointMass1D:
-      // create point mass 1D DAM
-      model = boost::make_shared<DAMPointMass1D>();
+      if(x_eq || x_ineq){
+        ng_x = 2;
+      }
+      if(u_eq || u_ineq){
+        ng_u = 1;
+      }
+      ng = ng_x + ng_u;
+      model = boost::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     case ModelTypes::PointMass2D:
-      // Create point mass 2D
-      model = boost::make_shared<DAMPointMass2D>(is_terminal);
+      if(x_eq || x_ineq){
+        ng_x = 4;
+      }
+      if(u_eq || u_ineq){
+        ng_u = 2;
+      }
+      ng = ng_x + ng_u;
+      model = boost::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     default:
       throw_pretty(__FILE__ ": Wrong ModelTypes::Type given");
       break;
   }
-  std::size_t ng_x = 0;
-  std::size_t ng_u = 0;
-  // Create state equality constraint
-  if(x_cstr_type==XConstraintType::AllEq || (x_cstr_type==XConstraintType::TermEq && is_terminal==true)){
-    ng_x = 2
-    model->set_x_eq_cstr();
-  }
-  // Create state inequality constraint
-  if(x_cstr_type==XConstraintType::AllIneq || (x_cstr_type==XConstraintType::TermIneq && is_terminal==true)){
-    ng_x = 2
-    low, upper
-    model->set_x_ineq_cstr();
-  }
-  // Create control equality constraint
-  if(u_cstr_type==UConstraintType::AllEq && is_terminal==false){
-    ng_u = 1
-    model->set_u_eq_cstr();
-  }
-  // Create control inequality constraint
-  if(u_cstr_type==UConstraintType::AllIneq && is_terminal==false){
-    std::cout
-    // ng_u = 1
-    // model->set_u_ineq_cstr();
-  }
-  std::size_t ng = ng_x + ng_u;
-
   return model;
 }
 

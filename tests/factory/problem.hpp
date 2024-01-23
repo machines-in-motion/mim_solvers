@@ -11,25 +11,26 @@
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
 
-#ifndef MIM_SOLVERS_MODEL_FACTORY_HPP_
-#define MIM_SOLVERS_MODEL_FACTORY_HPP_
+#ifndef MIM_SOLVERS_PROBLEM_FACTORY_HPP_
+#define MIM_SOLVERS_PROBLEM_FACTORY_HPP_
 
-#include "constraints.hpp"
-#include "point-mass.hpp"
+#include <crocoddyl/core/optctrl/shooting.hpp>
+
+#include "model.hpp"
 
 namespace mim_solvers {
 namespace unittest {
 
-struct ModelTypes {
+struct ProblemTypes {
   enum Type {
-    PointMass1D,
-    PointMass2D,
-    NbModelTypes
+    ShootingProblem,
+    // ShootingProblem_Large,
+    NbProblemTypes
   };
   static std::vector<Type> init_all() {
     std::vector<Type> v;
-    v.reserve(NbModelTypes);
-    for (int i = 0; i < NbModelTypes; ++i) {
+    v.reserve(NbProblemTypes);
+    for (int i = 0; i < NbProblemTypes; ++i) {
       v.push_back((Type)i);
     }
     return v;
@@ -37,30 +38,23 @@ struct ModelTypes {
   static const std::vector<Type> all;
 };
 
-std::ostream& operator<<(std::ostream& os, ModelTypes::Type type);
+std::ostream& operator<<(std::ostream& os, ProblemTypes::Type type);
 
-class ModelFactory {
+class ProblemFactory {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  // typedef crocoddyl::MathBaseTpl<double> MathBase;
-  // typedef typename MathBase::Vector6s Vector6d;
+  explicit ProblemFactory();
+  ~ProblemFactory();
 
-  explicit ModelFactory();
-  ~ModelFactory();
-
-  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> create(
+  boost::shared_ptr<crocoddyl::ShootingProblem> create(
+      ProblemTypes::Type problem_type,
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,
-      UConstraintType::Type u_cstr_type,
-      bool isInitial,
-      bool isTerminal) const;
+      UConstraintType::Type u_cstr_type) const;
 };
 
-// boost::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
-//     StateModelTypes::Type state_type,
-//     std::size_t nu = std::numeric_limits<std::size_t>::max());
 }  // namespace unittest
 }  // namespace mim_solvers
 
-#endif  // MIM_SOLVERS_COST_FACTORY_HPP_
+#endif  // MIM_SOLVERS_ PROBLEM_FACTORY_HPP_

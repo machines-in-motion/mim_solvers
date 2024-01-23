@@ -15,6 +15,8 @@
 #define MIM_SOLVERS_POINT_MASS_HPP_
 
 #include <crocoddyl/core/diff-action-base.hpp>
+#include <crocoddyl/core/states/euclidean.hpp>
+#include "crocoddyl/core/fwd.hpp"
 
 
 namespace mim_solvers {
@@ -23,18 +25,12 @@ namespace unittest {
 struct DADPointMass1D
     : public crocoddyl::DifferentialActionDataAbstract {
   
-  typedef crocoddyl::DifferentialActionDataAbstractTpl<double> DADBase;
+  typedef crocoddyl::DifferentialActionDataAbstract DADBase;
   typedef typename Eigen::VectorXd VectorXd;
 
   template <class DAModel>
   explicit DADPointMass1D(DAModel* const model)
       : DADBase(model) {}
-    // Fx.leftCols(model->get_state()->get_nq()) = model->get_Fq();
-    // Fx.rightCols(model->get_state()->get_nv()) = model->get_Fv();
-    // Fu = model->get_Fu();
-    // Lxx = model->get_Lxx();
-    // Luu = model->get_Luu();
-    // Lxu = model->get_Lxu();
 
     using DADBase::xout;
     using DADBase::cost;
@@ -57,7 +53,7 @@ class DAMPointMass1D
     : public crocoddyl::DifferentialActionModelAbstract {
   
   public:
-    typedef crocoddyl::DifferentialActionModelAbstractTpl<double> DAMBase;
+    typedef crocoddyl::DifferentialActionModelAbstract DAMBase;
     typedef typename Eigen::VectorXd VectorXd;
 
     // Constructor
@@ -121,6 +117,107 @@ class DAMPointMass1D
 };
 
 
+
+
+
+
+
+
+
+
+struct DADPointMass2D
+    : public crocoddyl::DifferentialActionDataAbstract {
+  
+  typedef crocoddyl::DifferentialActionDataAbstract DADBase;
+  typedef typename Eigen::VectorXd VectorXd;
+
+  template <class DAModel>
+  explicit DADPointMass2D(DAModel* const model)
+      : DADBase(model) {}
+
+    using DADBase::xout;
+    using DADBase::cost;
+    using DADBase::r;
+    using DADBase::Fu;
+    using DADBase::Fx;
+    using DADBase::Lu;
+    using DADBase::Luu;
+    using DADBase::Lx;
+    using DADBase::Lxu;
+    using DADBase::Lxx;
+    using DADBase::g;
+    using DADBase::Gx;
+    using DADBase::Gu;
+    // (h,Hx,Hu) not used because our mim_solvers treat equalities as inequalities with lb=ub
+};
+
+
+class DAMPointMass2D 
+    : public crocoddyl::DifferentialActionModelAbstract {
+  
+  public:
+    typedef crocoddyl::DifferentialActionModelAbstract DAMBase;
+    typedef typename Eigen::VectorXd VectorXd;
+
+    // Constructor
+    DAMPointMass2D(const std::size_t ng,
+                   const bool x_eq,
+                   const bool x_ineq,
+                   const bool u_eq,
+                   const bool u_ineq,
+                   const bool isInitial,
+                   const bool isTerminal=false);
+    
+    // Destructor
+    virtual ~DAMPointMass2D();
+
+    // Cost & dynamics
+    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+              const Eigen::Ref<const VectorXd>& x,
+              const Eigen::Ref<const VectorXd>& u);
+    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                  const Eigen::Ref<const VectorXd>& x,
+                  const Eigen::Ref<const VectorXd>& u);
+
+    // Cost & derivatives
+    void costCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                  const Eigen::Ref<const VectorXd>& x,
+                  const Eigen::Ref<const VectorXd>& u);
+    void costCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                      const Eigen::Ref<const VectorXd>& x,
+                      const Eigen::Ref<const VectorXd>& u); 
+
+    // Constraint & derivatives
+    void constraintCalc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                        const Eigen::Ref<const VectorXd>& x,
+                        const Eigen::Ref<const VectorXd>& u);
+    void constraintCalcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+                            const Eigen::Ref<const VectorXd>& x,
+                            const Eigen::Ref<const VectorXd>& u); 
+
+    virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
+    virtual bool checkData(const boost::shared_ptr<DifferentialActionDataAbstract>& data);
+    virtual void print(std::ostream& os) const;
+
+  protected:
+    using DAMBase::nu_;  //!< Control dimension
+    using DAMBase::nr_;  //!< Dimension of the cost residual
+    using DAMBase::ng_;  //!< Number of inequality constraints
+    using DAMBase::nh_;  //!< Number of equality constraints
+    VectorXd gravity_;
+    VectorXd x_weights_terminal_;
+  
+    boost::shared_ptr<StateAbstract> state_;  //!< Model of the state
+    using DAMBase::g_lb_;            //!< Lower bound of the inequality constraints
+    using DAMBase::g_ub_;            //!< Lower bound of the inequality constraints
+    // VectorXs u_lb_;            //!< Lower control limits
+    // VectorXs u_ub_;            //!< Upper control limits
+    bool isTerminal_;
+    bool isInitial_;
+    bool has_x_cstr_;
+    bool has_u_cstr_;
+    bool no_cstr_;
+};
 
 
 }  // namespace unittest
