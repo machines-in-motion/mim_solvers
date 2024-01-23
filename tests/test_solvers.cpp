@@ -31,6 +31,8 @@ void test_solver_solutions(ProblemTypes::Type problem_type,
   const double TOL = 1e-6;
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solverCSQP = factory.create(SolverTypes::SolverCSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
+  
+  // Compare with constrained solver in the absence of constraints
   if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::None){
     boost::shared_ptr<crocoddyl::SolverAbstract> solverSQP = factory.create(SolverTypes::SolverSQP, problem_type, model_type, x_cstr_type, u_cstr_type);
     solverCSQP->solve();
@@ -39,19 +41,17 @@ void test_solver_solutions(ProblemTypes::Type problem_type,
       BOOST_CHECK((solverCSQP->get_us()[t] - solverSQP->get_us()[t]).isZero(TOL));
       BOOST_CHECK((solverCSQP->get_xs()[t] - solverSQP->get_xs()[t]).isZero(TOL));
     }
+    // Convergence in 1 iteration
+    BOOST_CHECK_EQUAL(solverSQP->get_iter(), 1);
+    // KKT residual is below termination tolerance
+    boost::shared_ptr<mim_solvers::SolverSQP> solverSQP_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solverSQP); 
+    BOOST_CHECK(solverSQP_cast->get_KKT() <= solverSQP_cast->get_termination_tolerance());
   }
+  
+  boost::shared_ptr<mim_solvers::SolverCSQP> solverCSQP_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solverCSQP); 
+  BOOST_CHECK_EQUAL(solverCSQP->get_iter(), 1);
+  BOOST_CHECK(solverCSQP_cast->get_KKT() <= solverCSQP_cast->get_termination_tolerance());
 
-  // // define some aliases
-  // const std::size_t ndx = kkt->get_ndx();
-  // const std::size_t nu = kkt->get_nu();
-
-  // // Test the different matrix sizes
-  // BOOST_CHECK_EQUAL(kkt->get_kkt().rows(), 2 * ndx + nu);
-  // BOOST_CHECK_EQUAL(kkt->get_kkt().cols(), 2 * ndx + nu);
-  // BOOST_CHECK_EQUAL(kkt->get_kktref().size(), 2 * ndx + nu);
-  // BOOST_CHECK_EQUAL(kkt->get_primaldual().size(), 2 * ndx + nu);
-  // BOOST_CHECK_EQUAL(kkt->get_us().size(), T);
-  // BOOST_CHECK_EQUAL(kkt->get_xs().size(), T + 1);
 }
 
 //____________________________________________________________________________//
