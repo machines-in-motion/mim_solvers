@@ -24,6 +24,9 @@ namespace mim_solvers {
 
 SolverFDDP::SolverFDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverDDP(problem), dg_(0), dq_(0), dv_(0), th_acceptnegstep_(2) {
+      std::cerr << "Warning: Do not use mim_solvers.SolverFDDP !!! " << std::endl;
+      std::cerr << "It may differ significantly from its Crocoddyl counterpart. " << std::endl;
+      std::cerr << "This class served only as a development tool and will be REMOVED in future releases." << std::endl;
       const std::size_t T = this->problem_->get_T();
       const std::size_t ndx = problem_->get_ndx();
       fs_try_.resize(T + 1);
