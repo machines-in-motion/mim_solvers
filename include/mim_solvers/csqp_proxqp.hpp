@@ -130,6 +130,7 @@ class SolverPROXQP : public SolverDDP {
   bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
+  double get_mu2() const { return mu2_; };
   double get_termination_tolerance() const { return termination_tol_; };
   int get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
@@ -141,6 +142,9 @@ class SolverPROXQP : public SolverDDP {
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
 
+  void set_mu(double mu) { mu_ = mu; };
+  void set_mu2(double mu2) { mu2_ = mu2; };
+  
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
@@ -196,8 +200,6 @@ class SolverPROXQP : public SolverDDP {
   double termination_tol_ = 1e-8;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
   bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
-  double sigma_ = 1e-6; // proximal term
-  double alpha_ = 1.6; // relaxed step size
   int max_qp_iters_ = 1000; // max qp iters
   int qp_iters_ = 0;
 
