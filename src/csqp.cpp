@@ -98,7 +98,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
           }
           else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
-              inv_rho_vec_[t][k] = rho_sparse_;
+              inv_rho_vec_[t][k] = 1/rho_sparse_;
 
           }
         }
@@ -860,9 +860,11 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       Cdx_Cdu[t].noalias() += d->Gu * dutilde_[t];
       z_relaxed_[t] = alpha_ * Cdx_Cdu[t] + (1 - alpha_) * z_[t];
 
+
       const auto ub = m->get_g_ub(); 
       const auto lb = m->get_g_lb();
       dual_cwise_prod = y_[t].cwiseProduct(inv_rho_vec_[t]);
+
       z_[t] = (z_relaxed_[t] + dual_cwise_prod);
       z_[t] = z_[t].cwiseMax(lb - d->g).cwiseMin(ub - d->g);
      
