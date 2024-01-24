@@ -18,7 +18,6 @@
 #include <Eigen/Cholesky>
 #include <crocoddyl/core/solver-base.hpp>
 #include <crocoddyl/core/mathbase.hpp>
-#include <crocoddyl/core/utils/deprecate.hpp>
 
 namespace mim_solvers {
 
