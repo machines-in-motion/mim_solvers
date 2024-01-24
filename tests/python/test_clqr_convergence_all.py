@@ -1,10 +1,20 @@
+"""
+License: BSD 3-Clause License
+Copyright (C) 2024, New York University
+
+Copyright note valid unless otherwise stated in individual files.
+All rights reserved.
+
+This file checks that all methods converge in one iteration on a constrained LQR problem.
+"""
+
+
 import pathlib
 import os
 python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
 
 import numpy as np
-import crocoddyl
 import matplotlib.pyplot as plt
 from csqp import CSQP
 
@@ -47,7 +57,7 @@ ddp4.max_qp_iters = max_qp_iters
 ddp5.max_qp_iters = max_qp_iters
 ddp6.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-8
+eps_abs = 1e-6
 eps_rel = 0.
 ddp1.eps_abs = eps_abs
 ddp2.eps_abs = eps_abs

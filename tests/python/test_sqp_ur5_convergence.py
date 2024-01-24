@@ -1,11 +1,14 @@
-"""__init__
-
+"""
 License: BSD 3-Clause License
-Copyright (C) 2023, New York University
+Copyright (C) 2024, New York University
 
 Copyright note valid unless otherwise stated in individual files.
 All rights reserved.
+
+This file checks that all methods converge to the same solution on the ur5 example.
 """
+
+
 import pathlib
 import os
 python_path = pathlib.Path('.').absolute().parent.parent/'python'

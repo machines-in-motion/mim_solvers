@@ -1,13 +1,20 @@
+"""
+License: BSD 3-Clause License
+Copyright (C) 2024, New York University
+
+Copyright note valid unless otherwise stated in individual files.
+All rights reserved.
+
+This file checks that all methods converge to the same solution on the taichi example.
+"""
+
+
 import pathlib
 import os
 python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
-import sys
-import crocoddyl
 import mim_solvers
 import numpy as np
-import example_robot_data
-import pinocchio as pin
 np.set_printoptions(precision=4, linewidth=180)
 from sqp_cpp import SQP_CPP
 from sqp import SQP

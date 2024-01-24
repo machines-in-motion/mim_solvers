@@ -1,11 +1,13 @@
-"""__init__
-
+"""
 License: BSD 3-Clause License
-Copyright (C) 2023, New York University
+Copyright (C) 2024, New York University
 
 Copyright note valid unless otherwise stated in individual files.
 All rights reserved.
+
+This file checks that the python and c++ csqp implementation match on ur5.
 """
+
 import pathlib
 import os
 python_path = pathlib.Path('.').absolute().parent.parent/'python'
