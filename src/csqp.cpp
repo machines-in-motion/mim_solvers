@@ -422,9 +422,12 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
         converged_ = true;
         break;
     }
-
-    // std::cout << "Iters " << iter << " res-primal " << norm_primal_ << " res-dual " << norm_dual_ << " optimal rho estimate " << rho_estimate_sparse_
-    //         << " rho " << rho_sparse_ << std::endl;
+    bool mybool1 = norm_primal_ <= eps_abs_ + eps_rel_ * norm_primal_rel_;
+    bool mybool2 = norm_dual_ <= eps_abs_ + eps_rel_ * norm_dual_rel_;
+    std::cout << mybool1 << std::endl; 
+    std::cout << mybool2 << std::endl;
+    std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " | norm_dual=" << norm_dual_ << " norm_primal_rel= " << norm_primal_rel_
+            << " norm_dual_rel=" << norm_dual_rel_ << std::endl;
   }
 
   if (!converged_){

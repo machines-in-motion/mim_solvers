@@ -77,7 +77,6 @@ DAMPointMass1D::DAMPointMass1D(const std::size_t ng,
       has_x_cstr_ = true;
     }
     if(x_ineq){
-      // std::numeric_limits<double>::infinity();
       g_lb_.head(state_->get_nx()) = Eigen::Vector2d(0., 0.);
       g_ub_.head(state_->get_nx()) = Eigen::Vector2d(0.4, 0.4);
       has_x_cstr_ = true;
@@ -276,7 +275,6 @@ DAMPointMass2D::DAMPointMass2D(const std::size_t ng,
       has_x_cstr_ = true;
     }
     if(x_ineq){
-      // std::numeric_limits<double>::infinity();
       g_lb_.head(state_->get_nx()) << -0.4, -0.4, -0.4, -0.4;
       g_ub_.head(state_->get_nx()) << 0.4, 0.4, 0.4, 0.4;
       has_x_cstr_ = true;
@@ -292,6 +290,10 @@ DAMPointMass2D::DAMPointMass2D(const std::size_t ng,
       has_u_cstr_ = true;
     }
   }
+  // if(no_cstr_ == true){
+  //   std::cerr << "g_lb_ =" << g_lb_ << std::endl;
+  //   std::cerr << "g_ub_ =" << g_ub_ << std::endl;
+  // }
 }
 
 

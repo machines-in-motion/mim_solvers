@@ -78,7 +78,7 @@ for t in range(T + 1):
         constraints.addConstraint("ee_bound", ee_contraint)
     # Create Differential action model
     running_DAM = crocoddyl.DifferentialActionModelFreeFwdDynamics(
-        state, actuation, runningCostModel, constraints
+        state, actuation, runningCostModel #, constraints
     )
     # Apply Euler integration
     running_model = crocoddyl.IntegratedActionModelEuler(running_DAM, dt)
