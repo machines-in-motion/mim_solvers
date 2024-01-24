@@ -11,19 +11,19 @@ import os
 import numpy as np
 import mim_solvers
 
-python_path = pathlib.Path('.').absolute().parent/'python'
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 print(python_path)
 os.sys.path.insert(1, str(python_path))
 
-from py_mim_solvers import SQP
+from sqp import SQP
 
 from problems import create_double_pendulum_problem, create_quadrotor_problem
 import pinocchio as pin
 
 # Solver params
-MAXITER     = 10
-TOL         = 1e-4 
-CALLBACKS   = True
+MAXITER     = 100
+TOL         = 1e-4
+with_callbacks   = True
 FILTER_SIZE = MAXITER
 
 # Create 1 solver of each type for each problem
@@ -41,13 +41,15 @@ for problem in problems:
     solverSQP.termination_tolerance  = TOL
     solverSQP.use_filter_line_search = True
     solverSQP.filter_size            = MAXITER
-    solverSQP.with_callbacks         = CALLBACKS
+    solverSQP.with_callbacks         = with_callbacks
     solverSQP.reg_min                = 0.0 # This turns of regularization completely. 
     reginit                          = 0.0
 
     # Create python solver
-    pysolverSQP = SQP(problem, VERBOSE = CALLBACKS)
+    pysolverSQP = SQP(problem, with_callbacks=with_callbacks)
     pysolverSQP.termination_tolerance  = TOL
+    pysolverSQP.use_filter_line_search  = True
+    pysolverSQP.filter_size  = MAXITER
 
     # SQP    
     solverSQP.xs = [x0] * (problem.T + 1)

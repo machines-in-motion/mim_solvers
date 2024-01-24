@@ -101,7 +101,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib"
 
 # Python Bindings
 if(BUILD_PYTHON_INTERFACE)
-  add_subdirectory(python)
+  add_subdirectory(bindings)
 endif()
 
 # Unit tests

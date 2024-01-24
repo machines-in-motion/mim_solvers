@@ -1,15 +1,15 @@
 import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
-
 import numpy as np
 from csqp import CSQP
-
 import mim_solvers
-from clqr_problem import create_clqr_problem
+from problems import create_clqr_problem
 
 LINE_WIDTH = 100
+
+print(" TEST Stagewise ADMM PROBLEM ".center(LINE_WIDTH, "-"))
 
 problem, xs_init, us_init = create_clqr_problem()
 

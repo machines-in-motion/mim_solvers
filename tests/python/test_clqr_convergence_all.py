@@ -1,6 +1,6 @@
 import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
 
 import numpy as np
@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from csqp import CSQP
 
 import mim_solvers
-from clqr_problem import create_clqr_problem
+from problems import create_clqr_problem
 
 LINE_WIDTH = 100
 

@@ -223,6 +223,11 @@ class SQP(SolverAbstract):
         for iter in range(maxiter):
             recalc = True   # this will recalculated derivatives in Compute Direction 
             self.computeDirection(recalc=recalc)
+
+            # self.check_optimality()
+            if self.KKT < self.termination_tolerance:
+                return True
+
             self.gap_list.append(self.gap_norm)
             self.cost_list.append(self.cost)
             alpha = 1.
@@ -250,9 +255,6 @@ class SQP(SolverAbstract):
 
                 alpha *= 0.5
 
-            # self.check_optimality()
-            if self.KKT < self.termination_tolerance:
-                return True
             
             if(self.with_callbacks):
                 print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))

@@ -8,7 +8,7 @@ All rights reserved.
 """
 import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
 import crocoddyl
 import numpy as np

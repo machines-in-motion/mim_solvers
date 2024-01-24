@@ -1,18 +1,17 @@
 import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
-
 import numpy as np
 import matplotlib.pyplot as plt
 from csqp import CSQP
-
-from clqr_problem import create_clqr_problem
+from problems import create_clqr_problem
 
 LINE_WIDTH = 100
 
-problem, xs_init, us_init = create_clqr_problem()
+print(" TEST OSQP ".center(LINE_WIDTH, "-"))
 
+problem, xs_init, us_init = create_clqr_problem()
 
 ddp1 = CSQP(problem, "CustomOSQP")
 ddp2 = CSQP(problem, "OSQP")
