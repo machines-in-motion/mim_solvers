@@ -120,7 +120,7 @@ class SolverPROXQP : public SolverDDP {
   const std::vector<Eigen::VectorXd>& get_y() const { return y_; };
   const std::vector<Eigen::VectorXd>& get_lag_mul() const { return lag_mul_; };
 
-  double get_KKT_norm() const { return KKT_; };
+  double get_KKT() const { return KKT_; };
   double get_gap_norm() const { return gap_norm_; };
   double get_constraint_norm() const { return constraint_norm_; };
   double get_qp_iters() const { return qp_iters_; };

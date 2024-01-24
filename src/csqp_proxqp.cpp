@@ -35,8 +35,6 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       lag_mul_.resize(T+1);
       y_.resize(T+1);
       du_.resize(T);
-      KKT_ = 0.;
-
       dx_.resize(T+1); 
       du_.resize(T);
 
@@ -349,6 +347,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   norm_primal_ = qp_.results.info.pri_res;
   norm_dual_ = qp_.results.info.dua_res;
 
+  // std::cout << "ProxQP iters " << qp_iters_ << " norm_primal=" << norm_primal_ << " norm_dual= " << norm_dual_ << std::endl;
   const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   x_grad_norm_ = 0; u_grad_norm_ = 0;
   double nin_count = 0;
