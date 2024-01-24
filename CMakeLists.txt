@@ -69,7 +69,6 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
-  include/${PROJECT_NAME}/timings.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES

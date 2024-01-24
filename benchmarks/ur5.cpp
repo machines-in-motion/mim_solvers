@@ -23,6 +23,7 @@
 
 #include "crocoddyl/core/costs/cost-sum.hpp"
 #include "crocoddyl/core/optctrl/shooting.hpp"
+#include "mim_solvers/timings.hpp"
 
 
 
@@ -130,9 +131,14 @@ int main(){
     solver.setCallbacks(true);
 
     const int max_iter = 100;
-    solver.solve(xs, us, max_iter);
 
-    std::cout << "all good" << std::endl;
+    mim_solvers::Timer timer;
+    timer.start();
+    solver.solve(xs, us, max_iter);
+    timer.stop();
+
+    std::cout << "Problem solved in : " << timer.elapsed().user << "milli-seconds" << std::endl;
+
 
     return 0;
 };
