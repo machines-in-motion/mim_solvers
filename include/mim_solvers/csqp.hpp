@@ -135,6 +135,7 @@ class SolverCSQP : public SolverDDP {
   bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
+  double get_mu2() const { return mu2_; };
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
@@ -150,6 +151,15 @@ class SolverCSQP : public SolverDDP {
 
   double get_eps_abs() { return eps_abs_;};
   double get_eps_rel() { return eps_rel_;};
+  double get_norm_primal() { return norm_primal_;};
+  double get_norm_primal_tolerance() { return norm_primal_tolerance_;};
+  double get_norm_dual() { return norm_dual_;};
+  double get_norm_dual_tolerance() { return norm_dual_tolerance_;};
+
+  double get_warm_start_y() { return warm_start_y_;};
+  double get_reset_rho() { return reset_rho_;};
+  double get_rho_min() { return rho_min_;};
+  double get_rho_max() { return rho_max_;};
 
 
   void printCallbacks();
@@ -162,6 +172,7 @@ class SolverCSQP : public SolverDDP {
   void set_adaptive_rho_tolerance(std::size_t tolerance) { adaptive_rho_tolerance_ = tolerance; };
 
   void set_mu(double mu) { mu_ = mu; };
+  void set_mu2(double mu2) { mu2_ = mu2; };
   void set_alpha(double alpha) { alpha_ = alpha; };
   void set_sigma(double sigma) { sigma_ = sigma; };
 
@@ -214,7 +225,8 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_ = 0.0;                                     //!< norm dual residual
   double norm_primal_rel_ = 0.0;                               //!< norm primal relative residual
   double norm_dual_rel_ = 0.0;                                 //!< norm dual relative residual
-
+  double norm_primal_tolerance_ = 0.0;                         //!< tolerance of the primal residual norm
+  double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
   bool warm_start_y_ = false;
   bool reset_rho_ = false;
 

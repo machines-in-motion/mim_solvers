@@ -30,15 +30,6 @@ const std::vector<SolverTypes::Type> SolverTypes::all(SolverTypes::init_all());
 
 std::ostream& operator<<(std::ostream& os, SolverTypes::Type type) {
   switch (type) {
-    case SolverTypes::SolverKKT:
-      os << "SolverKKT";
-      break;
-    case SolverTypes::SolverDDP:
-      os << "SolverDDP";
-      break;
-    case SolverTypes::SolverFDDP:
-      os << "SolverFDDP";
-      break;
     case SolverTypes::SolverSQP:
       os << "SolverSQP";
       break;
@@ -64,38 +55,21 @@ SolverFactory::SolverFactory() {}
 SolverFactory::~SolverFactory() {}
 
 boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
-    SolverTypes::Type solver_type, ActionModelTypes::Type action_type,
-    size_t T) const {
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver;
-  boost::shared_ptr<crocoddyl::ActionModelAbstract> model =
-      ActionModelFactory().create(action_type);
-  boost::shared_ptr<crocoddyl::ActionModelAbstract> model2 =
-      ActionModelFactory().create(action_type, true);
-  std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >
-      running_models;
-  const size_t halfway = T / 2;
-  for (size_t i = 0; i < halfway; ++i) {
-    running_models.push_back(model);
-  }
-  for (size_t i = 0; i < T - halfway; ++i) {
-    running_models.push_back(model2);
-  }
+    SolverTypes::Type solver_type, 
+    ProblemTypes::Type problem_type,
+    ModelTypes::Type model_type,
+    XConstraintType::Type x_cstr_type,
+    UConstraintType::Type u_cstr_type) const {
 
+  boost::shared_ptr<crocoddyl::SolverAbstract> solver;
   boost::shared_ptr<crocoddyl::ShootingProblem> problem =
-      boost::make_shared<crocoddyl::ShootingProblem>(model->get_state()->zero(),
-                                                     running_models, model);
+      ProblemFactory().create( problem_type, model_type, x_cstr_type, u_cstr_type );
 
   switch (solver_type) {
-    case SolverTypes::SolverKKT:
-      solver = boost::make_shared<mim_solvers::SolverKKT>(problem);
-      break;
-    case SolverTypes::SolverDDP:
-      solver = boost::make_shared<mim_solvers::SolverDDP>(problem);
-      break;
-    case SolverTypes::SolverFDDP:
-      solver = boost::make_shared<mim_solvers::SolverFDDP>(problem);
-      break;
     case SolverTypes::SolverSQP:
+      if(x_cstr_type != XConstraintType::None || u_cstr_type != UConstraintType::None){
+        throw_pretty(__FILE__": Impossible test case : SolverSQP cannot be tested on constrained problem !")
+      }
       solver = boost::make_shared<mim_solvers::SolverSQP>(problem);
       break;
     case SolverTypes::SolverCSQP:

@@ -22,6 +22,14 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverDDP_solves, SolverDDP::solve, 0, 5)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverDDP_computeDirections, SolverDDP::computeDirection, 0, 1)
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverDDP_trySteps, SolverDDP::tryStep, 0, 1)
 
+// Wrapper function to handle deprecation warning upon instantiation
+boost::shared_ptr<SolverDDP> createSolverDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem) {
+      std::cerr << "Warning: Do not use mim_solvers.SolverDDP !!! " << std::endl;
+      std::cerr << "It may differ significantly from its Crocoddyl counterpart. " << std::endl;
+      std::cerr << "This class served only as a development tool and will be REMOVED in future releases." << std::endl;
+     return boost::make_shared<SolverDDP>(problem);
+}
+
 void exposeSolverDDP() {
   bp::register_ptr_to_python<boost::shared_ptr<SolverDDP> >();
 
@@ -37,6 +45,7 @@ void exposeSolverDDP() {
       bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
+      .def("__init__", bp::make_constructor(&createSolverDDP))  // Custom constructor
       .def("solve", &SolverDDP::solve,
            SolverDDP_solves(
                bp::args("self", "init_xs", "init_us", "maxiter", "isFeasible", "regInit"),
