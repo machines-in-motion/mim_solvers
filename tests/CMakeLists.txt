@@ -1,17 +1,13 @@
 set(${PROJECT_NAME}_FACTORY_TEST
-  factory/crocoddyl/pinocchio_model.hpp
-  factory/crocoddyl/state.hpp
-  factory/crocoddyl/activation.hpp
-  factory/crocoddyl/impulse.hpp
-  factory/crocoddyl/cost.hpp
-  factory/crocoddyl/action.hpp
+  factory/constraints.hpp
+  factory/constraints.cpp
+  factory/point-mass.hpp
+  factory/point-mass.cpp
+  factory/model.hpp
+  factory/model.cpp
+  factory/problem.hpp
+  factory/problem.cpp
   factory/solver.hpp
-  factory/crocoddyl/pinocchio_model.cpp
-  factory/crocoddyl/state.cpp
-  factory/crocoddyl/activation.cpp
-  factory/crocoddyl/impulse.cpp
-  factory/crocoddyl/cost.cpp
-  factory/crocoddyl/action.cpp
   factory/solver.cpp
   )
 
@@ -21,13 +17,7 @@ target_link_libraries(
                                   example-robot-data::example-robot-data)
 
 add_unit_test(test_solvers test_solvers.cpp)
-# add_unit_test(test_sqp test_sqp.cpp)
 target_link_libraries(test_solvers PUBLIC ${PROJECT_NAME}_unittest)
-# target_link_libraries(test_sqp PUBLIC ${PROJECT_NAME}_unittest)
 
 add_executable(timings timings.cpp)
 target_link_libraries(timings PUBLIC ${PROJECT_NAME})
-
-# if(BUILD_PYTHON_INTERFACE)
-#   add_subdirectory(python)
-# endif()

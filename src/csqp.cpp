@@ -47,6 +47,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
 
       rho_sparse_base_ = rho_sparse_;
 
+      std::size_t n_eq_crocoddyl = 0;
 
       Vx_tmp = Eigen::VectorXd::Zero(ndx);
       dual_cwise_prod = Eigen::VectorXd::Zero(ndx);
@@ -71,9 +72,9 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
         fs_try_[t] = Eigen::VectorXd::Zero(ndx);
 
         std::size_t nc = model->get_ng(); 
+        n_eq_crocoddyl += model->get_nh();
+
         Cdx_Cdu[t].resize(nc); Cdx_Cdu[t].setZero();
-
-
 
         z_[t].resize(nc); z_[t].setZero();
         z_prev_[t].resize(nc); z_prev_[t].setZero();
@@ -98,7 +99,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
           }
           else if (lb[k] < ub[k]){
               rho_vec_[t][k] = rho_sparse_;
-              inv_rho_vec_[t][k] = rho_sparse_;
+              inv_rho_vec_[t][k] = 1/rho_sparse_;
 
           }
         }
@@ -115,6 +116,15 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
 
 
       std::size_t nc = problem_->get_terminalModel()->get_ng(); 
+
+      // Check that no equality constraint was specified through Crocoddyl's API
+      n_eq_crocoddyl += problem_->get_terminalModel()->get_nh(); 
+      if(n_eq_crocoddyl != 0){
+        throw_pretty("Error: nh must be zero !!! Crocoddyl's equality constraints API is not supported by mim_solvers.\n"
+                     "  >> Equality constraints of the form H(x,u) = h must be implemented as g <= G(x,u) <= g by specifying \n"
+                     "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
+      } 
+
       Cdx_Cdu.back().resize(nc); Cdx_Cdu.back().setZero();
 
       // Constraint Models
@@ -279,10 +289,13 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       }
       break;
     }
-
+    
     // KKT termination criteria
     if(use_kkt_criteria_){
       if (KKT_  <= termination_tol_) {
+        if(with_callbacks_){
+          printCallbacks();
+        }
         STOP_PROFILER("SolverCSQP::solve");
         return true;
       }
@@ -335,7 +348,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         return false;
       }
     }
-
     if(with_callbacks_){
       printCallbacks();
     }
@@ -415,14 +427,23 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     forwardPass();
     update_lagrangian_parameters(true);
     update_rho_sparse(iter);
-    if(norm_primal_ <= eps_abs_ + eps_rel_ * norm_primal_rel_ && norm_dual_ <= eps_abs_ + eps_rel_ * norm_dual_rel_){
+    
+    // Because (eps_rel=0) x inf = NaN
+    if(eps_rel_ == 0){
+      norm_primal_tolerance_ = eps_abs_;
+      norm_dual_tolerance_   = eps_abs_;
+    } 
+    else{
+      norm_primal_tolerance_ = eps_abs_ + eps_rel_ * norm_primal_rel_;
+      norm_dual_tolerance_   = eps_abs_ + eps_rel_ * norm_dual_rel_;
+    }
+    if(norm_primal_ <= norm_primal_tolerance_ && norm_dual_ <= norm_dual_tolerance_){
         qp_iters_ = iter;
         converged_ = true;
         break;
     }
-
-    // std::cout << "Iters " << iter << " res-primal " << norm_primal_ << " res-dual " << norm_dual_ << " optimal rho estimate " << rho_estimate_sparse_
-    //         << " rho " << rho_sparse_ << std::endl;
+    // std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
+    //                                  " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
   }
 
   if (!converged_){
@@ -1000,11 +1021,19 @@ void SolverCSQP::printCallbacks(){
     std::cout << "iter     merit        cost         grad       step     ||gaps||       KKT       Constraint Norms    QP Iters";
     std::cout << std::endl;
   }
-  std::cout << std::setw(4) << this->get_iter() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::setw(4) << "END" << "  ";
+  } else {
+    std::cout << std::setw(4) << this->get_iter()+1 << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_merit() << "  ";
   std::cout << std::scientific << std::setprecision(5) << this->get_cost() << "  ";
   std::cout << this->get_xgrad_norm() + this->get_ugrad_norm() << "  ";
-  std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::fixed << std::setprecision(4) << " ---- " << "  ";
+  } else {
+    std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_gap_norm() << "  ";
   std::cout << std::scientific << std::setprecision(5) << KKT_ << "    ";
   std::cout << std::scientific << std::setprecision(5) << constraint_norm_ << "         ";

@@ -18,190 +18,421 @@
 #include "factory/solver.hpp"
 #include "unittest_common.hpp"
 
-#include "mim_solvers/kkt.hpp"
-
 using namespace boost::unit_test;
 using namespace mim_solvers::unittest;
 
+const double TOL     = 1e-6;
+
 //____________________________________________________________________________//
 
-void test_kkt_dimension(ActionModelTypes::Type action_type, size_t T) {
-  // Create the kkt solver
+void test_sqp_core(){
+  // Create solver
   SolverFactory factory;
-  boost::shared_ptr<mim_solvers::SolverKKT> kkt =
-      boost::static_pointer_cast<mim_solvers::SolverKKT>(
-          factory.create(SolverTypes::SolverKKT, action_type, T));
+  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverSQP, 
+                                                                       ProblemTypes::ShootingProblem, 
+                                                                       ModelTypes::PointMass2D, 
+                                                                       XConstraintType::None, 
+                                                                       UConstraintType::None);
+  // Downcast
+  boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
+  
+  // Test initial & default attributes
+  BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
+  BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 1);
+  BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e0);
+  BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-6);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
+  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
-  // define some aliases
-  const std::size_t ndx = kkt->get_ndx();
-  const std::size_t nu = kkt->get_nu();
-
-  // Test the different matrix sizes
-  BOOST_CHECK_EQUAL(kkt->get_kkt().rows(), 2 * ndx + nu);
-  BOOST_CHECK_EQUAL(kkt->get_kkt().cols(), 2 * ndx + nu);
-  BOOST_CHECK_EQUAL(kkt->get_kktref().size(), 2 * ndx + nu);
-  BOOST_CHECK_EQUAL(kkt->get_primaldual().size(), 2 * ndx + nu);
-  BOOST_CHECK_EQUAL(kkt->get_us().size(), T);
-  BOOST_CHECK_EQUAL(kkt->get_xs().size(), T + 1);
+  // Test setters
+  const double mu = 10;
+  solver_cast->set_mu(mu);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
+  const double termination_tolerance = 1e-4;
+  solver_cast->set_termination_tolerance(termination_tolerance);
+  BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
+  const bool use_kkt_criteria = false;
+  solver_cast->set_use_kkt_criteria(use_kkt_criteria);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
+  const bool use_filter_line_search = false;
+  solver_cast->set_use_filter_line_search(use_filter_line_search);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);
+  const std::size_t filter_size = 2;
+  solver_cast->set_filter_size(filter_size);
+  BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
+  const bool with_callbacks = true;
+  solver_cast->setCallbacks(with_callbacks);
+  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), true);
 }
 
 //____________________________________________________________________________//
 
-void test_kkt_search_direction(ActionModelTypes::Type action_type, size_t T) {
-  // Create the kkt solver
+void test_csqp_core(){
+  // Create solver
   SolverFactory factory;
-  boost::shared_ptr<mim_solvers::SolverKKT> kkt =
-      boost::static_pointer_cast<mim_solvers::SolverKKT>(
-          factory.create(SolverTypes::SolverKKT, action_type, T));
+  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverCSQP, 
+                                                                       ProblemTypes::ShootingProblem, 
+                                                                       ModelTypes::PointMass2D, 
+                                                                       XConstraintType::AllIneq, 
+                                                                       UConstraintType::AllEq);
+  // Downcast
+  boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
+  
+  // Test initial & default attributes
+  BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
+  BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_constraint_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_qp_iters(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
+  BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-6);
+  BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 1000);
+  BOOST_CHECK_EQUAL(solver_cast->get_cost(), 0.);
+  BOOST_CHECK_EQUAL(solver_cast->get_warm_start(), true);
+  BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 1);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_update_interval(), 25);
+  BOOST_CHECK_EQUAL(solver_cast->get_adaptive_rho_tolerance(), 5);
+  BOOST_CHECK_EQUAL(solver_cast->get_alpha(), 1.6);
+  BOOST_CHECK_EQUAL(solver_cast->get_sigma(), 1e-6);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_sparse(), 1e-1);
+  BOOST_CHECK_EQUAL(solver_cast->get_eps_abs(), 1e-4);
+  BOOST_CHECK_EQUAL(solver_cast->get_norm_primal(), 0.);
+  BOOST_CHECK_EQUAL(solver_cast->get_norm_primal_tolerance(), 0.);
+  BOOST_CHECK_EQUAL(solver_cast->get_norm_dual(), 0.);
+  BOOST_CHECK_EQUAL(solver_cast->get_norm_dual_tolerance(), 0.);
+  BOOST_CHECK_EQUAL(solver_cast->get_warm_start_y(), false);
+  BOOST_CHECK_EQUAL(solver_cast->get_reset_rho(), false);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_min(), 1e-6);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_max(), 1e3);
+  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
-  // Generate the different state along the trajectory
-  const boost::shared_ptr<crocoddyl::ShootingProblem>& problem =
-      kkt->get_problem();
-  const boost::shared_ptr<crocoddyl::StateAbstract>& state =
-      problem->get_runningModels()[0]->get_state();
-  std::vector<Eigen::VectorXd> xs;
-  std::vector<Eigen::VectorXd> us;
-  for (std::size_t i = 0; i < T; ++i) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model =
-        problem->get_runningModels()[i];
-    xs.push_back(state->rand());
-    us.push_back(Eigen::VectorXd::Random(model->get_nu()));
-  }
-  xs.push_back(state->rand());
-
-  // Compute the search direction
-  kkt->setCandidate(xs, us);
-  kkt->computeDirection();
-
-  // define some aliases
-  const std::size_t ndx = kkt->get_ndx();
-  const std::size_t nu = kkt->get_nu();
-  Eigen::MatrixXd kkt_mat = kkt->get_kkt();
-  Eigen::Block<Eigen::MatrixXd> hess = kkt_mat.block(0, 0, ndx + nu, ndx + nu);
-
-  // Checking the symmetricity of the Hessian
-  double TOL = 1e-7;
-  BOOST_CHECK((hess - hess.transpose()).isZero(TOL));
-
-  // Check initial state
-  BOOST_CHECK((state->diff_dx(state->integrate_x(xs[0], kkt->get_dxs()[0]),
-                              kkt->get_problem()->get_x0()))
-                  .isZero(TOL));
+  // Test setters
+  const double mu = 10;
+  solver_cast->set_mu(mu);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
+  const double mu2 = 10;
+  solver_cast->set_mu2(mu2);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 10);
+  const double alpha = 2.;
+  solver_cast->set_alpha(alpha);
+  BOOST_CHECK_EQUAL(solver_cast->get_alpha(), 2.);
+  const double sigma = 1e-4;
+  solver_cast->set_sigma(sigma);
+  BOOST_CHECK_EQUAL(solver_cast->get_sigma(), 1e-4);
+  const bool warm_start = false;
+  solver_cast->set_warm_start(warm_start);
+  BOOST_CHECK_EQUAL(solver_cast->get_warm_start(), false);
+  const double termination_tolerance = 1e-4;
+  solver_cast->set_termination_tolerance(termination_tolerance);
+  BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
+  const bool use_kkt_criteria = false;
+  solver_cast->set_use_kkt_criteria(use_kkt_criteria);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
+  const bool use_filter_line_search = false;
+  solver_cast->set_use_filter_line_search(use_filter_line_search);
+  BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);
+  const std::size_t filter_size = 2;
+  solver_cast->set_filter_size(filter_size);
+  BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
+  const double rho_sparse = 1e-2;
+  solver_cast->set_rho_sparse(rho_sparse);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_sparse(), 1e-2);
+  const std::size_t rho_update_interval = 10;
+  solver_cast->set_rho_update_interval(rho_update_interval);
+  BOOST_CHECK_EQUAL(solver_cast->get_rho_update_interval(), 10);
+  const double adaptive_rho_tolerance = 10;
+  solver_cast->set_adaptive_rho_tolerance(adaptive_rho_tolerance);
+  BOOST_CHECK_EQUAL(solver_cast->get_adaptive_rho_tolerance(), 10);
+  const std::size_t max_qp_iters = 100;
+  solver_cast->set_max_qp_iters(max_qp_iters);
+  BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 100);
+  const double eps_abs = 10;
+  solver_cast->set_eps_abs(eps_abs);
+  BOOST_CHECK_EQUAL(solver_cast->get_eps_abs(), 10);
+  const double eps_rel = 10;
+  solver_cast->set_eps_rel(eps_rel);
+  BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 10);
+  const bool with_callbacks = true;
+  solver_cast->setCallbacks(with_callbacks);
+  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), true);
 }
 
 //____________________________________________________________________________//
 
-void test_solver_against_kkt_solver(SolverTypes::Type solver_type,
-                                    ActionModelTypes::Type action_type,
-                                    size_t T) {
-  // Create the testing and KKT solvers
-  SolverFactory solver_factory;
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver =
-      solver_factory.create(solver_type, action_type, T);
-  boost::shared_ptr<crocoddyl::SolverAbstract> kkt =
-      solver_factory.create(SolverTypes::SolverKKT, action_type, T);
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  void test_proxqp_core(){
+    // Create solver
+    SolverFactory factory;
+    boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverPROXQP, 
+                                                                        ProblemTypes::ShootingProblem, 
+                                                                        ModelTypes::PointMass2D, 
+                                                                        XConstraintType::AllIneq, 
+                                                                        UConstraintType::AllEq);
+    // Downcast
+    boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    
+    // Test initial & default attributes
+    BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
+    BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_constraint_norm(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_qp_iters(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
+    BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
+    BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
+    BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-8);
+    BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 1000);
+    BOOST_CHECK_EQUAL(solver_cast->get_cost(), 0.);
+    BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 1);
+    BOOST_CHECK_EQUAL(solver_cast->get_eps_abs(), 1e-4);
+    BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 1e-4);
+    BOOST_CHECK_EQUAL(solver_cast->get_norm_primal(), 0.);
+    BOOST_CHECK_EQUAL(solver_cast->get_norm_dual(), 0.);
+    BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
-  // Get the pointer to the problem so we can create the equivalent kkt solver.
-  const boost::shared_ptr<crocoddyl::ShootingProblem>& problem =
-      solver->get_problem();
-
-  // Generate the different state along the trajectory
-  const boost::shared_ptr<crocoddyl::StateAbstract>& state =
-      problem->get_runningModels()[0]->get_state();
-  std::vector<Eigen::VectorXd> xs;
-  std::vector<Eigen::VectorXd> us;
-  for (std::size_t i = 0; i < T; ++i) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model =
-        problem->get_runningModels()[i];
-    xs.push_back(state->rand());
-    us.push_back(Eigen::VectorXd::Random(model->get_nu()));
+    // Test setters
+    const double mu = 10;
+    solver_cast->set_mu(mu);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
+    const double mu2 = 10;
+    solver_cast->set_mu2(mu2);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 10);
+    const double termination_tolerance = 1e-4;
+    solver_cast->set_termination_tolerance(termination_tolerance);
+    BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
+    const bool use_kkt_criteria = false;
+    solver_cast->set_use_kkt_criteria(use_kkt_criteria);
+    BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
+    const bool use_filter_line_search = false;
+    solver_cast->set_use_filter_line_search(use_filter_line_search);
+    BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);
+    const std::size_t filter_size = 2;
+    solver_cast->set_filter_size(filter_size);
+    BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
+    const std::size_t max_qp_iters = 100;
+    solver_cast->set_max_qp_iters(max_qp_iters);
+    BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 100);
+    const double eps_abs = 10;
+    solver_cast->set_eps_abs(eps_abs);
+    BOOST_CHECK_EQUAL(solver_cast->get_eps_abs(), 10);
+    const double eps_rel = 10;
+    solver_cast->set_eps_rel(eps_rel);
+    BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 10);
+    const bool with_callbacks = true;
+    solver_cast->setCallbacks(with_callbacks);
+    BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), true);
   }
-  xs.push_back(state->rand());
+#endif
 
-  // Define the callback function
-  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract> > cbs;
-  cbs.push_back(boost::make_shared<crocoddyl::CallbackVerbose>());
-  kkt->setCallbacks(cbs);
-  solver->setCallbacks(cbs);
+//____________________________________________________________________________//
 
-  // Print the name of the action model for introspection
-  std::cout << ActionModelTypes::all[action_type] << std::endl;
-  // std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
-  std::cout << solver_type << " " << action_type << std::endl;
+void test_solver_convergence(SolverTypes::Type solver_type,
+                             ProblemTypes::Type problem_type,
+                             ModelTypes::Type model_type,
+                             XConstraintType::Type x_cstr_type,
+                             UConstraintType::Type u_cstr_type) {
+  
+  std::cout << "test_solver_convergence_" << solver_type << "_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
+  
+  SolverFactory factory;
+  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
 
-  // Solve the problem using the KKT solver
-  // std::cout << " KKT solve..." << std::endl;
-  kkt->solve(xs, us, 100);
+  // SQP params
+  const int MAXITER    = 10;
+  const double SQP_TOL = 1e-4;
+  // QP params (only for CSQP and PROXQP)
+  const int QP_MAXITER = 1e5;
+  const double EPS_ABS = 1e-10;
+  const double EPS_REL = 0.;
 
-  // Solve the problem using the solver in testing
-  // std::cout << " SOLVER solve..." << std::endl;
-  solver->solve(xs, us, 100);
-  // std::cout << " - - - - - - - - - - - - - - - - - -" << std::endl;
-
-  // check trajectory dimensions
-  BOOST_CHECK_EQUAL(solver->get_us().size(), T);
-  BOOST_CHECK_EQUAL(solver->get_xs().size(), T + 1);
-
-  // initial state
-  double TOL = 1e-4;
-  BOOST_CHECK((solver->get_xs()[0] - problem->get_x0()).isZero(TOL));
-
-  // check solutions against each other
-  for (unsigned int t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model =
-        solver->get_problem()->get_runningModels()[t];
-    std::size_t nu = model->get_nu();
-    BOOST_CHECK((state->diff_dx(solver->get_xs()[t], kkt->get_xs()[t])).isZero(TOL));
-    BOOST_CHECK((solver->get_us()[t].head(nu) - kkt->get_us()[t]).isZero(TOL));
+  switch (solver_type)
+  {
+  case SolverTypes::SolverSQP:
+  {
+    boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
+    solver_cast->set_termination_tolerance(SQP_TOL);
+    solver_cast->setCallbacks(false);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), MAXITER);
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    break;
   }
-  BOOST_CHECK(
-      (state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T])).isZero(TOL));
-  // std::cout << "diff = " << std::endl << state->diff_dx(solver->get_xs()[T], kkt->get_xs()[T]) << std::endl;
+  case SolverTypes::SolverCSQP:
+  {
+    // if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::AllEq){
+    boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
+    solver_cast->set_termination_tolerance(SQP_TOL);
+    solver_cast->set_eps_rel(EPS_REL);
+    solver_cast->set_eps_abs(EPS_ABS);
+    solver_cast->set_max_qp_iters(QP_MAXITER);
+    solver_cast->setCallbacks(false);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), MAXITER);
+    // Check SQP convergence
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    // Check QP convergence
+    BOOST_CHECK(solver_cast->get_norm_primal() <= solver_cast->get_norm_primal_tolerance());
+    BOOST_CHECK(solver_cast->get_norm_dual() <= solver_cast->get_norm_dual_tolerance());
+    BOOST_CHECK(solver_cast->get_qp_iters() < solver_cast->get_max_qp_iters());
+    // }
+    break;
+  }
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  case SolverTypes::SolverPROXQP:
+  {
+    boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    solver_cast->set_termination_tolerance(SQP_TOL);
+    solver_cast->set_eps_rel(EPS_REL);
+    solver_cast->set_eps_abs(EPS_ABS);
+    solver_cast->set_max_qp_iters(QP_MAXITER);
+    solver_cast->setCallbacks(false);
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), MAXITER);
+    // Check SQP convergence
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    // Check QP convergence
+    BOOST_CHECK(solver_cast->get_qp_iters() < solver_cast->get_max_qp_iters());
+    break;
+  }
+#endif
+  default:
+    std::cerr << "Error: Unknown solver type" << std::endl; 
+    break;
+  }
 }
 
 //____________________________________________________________________________//
 
-void register_kkt_solver_unit_tests(ActionModelTypes::Type action_type,
-                                    const std::size_t T) {
+void test_csqp_equiv_sqp(ProblemTypes::Type problem_type,
+                         ModelTypes::Type model_type) {
+  std::cout << "test_csqp_equiv_sqp_" << problem_type << "_" << model_type << std::endl;
+  SolverFactory factory;
+  boost::shared_ptr<crocoddyl::SolverAbstract> solverSQP  = factory.create(SolverTypes::SolverSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
+  boost::shared_ptr<crocoddyl::SolverAbstract> solverCSQP = factory.create(SolverTypes::SolverCSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
+  // Compare with constrained solver in the absence of constraints
+  solverCSQP->solve();
+  solverSQP->solve();
+  for(std::size_t t=0; t<solverCSQP->get_problem()->get_T(); t++){
+    BOOST_CHECK((solverCSQP->get_us()[t] - solverSQP->get_us()[t]).isZero(TOL));
+    BOOST_CHECK((solverCSQP->get_xs()[t] - solverSQP->get_xs()[t]).isZero(TOL));
+  }
+}
+
+
+//____________________________________________________________________________//
+
+
+void register_sqp_core_test() {
   boost::test_tools::output_test_stream test_name;
-  test_name << "test_" << action_type;
+  test_name << "test_SQP_core";
   test_suite* ts = BOOST_TEST_SUITE(test_name.str());
-  ts->add(BOOST_TEST_CASE(boost::bind(&test_kkt_dimension, action_type, T)));
-  ts->add(
-      BOOST_TEST_CASE(boost::bind(&test_kkt_search_direction, action_type, T)));
+  std::cout << "Running " << test_name.str() << std::endl;
+  ts->add(BOOST_TEST_CASE(boost::bind(&test_sqp_core)));
   framework::master_test_suite().add(ts);
 }
 
-void register_solvers_againt_kkt_unit_tests(SolverTypes::Type solver_type,
-                                            ActionModelTypes::Type action_type,
-                                            const std::size_t T) {
+void register_csqp_core_test() {
   boost::test_tools::output_test_stream test_name;
-  test_name << "test_" << solver_type << "_" << action_type;
+  test_name << "test_CSQP_core";
   test_suite* ts = BOOST_TEST_SUITE(test_name.str());
   std::cout << "Running " << test_name.str() << std::endl;
-  ts->add(BOOST_TEST_CASE(boost::bind(&test_solver_against_kkt_solver,
-                                      solver_type, action_type, T)));
+  ts->add(BOOST_TEST_CASE(boost::bind(&test_csqp_core)));
+  framework::master_test_suite().add(ts);
+}
+
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  void register_proxqp_core_test() {
+    boost::test_tools::output_test_stream test_name;
+    test_name << "test_PROXQP_core";
+    test_suite* ts = BOOST_TEST_SUITE(test_name.str());
+    std::cout << "Running " << test_name.str() << std::endl;
+    ts->add(BOOST_TEST_CASE(boost::bind(&test_proxqp_core)));
+    framework::master_test_suite().add(ts);
+  }
+#endif
+
+
+void register_convergence_test(SolverTypes::Type solver_type,
+                               ProblemTypes::Type problem_type,
+                               ModelTypes::Type model_type,
+                               XConstraintType::Type x_cstr_type,
+                               UConstraintType::Type u_cstr_type) {
+  boost::test_tools::output_test_stream test_name;
+  test_name << "test_" << solver_type << "_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type;
+  test_suite* ts = BOOST_TEST_SUITE(test_name.str());
+  std::cout << "Running " << test_name.str() << std::endl;
+  ts->add(BOOST_TEST_CASE(boost::bind(&test_solver_convergence, solver_type, problem_type, model_type, x_cstr_type, u_cstr_type)));
+  framework::master_test_suite().add(ts);
+}
+
+void register_equivalence_test(ProblemTypes::Type problem_type,
+                               ModelTypes::Type model_type) {
+  boost::test_tools::output_test_stream test_name;
+  test_name << "test_equivalence_CSQP_vs_SQP_" << problem_type << "_" << model_type;
+  test_suite* ts = BOOST_TEST_SUITE(test_name.str());
+  std::cout << "Running " << test_name.str() << std::endl;
+  ts->add(BOOST_TEST_CASE(boost::bind(&test_csqp_equiv_sqp, problem_type, model_type)));
   framework::master_test_suite().add(ts);
 }
 
 //____________________________________________________________________________//
 
 bool init_function() {
-  std::size_t T = 10;
 
-  for (size_t i = 0; i < ActionModelTypes::all.size(); ++i) {
-    register_kkt_solver_unit_tests(ActionModelTypes::all[i], T);
-  }
+  // Test solvers basic functionalities
+  register_sqp_core_test();
+  register_csqp_core_test();
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  register_proxqp_core_test();
+#endif
 
-  // We start from 1 as 0 is the kkt solver
-  for (size_t s = 1; s < SolverTypes::all.size(); ++s) {
-    for (size_t i = 0; i < ActionModelTypes::ActionModelImpulseFwdDynamics_HyQ;
-         ++i) {
-      register_solvers_againt_kkt_unit_tests(SolverTypes::all[s],
-                                             ActionModelTypes::all[i], T);
+
+  // Test solvers convergence test 
+  for (size_t i_pb = 0; i_pb < ProblemTypes::all.size(); ++i_pb) {
+    for (size_t i_md = 0; i_md < ModelTypes::all.size(); ++i_md) {
+      // Unconstrained problems only (SQP)
+      register_convergence_test(SolverTypes::SolverSQP,
+                                ProblemTypes::all[i_pb],
+                                ModelTypes::all[i_md],
+                                XConstraintType::None,
+                                UConstraintType::None);
+      register_equivalence_test(ProblemTypes::all[i_pb],
+                                ModelTypes::all[i_md]);
+      // Unconstrained AND Constrained problems (CSQP, PROXQP)
+      for (size_t i_xc = 0; i_xc < XConstraintType::all.size(); ++i_xc) {
+        for (size_t i_uc = 0; i_uc < UConstraintType::all.size(); ++i_uc) {
+            register_convergence_test(SolverTypes::SolverCSQP,
+                                      ProblemTypes::all[i_pb],
+                                      ModelTypes::all[i_md],
+                                      XConstraintType::all[i_xc],
+                                      UConstraintType::all[i_uc]);
+#ifdef MIM_SOLVERS_WITH_PROXQP
+            register_convergence_test(SolverTypes::SolverPROXQP,
+                                      ProblemTypes::all[i_pb],
+                                      ModelTypes::all[i_md],
+                                      XConstraintType::all[i_xc],
+                                      UConstraintType::all[i_uc]);
+#endif
+        }
+      }
     }
   }
+
   return true;
+
 }
 
 //____________________________________________________________________________//

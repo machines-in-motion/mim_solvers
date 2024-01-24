@@ -35,12 +35,12 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       lag_mul_.resize(T+1);
       y_.resize(T+1);
       du_.resize(T);
-      KKT_ = 0.;
-
       dx_.resize(T+1); 
       du_.resize(T);
 
       xs_try_.resize(T+1); us_try_.resize(T);
+
+      std::size_t n_eq_crocoddyl = 0;
 
       const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
       // We allow nx and nu to change with time
@@ -75,6 +75,7 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
         
         // Constraint Models
         int nc = model->get_ng();
+        n_eq_crocoddyl += model->get_nh();
         y_[t].resize(nc); y_[t].setZero();
         n_in += nc;
 
@@ -91,6 +92,15 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
 
       // Constraint Models
       int nc = problem_->get_terminalModel()->get_ng();
+
+      // Check that no equality constraint was specified through Crocoddyl's API
+      n_eq_crocoddyl += problem_->get_terminalModel()->get_nh(); 
+      if(n_eq_crocoddyl != 0){
+        throw_pretty("Error: nh must be zero !!! Crocoddyl's equality constraints API is not supported by mim_solvers.\n"
+                     "  >> Equality constraints of the form H(x,u) = h must be implemented as g <= G(x,u) <= g by specifying \n"
+                     "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
+      } 
+
       y_.back().resize(nc); y_.back().setZero();
       n_in += nc;
       // n_eq = T* nx;
@@ -163,6 +173,9 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
     // KKT termination criteria
     if(use_kkt_criteria_){
       if (KKT_  <= termination_tol_) {
+        if(with_callbacks_){
+          printCallbacks();
+        }
         STOP_PROFILER("SolverPROXQP::solve");
         return true;
       }
@@ -331,22 +344,22 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     checkKKTConditions();
   }
 
-  // proxsuite::proxqp::dense::QP<double> qp(n_vars, n_eq, n_in);
-  // qp.init(P_, q_, A_, b_, C_, l_, u_);
+  // proxsuite::proxqp::dense::QP<double> qp_(n_vars, n_eq, n_in);
+  // qp_.init(P_, q_, A_, b_, C_, l_, u_);
 
-  proxsuite::proxqp::sparse::QP<double, long long> qp(n_vars, n_eq, n_in);
-  qp.init(Psp_, q_, Asp_, b_, Csp_, l_, u_);
+  proxsuite::proxqp::sparse::QP<double, long long> qp_(n_vars, n_eq, n_in);
+  qp_.init(Psp_, q_, Asp_, b_, Csp_, l_, u_);
 
-  // std::cout << "max qp iter = " << eps_abs_ << std::endl;
-  // std::cout << "was set from = " << qp.settings.eps_abs << std::endl;
-  qp.settings.eps_abs = eps_abs_;
-  // std::cout << "was set in to = " << qp.settings.eps_abs << std::endl;
-  qp.settings.max_iter = max_qp_iters_;
-  qp.settings.max_iter_in = max_qp_iters_;
-  qp.solve(); 
-  auto res = qp.results.x;
-  qp_iters_ = qp.results.info.iter;
+  qp_.settings.eps_abs = eps_abs_;
+  qp_.settings.eps_rel = eps_rel_;
+  qp_.settings.max_iter = max_qp_iters_;
+  qp_.settings.max_iter_in = max_qp_iters_;
+  qp_.solve(); 
+  qp_iters_ = qp_.results.info.iter;
+  norm_primal_ = qp_.results.info.pri_res;
+  norm_dual_ = qp_.results.info.dua_res;
 
+  // std::cout << "ProxQP iters " << qp_iters_ << " norm_primal=" << norm_primal_ << " norm_dual= " << norm_dual_ << std::endl;
   const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   x_grad_norm_ = 0; u_grad_norm_ = 0;
   double nin_count = 0;
@@ -357,16 +370,16 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     const int nu = m->get_nu();
     int nc = m->get_ng();
 
-    dx_[t+1] = res.segment(t * nx, nx);
+    dx_[t+1] = qp_.results.x.segment(t * nx, nx);
     // double index_u = T *nx + t * nu;
-    du_[t] = res.segment(index_u, nu);
+    du_[t] = qp_.results.x.segment(index_u, nu);
     x_grad_norm_ += dx_[t+1].lpNorm<1>(); // assuming that there is no gap in the initial state
     u_grad_norm_ += du_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
 
 
-    lag_mul_[t+1] = -qp.results.y.segment(t* nx, nx);
-    lag_mul_[t+1] = -qp.results.y.segment(t* nx, nx);
-    y_[t] = qp.results.z.segment(nin_count, nc);
+    lag_mul_[t+1] = -qp_.results.y.segment(t* nx, nx);
+    lag_mul_[t+1] = -qp_.results.y.segment(t* nx, nx);
+    y_[t] = qp_.results.z.segment(nin_count, nc);
     nin_count += nc;
     index_u += nu;
   }
@@ -374,7 +387,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   u_grad_norm_ = u_grad_norm_/T; 
 
   int nc = problem_->get_terminalModel()->get_ng();
-  y_.back() = qp.results.z.segment(nin_count, nc);
+  y_.back() = qp_.results.z.segment(nin_count, nc);
 
   STOP_PROFILER("SolverPROXQP::computeDirection");
 }
@@ -488,11 +501,19 @@ void SolverPROXQP::printCallbacks(){
     std::cout << "iter     merit        cost         grad       step     ||gaps||       KKT       Constraint Norms    QP Iters";
     std::cout << std::endl;
   }
-  std::cout << std::setw(4) << this->get_iter() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::setw(4) << "END" << "  ";
+  } else {
+    std::cout << std::setw(4) << this->get_iter()+1 << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_merit() << "  ";
   std::cout << std::scientific << std::setprecision(5) << this->get_cost() << "  ";
   std::cout << this->get_xgrad_norm() + this->get_ugrad_norm() << "  ";
-  std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  if(KKT_ < termination_tol_){
+    std::cout << std::fixed << std::setprecision(4) << " ---- " << "  ";
+  } else {
+    std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
+  }
   std::cout << std::scientific << std::setprecision(5) << this->get_gap_norm() << "  ";
   std::cout << std::scientific << std::setprecision(5) << KKT_ << "    ";
   std::cout << std::scientific << std::setprecision(5) << constraint_norm_ << "         ";
