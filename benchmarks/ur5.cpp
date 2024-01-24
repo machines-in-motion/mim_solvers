@@ -23,6 +23,7 @@
 
 #include "crocoddyl/core/costs/cost-sum.hpp"
 #include "crocoddyl/core/optctrl/shooting.hpp"
+
 #include "mim_solvers/timings.hpp"
 
 
