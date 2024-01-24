@@ -267,8 +267,8 @@ class SolverCSQP : public SolverDDP {
   double th_acceptnegstep_;                                   //!< Threshold used for accepting step along ascent direction
   Eigen::VectorXd dual_vecx;
   Eigen::VectorXd dual_vecu;
-  Eigen::VectorXd dual_cwise_prod;
-  Eigen::VectorXd Vx_tmp;
+  Eigen::VectorXd dual_cwise_prod;                            //!< Temporary variable
+  Eigen::VectorXd Vx_tmp;                                     //!< Temporary variable
 
   Eigen::MatrixXd sigma_diag_x;                // This is the sigma * eye(ndx)
   std::vector<Eigen::MatrixXd> sigma_diag_u;   // This is the sigma * eye(nu)
