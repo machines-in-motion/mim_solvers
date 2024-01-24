@@ -17,7 +17,7 @@ add_compile_options(--warn-no-conversion)
 # Project options
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
-option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" ON)
+option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
