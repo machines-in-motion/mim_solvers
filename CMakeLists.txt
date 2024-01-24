@@ -109,6 +109,11 @@ if(BUILD_TESTING)
   add_subdirectory(tests)
 endif(BUILD_TESTING)
 
+# Benchmarks
+# if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
+# endif(BUILD_BENCHMARKS)
+
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
 install(FILES package.xml DESTINATION share/${PROJECT_NAME})
