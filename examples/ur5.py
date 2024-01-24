@@ -78,7 +78,7 @@ for t in range(T + 1):
         constraints.addConstraint("ee_bound", ee_contraint)
     # Create Differential action model
     running_DAM = crocoddyl.DifferentialActionModelFreeFwdDynamics(
-        state, actuation, runningCostModel #, constraints
+        state, actuation, runningCostModel, constraints
     )
     # Apply Euler integration
     running_model = crocoddyl.IntegratedActionModelEuler(running_DAM, dt)
@@ -98,7 +98,7 @@ xs = [x0] * (T + 1)
 us = [np.zeros(nu)] * T
 
 # Define solver
-solver = mim_solvers.SolverCSQP(problem)
+solver = mim_solvers.SolverPROXQP(problem)
 solver.termination_tolerance = 1e-4
 solver.with_callbacks = True 
 

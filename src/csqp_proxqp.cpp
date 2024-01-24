@@ -40,6 +40,8 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
 
       xs_try_.resize(T+1); us_try_.resize(T);
 
+      std::size_t n_eq_crocoddyl = 0;
+
       const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
       // We allow nx and nu to change with time
       n_vars = 0;
@@ -73,6 +75,7 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
         
         // Constraint Models
         int nc = model->get_ng();
+        n_eq_crocoddyl += model->get_nh();
         y_[t].resize(nc); y_[t].setZero();
         n_in += nc;
 
@@ -89,6 +92,15 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
 
       // Constraint Models
       int nc = problem_->get_terminalModel()->get_ng();
+
+      // Check that no equality constraint was specified through Crocoddyl's API
+      n_eq_crocoddyl += problem_->get_terminalModel()->get_nh(); 
+      if(n_eq_crocoddyl != 0){
+        throw_pretty("Error: nh must be zero !!! Crocoddyl's equality constraints API is not supported by mim_solvers.\n"
+                     "  >> Equality constraints of the form H(x,u) = h must be implemented as g <= G(x,u) <= g by specifying \n"
+                     "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
+      } 
+
       y_.back().resize(nc); y_.back().setZero();
       n_in += nc;
       // n_eq = T* nx;

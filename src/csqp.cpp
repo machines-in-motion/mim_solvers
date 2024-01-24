@@ -47,6 +47,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
 
       rho_sparse_base_ = rho_sparse_;
 
+      std::size_t n_eq_crocoddyl = 0;
 
       Vx_tmp = Eigen::VectorXd::Zero(ndx);
       dual_cwise_prod = Eigen::VectorXd::Zero(ndx);
@@ -71,9 +72,9 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
         fs_try_[t] = Eigen::VectorXd::Zero(ndx);
 
         std::size_t nc = model->get_ng(); 
+        n_eq_crocoddyl += model->get_nh();
+
         Cdx_Cdu[t].resize(nc); Cdx_Cdu[t].setZero();
-
-
 
         z_[t].resize(nc); z_[t].setZero();
         z_prev_[t].resize(nc); z_prev_[t].setZero();
@@ -115,6 +116,15 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
 
 
       std::size_t nc = problem_->get_terminalModel()->get_ng(); 
+
+      // Check that no equality constraint was specified through Crocoddyl's API
+      n_eq_crocoddyl += problem_->get_terminalModel()->get_nh(); 
+      if(n_eq_crocoddyl != 0){
+        throw_pretty("Error: nh must be zero !!! Crocoddyl's equality constraints API is not supported by mim_solvers.\n"
+                     "  >> Equality constraints of the form H(x,u) = h must be implemented as g <= G(x,u) <= g by specifying \n"
+                     "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
+      } 
+
       Cdx_Cdu.back().resize(nc); Cdx_Cdu.back().setZero();
 
       // Constraint Models
