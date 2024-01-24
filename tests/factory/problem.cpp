@@ -75,8 +75,8 @@ boost::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
   switch (problem_type)
   {
   case ProblemTypes::ShootingProblem:
-    T = 100;
-    DT = 0.1;
+    T = 25;
+    DT = 0.4;
     break;
 //   case ProblemTypes::ShootingProblem_Large:
 //     T = 100;

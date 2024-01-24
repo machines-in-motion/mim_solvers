@@ -419,11 +419,13 @@ bool init_function() {
                                       ModelTypes::all[i_md],
                                       XConstraintType::all[i_xc],
                                       UConstraintType::all[i_uc]);
+#ifdef MIM_SOLVERS_WITH_PROXQP
             register_convergence_test(SolverTypes::SolverPROXQP,
                                       ProblemTypes::all[i_pb],
                                       ModelTypes::all[i_md],
                                       XConstraintType::all[i_xc],
                                       UConstraintType::all[i_uc]);
+#endif
         }
       }
     }
