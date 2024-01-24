@@ -238,7 +238,6 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
 
-  // need to cast to get residual and tolerance
   switch (solver_type)
   {
   case SolverTypes::SolverSQP:
@@ -253,20 +252,27 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   }
   case SolverTypes::SolverCSQP:
   {
+    // if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::AllEq){
     boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
     solver_cast->set_termination_tolerance(1e-4);
     solver_cast->set_eps_rel(0.);
     solver_cast->set_eps_abs(1e-10);
-    solver_cast->set_max_qp_iters(1e4);
-    // std::cout << solver_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
-    // if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::None){
-    //   std::cout << "lb = " << solver_cast->get_problem()->get_runningModels()[1]->get_g_lb() << std::endl;
-    //   std::cout << "ub = " << solver_cast->get_problem()->get_runningModels()[1]->get_g_ub() << std::endl;
-    // }
-    solver_cast->setCallbacks(true);
+    solver_cast->set_max_qp_iters(1e5);
+    std::cout << solver_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
+    // std::cout << "normP  = " << solver_cast->get_norm_primal() << "___" << solver_cast->get_norm_primal_tolerance() << std::endl;
+    // std::cout << "normD  = " << solver_cast->get_norm_dual() << "___" << solver_cast->get_norm_dual_tolerance() << std::endl;
+    // std::cout << "qp_it = " << solver_cast->get_qp_iters() << "___" << solver_cast->get_max_qp_iters() << std::endl;
+    // std::cout << "KKT_R = " << solver_cast->get_KKT() << "___" << solver_cast->get_termination_tolerance() << std::endl;
+    solver_cast->setCallbacks(false);
     solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 10);
+    // Check SQP convergence
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    // Check QP convergence
+    BOOST_CHECK(solver_cast->get_norm_primal() <= solver_cast->get_norm_primal_tolerance());
+    BOOST_CHECK(solver_cast->get_norm_dual() <= solver_cast->get_norm_dual_tolerance());
+    BOOST_CHECK(solver_cast->get_qp_iters() < solver_cast->get_max_qp_iters());
+    // }
     break;
   }
 #ifdef MIM_SOLVERS_WITH_PROXQP
@@ -274,14 +280,23 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   {
     boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
     solver_cast->set_termination_tolerance(1e-4);
-    solver_cast->set_eps_abs(1e-8);
-    solver_cast->set_max_qp_iters(1e4);
+    solver_cast->set_eps_abs(1e-10);
+    solver_cast->set_max_qp_iters(1e5);
+    std::cout << solver_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
+    std::cout << "normP  = " << solver_cast->get_norm_primal() << "___" << solver_cast->get_norm_primal_tolerance() << std::endl;
+    std::cout << "normD  = " << solver_cast->get_norm_dual() << "___" << solver_cast->get_norm_dual_tolerance() << std::endl;
+    std::cout << "qp_it = " << solver_cast->get_qp_iters() << "___" << solver_cast->get_max_qp_iters() << std::endl;
+    std::cout << "KKT_R = " << solver_cast->get_KKT() << "___" << solver_cast->get_termination_tolerance() << std::endl;
     solver_cast->setCallbacks(false);
-    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 2);
-    // std::cout << "kkt = " << solver_cast->get_KKT() << std::endl;
-    // std::cout << "tol = " <<  solver_cast->get_termination_tolerance() << std::endl;
-    // BOOST_CHECK_EQUAL(solver->get_iter(), 1);
-    // BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), 10);
+    // Check SQP convergence
+    BOOST_CHECK_EQUAL(solver->get_iter(), 1);
+    BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
+    // Check QP convergence
+    BOOST_CHECK(solver_cast->get_norm_primal() <= solver_cast->get_norm_primal_tolerance());
+    BOOST_CHECK(solver_cast->get_norm_dual() <= solver_cast->get_norm_dual_tolerance());
+    BOOST_CHECK(solver_cast->get_qp_iters() < solver_cast->get_max_qp_iters());
+    // }
     break;
   }
 #endif

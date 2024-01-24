@@ -334,21 +334,20 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     checkKKTConditions();
   }
 
-  // proxsuite::proxqp::dense::QP<double> qp(n_vars, n_eq, n_in);
-  // qp.init(P_, q_, A_, b_, C_, l_, u_);
+  // proxsuite::proxqp::dense::QP<double> qp_(n_vars, n_eq, n_in);
+  // qp_.init(P_, q_, A_, b_, C_, l_, u_);
 
-  proxsuite::proxqp::sparse::QP<double, long long> qp(n_vars, n_eq, n_in);
-  qp.init(Psp_, q_, Asp_, b_, Csp_, l_, u_);
+  proxsuite::proxqp::sparse::QP<double, long long> qp_(n_vars, n_eq, n_in);
+  qp_.init(Psp_, q_, Asp_, b_, Csp_, l_, u_);
 
-  // std::cout << "max qp iter = " << eps_abs_ << std::endl;
-  // std::cout << "was set from = " << qp.settings.eps_abs << std::endl;
-  qp.settings.eps_abs = eps_abs_;
-  // std::cout << "was set in to = " << qp.settings.eps_abs << std::endl;
-  qp.settings.max_iter = max_qp_iters_;
-  qp.settings.max_iter_in = max_qp_iters_;
-  qp.solve(); 
-  auto res = qp.results.x;
-  qp_iters_ = qp.results.info.iter;
+  qp_.settings.eps_abs = eps_abs_;
+  qp_.settings.eps_rel = eps_rel_;
+  qp_.settings.max_iter = max_qp_iters_;
+  qp_.settings.max_iter_in = max_qp_iters_;
+  qp_.solve(); 
+  qp_iters_ = qp_.results.info.iter;
+  norm_primal_ = qp_.results.info.pri_res;
+  norm_dual_ = qp_.results.info.dua_res;
 
   const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   x_grad_norm_ = 0; u_grad_norm_ = 0;
@@ -360,16 +359,16 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
     const int nu = m->get_nu();
     int nc = m->get_ng();
 
-    dx_[t+1] = res.segment(t * nx, nx);
+    dx_[t+1] = qp_.results.x.segment(t * nx, nx);
     // double index_u = T *nx + t * nu;
-    du_[t] = res.segment(index_u, nu);
+    du_[t] = qp_.results.x.segment(index_u, nu);
     x_grad_norm_ += dx_[t+1].lpNorm<1>(); // assuming that there is no gap in the initial state
     u_grad_norm_ += du_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
 
 
-    lag_mul_[t+1] = -qp.results.y.segment(t* nx, nx);
-    lag_mul_[t+1] = -qp.results.y.segment(t* nx, nx);
-    y_[t] = qp.results.z.segment(nin_count, nc);
+    lag_mul_[t+1] = -qp_.results.y.segment(t* nx, nx);
+    lag_mul_[t+1] = -qp_.results.y.segment(t* nx, nx);
+    y_[t] = qp_.results.z.segment(nin_count, nc);
     nin_count += nc;
     index_u += nu;
   }
@@ -377,7 +376,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   u_grad_norm_ = u_grad_norm_/T; 
 
   int nc = problem_->get_terminalModel()->get_ng();
-  y_.back() = qp.results.z.segment(nin_count, nc);
+  y_.back() = qp_.results.z.segment(nin_count, nc);
 
   STOP_PROFILER("SolverPROXQP::computeDirection");
 }

@@ -417,17 +417,23 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     forwardPass();
     update_lagrangian_parameters(true);
     update_rho_sparse(iter);
-    if(norm_primal_ <= eps_abs_ + eps_rel_ * norm_primal_rel_ && norm_dual_ <= eps_abs_ + eps_rel_ * norm_dual_rel_){
+    
+    // Because (eps_rel=0) x inf = NaN
+    if(eps_rel_ == 0){
+      norm_primal_tolerance_ = eps_abs_;
+      norm_dual_tolerance_   = eps_abs_;
+    } 
+    else{
+      norm_primal_tolerance_ = eps_abs_ + eps_rel_ * norm_primal_rel_;
+      norm_dual_tolerance_   = eps_abs_ + eps_rel_ * norm_dual_rel_;
+    }
+    if(norm_primal_ <= norm_primal_tolerance_ && norm_dual_ <= norm_dual_tolerance_){
         qp_iters_ = iter;
         converged_ = true;
         break;
     }
-    bool mybool1 = norm_primal_ <= eps_abs_ + eps_rel_ * norm_primal_rel_;
-    bool mybool2 = norm_dual_ <= eps_abs_ + eps_rel_ * norm_dual_rel_;
-    std::cout << mybool1 << std::endl; 
-    std::cout << mybool2 << std::endl;
-    std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " | norm_dual=" << norm_dual_ << " norm_primal_rel= " << norm_primal_rel_
-            << " norm_dual_rel=" << norm_dual_rel_ << std::endl;
+    // std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
+    //                                  " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
   }
 
   if (!converged_){

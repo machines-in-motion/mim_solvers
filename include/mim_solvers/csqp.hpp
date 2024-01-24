@@ -151,6 +151,10 @@ class SolverCSQP : public SolverDDP {
 
   double get_eps_abs() { return eps_abs_;};
   double get_eps_rel() { return eps_rel_;};
+  double get_norm_primal() { return norm_primal_;};
+  double get_norm_primal_tolerance() { return norm_primal_tolerance_;};
+  double get_norm_dual() { return norm_dual_;};
+  double get_norm_dual_tolerance() { return norm_dual_tolerance_;};
 
   double get_warm_start_y() { return warm_start_y_;};
   double get_reset_rho() { return reset_rho_;};
@@ -221,7 +225,8 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_ = 0.0;                                     //!< norm dual residual
   double norm_primal_rel_ = 0.0;                               //!< norm primal relative residual
   double norm_dual_rel_ = 0.0;                                 //!< norm dual relative residual
-
+  double norm_primal_tolerance_ = 0.0;                         //!< tolerance of the primal residual norm
+  double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
   bool warm_start_y_ = false;
   bool reset_rho_ = false;
 

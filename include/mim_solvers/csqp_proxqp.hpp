@@ -137,6 +137,9 @@ class SolverPROXQP : public SolverDDP {
   std::size_t get_filter_size() const { return filter_size_; };
 
   double get_eps_abs() { return eps_abs_;};
+  double get_eps_rel() { return eps_rel_;};
+  double get_norm_primal() { return norm_primal_;};
+  double get_norm_dual() { return norm_dual_;};
 
   void printCallbacks();
   void setCallbacks(bool inCallbacks);
@@ -165,7 +168,7 @@ class SolverPROXQP : public SolverDDP {
   const Eigen::VectorXd& get_u() const {return u_;};
 
   void set_eps_abs(double eps_abs) { eps_abs_ = eps_abs;};
-
+  void set_eps_rel(double eps_rel) { eps_rel_ = eps_rel;};
 
  public:  
   boost::circular_buffer<double> constraint_list_;             //!< memory buffer of constraint norms (used in filter line-search)
@@ -175,14 +178,14 @@ class SolverPROXQP : public SolverDDP {
   using SolverDDP::xs_try_;
   using SolverDDP::us_try_;
   using SolverDDP::cost_try_;
-  std::vector<Eigen::VectorXd> fs_try_;                                //!< Gaps/defects between shooting nodes
-  std::vector<Eigen::VectorXd> dx_;                                    //!< the descent direction for x
-  std::vector<Eigen::VectorXd> du_;                                    //!< the descent direction for u
-  std::vector<Eigen::VectorXd> lag_mul_;                               //!< the Lagrange multiplier of the dynamics constraint
-  std::vector<Eigen::VectorXd> y_;                                    //!< lagrangian dual variable
+  std::vector<Eigen::VectorXd> fs_try_;                        //!< Gaps/defects between shooting nodes
+  std::vector<Eigen::VectorXd> dx_;                            //!< the descent direction for x
+  std::vector<Eigen::VectorXd> du_;                            //!< the descent direction for u
+  std::vector<Eigen::VectorXd> lag_mul_;                       //!< the Lagrange multiplier of the dynamics constraint
+  std::vector<Eigen::VectorXd> y_;                             //!< lagrangian dual variable
   
-  Eigen::VectorXd fs_flat_;                                            //!< Gaps/defects between shooting nodes (1D array)
-  double KKT_ = std::numeric_limits<double>::infinity();               //!< KKT conditions residual
+  Eigen::VectorXd fs_flat_;                                    //!< Gaps/defects between shooting nodes (1D array)
+  double KKT_ = std::numeric_limits<double>::infinity();       //!< KKT conditions residual
   bool use_filter_line_search_ = true;                         //!< Use filter line search
 
  protected:
@@ -192,24 +195,23 @@ class SolverPROXQP : public SolverDDP {
   double u_grad_norm_ = 0;                                     //!< 1 norm of the delta u
   double gap_norm_ = 0;                                        //!< 1 norm of the gaps
   double constraint_norm_ = 0;                                 //!< 1 norm of constraint violation
-  double constraint_norm_try_ = 0;                                 //!< 1 norm of constraint violation try
+  double constraint_norm_try_ = 0;                             //!< 1 norm of constraint violation try
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double cost_ = 0.0;                                            //!< cost function
+  double cost_ = 0.0;                                          //!< cost function
   double mu_ = 1e1;                                            //!< penalty no constraint violation
-  double mu2_ = 1e1;                                            //!< penalty no constraint violation
+  double mu2_ = 1e1;                                           //!< penalty no constraint violation
   double termination_tol_ = 1e-8;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
   bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
-  int max_qp_iters_ = 1000; // max qp iters
-  int qp_iters_ = 0;
+  int max_qp_iters_ = 1000;                                    //!< maximum number of QP iterations
+  int qp_iters_ = 0;                                           //!< current number of QP iterations
 
-  double eps_abs_ = 1e-4; // absolute termination criteria
-  std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
+  double eps_abs_ = 1e-4;                                      //!< absolute termination criteria
+  double eps_rel_ = 1e-4;                                      //!< relative termination criteria
+  std::size_t filter_size_ = 1;                                //!< Filter size for line-search (do not change the default value !)
 
-  double norm_primal_ = 0.0; // norm primal residual
-  double norm_dual_ = 0.0; // norm dual residual
-  double norm_primal_rel_ = 0.0; // norm primal relative residual
-  double norm_dual_rel_ = 0.0; // norm dual relative residual
+  double norm_primal_ = 0.0;                                   //!< norm primal residual
+  double norm_dual_ = 0.0;                                     //!< norm dual residual
 
 
   // PROX QP STUFF
@@ -229,7 +231,7 @@ class SolverPROXQP : public SolverDDP {
   int n_in = 0;
   int n_eq = 0;
   int n_vars = 0;
-  
+  // 
  private:
   double th_acceptnegstep_;  //!< Threshold used for accepting step along ascent direction
   Eigen::VectorXd dual_vecx;

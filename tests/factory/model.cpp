@@ -116,21 +116,5 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
   return model;
 }
 
-
-// boost::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
-//     StateModelTypes::Type state_type, std::size_t nu) {
-//   static bool once = true;
-//   if (once) {
-//     srand((unsigned)time(NULL));
-//     once = false;
-//   }
-
-//   ModelFactory factory;
-//   ModelTypes::Type rand_type = static_cast<ModelTypes::Type>(
-//       rand() % ModelTypes::NbModelTypes);
-//   return factory.create(rand_type, state_type,
-//                         ActivationModelTypes::ActivationModelQuad, nu);
-// }
-
 }  // namespace unittest
 }  // namespace mim_solvers
