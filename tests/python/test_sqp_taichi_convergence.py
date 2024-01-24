@@ -1,0 +1,71 @@
+import pathlib
+import os
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
+os.sys.path.insert(1, str(python_path))
+import sys
+import crocoddyl
+import mim_solvers
+import numpy as np
+import example_robot_data
+import pinocchio as pin
+np.set_printoptions(precision=4, linewidth=180)
+from sqp_cpp import SQP_CPP
+from sqp import SQP
+from problems import create_taichi
+
+LINE_WIDTH = 100
+print("TEST HUMANOID TAICHI PROBLEM SQP".center(LINE_WIDTH, "-"))
+
+problem, xs_init, us_init = create_taichi()
+
+# Create solvers
+ddp0 = SQP(problem)
+ddp1 = SQP_CPP(problem)
+ddp2 = mim_solvers.SolverSQP(problem)
+
+# Set Filter Line Search
+ddp0.use_filter_line_search = True
+ddp1.use_filter_line_search = True
+ddp2.use_filter_line_search = True
+
+# Set filter size
+ddp0.filter_size = 10
+ddp1.filter_size = 10
+ddp2.filter_size = 10
+
+# Set callbacks
+ddp0.with_callbacks = True
+ddp1.with_callbacks = True
+ddp2.with_callbacks = True
+
+# Set tolerance 
+ddp0.termination_tolerance = 1e-8
+ddp1.termination_tolerance = 1e-8
+ddp2.termination_tolerance = 1e-8
+
+
+# Solve
+ddp0.solve(xs_init, us_init, 100, False)
+ddp1.solve(xs_init, us_init, 100, False)
+ddp2.solve(xs_init, us_init, 100, False)
+
+# ##### UNIT TEST #####################################
+
+tol = 1e-4
+assert np.linalg.norm(np.array(ddp0.xs) - np.array(ddp1.xs)) < tol, "Test failed"
+assert np.linalg.norm(np.array(ddp0.us) - np.array(ddp1.us)) < tol, "Test failed"
+
+assert np.linalg.norm(np.array(ddp0.xs) - np.array(ddp2.xs)) < tol, "Test failed"
+assert np.linalg.norm(np.array(ddp0.us) - np.array(ddp2.us)) < tol, "Test failed"
+
+assert ddp0.cost - ddp1.cost < tol, "Test failed"
+assert ddp0.cost - ddp2.cost < tol, "Test failed"
+
+assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp1.lag_mul)) < tol, "Test failed"
+assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp2.lag_mul)) < tol, "Test failed"
+
+assert ddp0.KKT - ddp1.KKT < tol, "Test failed"
+assert ddp0.KKT - ddp2.KKT < tol, "Test failed"
+
+print("TEST PASSED".center(LINE_WIDTH, "-"))
+print("\n")

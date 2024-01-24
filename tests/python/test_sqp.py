@@ -17,7 +17,7 @@ os.sys.path.insert(1, str(python_path))
 
 from sqp import SQP
 
-from problems import create_double_pendulum_problem, create_quadrotor_problem
+from problems import create_double_pendulum_problem, create_quadrotor_problem, create_unconstrained_ur5, create_taichi
 import pinocchio as pin
 
 # Solver params
@@ -28,16 +28,13 @@ FILTER_SIZE = MAXITER
 
 # Create 1 solver of each type for each problem
 
-problems = [create_double_pendulum_problem(), create_quadrotor_problem()]
+problems = [create_double_pendulum_problem(), create_quadrotor_problem(), create_unconstrained_ur5(), create_taichi()]
 
-for problem in problems:
+for problem, xs_init, us_init in problems:
 
     x0 = problem.x0.copy()
-
     # Create solver SQP (MS)
     solverSQP = mim_solvers.SolverSQP(problem)
-    solverSQP.xs = [solverSQP.problem.x0] * (solverSQP.problem.T + 1)  
-    solverSQP.us = solverSQP.problem.quasiStatic([solverSQP.problem.x0] * solverSQP.problem.T)
     solverSQP.termination_tolerance  = TOL
     solverSQP.use_filter_line_search = True
     solverSQP.filter_size            = MAXITER
@@ -52,13 +49,9 @@ for problem in problems:
     pysolverSQP.filter_size  = MAXITER
 
     # SQP    
-    solverSQP.xs = [x0] * (problem.T + 1)
-    solverSQP.us = problem.quasiStatic([x0] * problem.T)
-    solverSQP.solve(solverSQP.xs.copy() , solverSQP.us.copy(), MAXITER, False, reginit)
+    solverSQP.solve(xs_init , us_init, MAXITER, False, reginit)
 
-    pysolverSQP.xs = [x0] * (problem.T + 1) 
-    pysolverSQP.us = problem.quasiStatic([x0] * problem.T)
-    pysolverSQP.solve(pysolverSQP.xs.copy(), pysolverSQP.us.copy(), MAXITER)
+    pysolverSQP.solve(xs_init, us_init, MAXITER)
 
 ##### UNIT TEST #####################################
 

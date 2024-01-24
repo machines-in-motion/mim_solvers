@@ -9,7 +9,7 @@ All rights reserved.
 import numpy as np
 import crocoddyl
 import pinocchio as pin
-
+import sys
 import example_robot_data
 from crocoddyl.utils.pendulum import CostModelDoublePendulum, ActuationModelDoublePendulum
 
@@ -270,36 +270,13 @@ def create_double_pendulum_problem():
         crocoddyl.DifferentialActionModelFreeFwdDynamics(state, actuation, terminalCostModel), dt)
     T = 100
     x0 = np.array([3.14, 0., 0.1, 0.])
-    pb = crocoddyl.ShootingProblem(x0, [runningModel] * T, terminalModel)
-    return pb
+    problem = crocoddyl.ShootingProblem(x0, [runningModel] * T, terminalModel)
 
-def create_cartpole_problem():
-    '''
-    Create shooting problem for Cartpole
-    '''
-    print("Create cartpole problem ...")
-    # Creating the DAM for the cartpole
-    cartpoleDAM = DifferentialActionModelCartpole()
-    # Using NumDiff for computing the derivatives. We specify the
-    # withGaussApprox=True to have approximation of the Hessian based on the
-    # Jacobian of the cost residuals.
-    cartpoleND = crocoddyl.DifferentialActionModelNumDiff(cartpoleDAM, True)
-    # Getting the IAM using the simpletic Euler rule
-    timeStep = 5e-2
-    cartpoleIAM = crocoddyl.IntegratedActionModelEuler(cartpoleND, timeStep)
-    # Creating the shooting problem
-    T = 50
-    terminalCartpole = DifferentialActionModelCartpole()
-    terminalCartpoleDAM = crocoddyl.DifferentialActionModelNumDiff(terminalCartpole, True)
-    terminalCartpoleIAM = crocoddyl.IntegratedActionModelEuler(terminalCartpoleDAM, 0.)
-    terminalCartpole.costWeights[0] = 200
-    terminalCartpole.costWeights[1] = 200
-    terminalCartpole.costWeights[2] = 1.
-    terminalCartpole.costWeights[3] = 0.1
-    terminalCartpole.costWeights[4] = 0.01
-    terminalCartpole.costWeights[5] = 0.0001
-    pb = crocoddyl.ShootingProblem(x0, [cartpoleIAM] * T, terminalCartpoleIAM)
-    return pb 
+    xs_init = [x0] * (problem.T + 1) 
+    us_init = problem.quasiStatic([x0] * problem.T)
+
+    return problem, xs_init, us_init
+
 
 def create_quadrotor_problem():
     '''
@@ -341,8 +318,13 @@ def create_quadrotor_problem():
     # Creating the shooting problem and the FDDP solver
     T = 33
     x0 = np.array(list(hector.q0) + [0.]*hector.model.nv) 
-    pb = crocoddyl.ShootingProblem(x0, [runningModel] * T, terminalModel)
-    return pb 
+    problem = crocoddyl.ShootingProblem(x0, [runningModel] * T, terminalModel)
+
+    xs_init = [x0] * (problem.T + 1) 
+    us_init = problem.quasiStatic([x0] * problem.T)
+
+    return problem, xs_init, us_init
+
 
 def create_unconstrained_ur5():
     robot = example_robot_data.load("ur5")
@@ -403,4 +385,151 @@ def create_unconstrained_ur5():
     xs_init = [x0] * (T + 1)
     us_init = [np.zeros(nu)] * T
 
+    return problem, xs_init, us_init
+
+
+def create_taichi():
+    # Load robot
+    robot  = example_robot_data.load('talos')
+    rmodel = robot.model
+    lims   = rmodel.effortLimit
+    rmodel.effortLimit = lims
+
+    # Create data structures
+    rdata = rmodel.createData()
+    state = crocoddyl.StateMultibody(rmodel)
+    actuation = crocoddyl.ActuationModelFloatingBase(state)
+
+    # Set integration time
+    DT = 5e-2
+    T = 40
+    target = np.array([0.4, 0, 1.2])
+
+    # Initialize reference state, target and reference CoM
+    rightFoot = 'right_sole_link'
+    leftFoot = 'left_sole_link'
+    endEffector = 'gripper_left_joint'
+    endEffectorId = rmodel.getFrameId(endEffector)
+    rightFootId = rmodel.getFrameId(rightFoot)
+    leftFootId = rmodel.getFrameId(leftFoot)
+    q0 = rmodel.referenceConfigurations["half_sitting"]
+    x0 = np.concatenate([q0, np.zeros(rmodel.nv)])
+    pin.forwardKinematics(rmodel, rdata, q0)
+    pin.updateFramePlacements(rmodel, rdata)
+    rfPos0 = rdata.oMf[rightFootId].translation
+    lfPos0 = rdata.oMf[leftFootId].translation
+    refGripper = rdata.oMf[rmodel.getFrameId("gripper_left_joint")].translation
+    comRef = (rfPos0 + lfPos0) / 2
+    comRef[2] = pin.centerOfMass(rmodel, rdata, q0)[2].item()
+
+    # Create two contact models used along the motion
+    contactModel1Foot = crocoddyl.ContactModelMultiple(state, actuation.nu)
+    contactModel2Feet = crocoddyl.ContactModelMultiple(state, actuation.nu)
+    supportContactModelLeft = crocoddyl.ContactModel6D(state, leftFootId, pin.SE3.Identity(), pin.LOCAL, actuation.nu,
+                                                    np.array([0, 40]))
+    supportContactModelRight = crocoddyl.ContactModel6D(state, rightFootId, pin.SE3.Identity(), pin.LOCAL, actuation.nu,
+                                                        np.array([0, 40]))
+    contactModel1Foot.addContact(rightFoot + "_contact", supportContactModelRight)
+    contactModel2Feet.addContact(leftFoot + "_contact", supportContactModelLeft)
+    contactModel2Feet.addContact(rightFoot + "_contact", supportContactModelRight)
+
+    # Cost for self-collision
+    maxfloat = sys.float_info.max
+    xlb = np.concatenate([
+        -maxfloat * np.ones(6),  # dimension of the SE(3) manifold
+        rmodel.lowerPositionLimit[7:],
+        -maxfloat * np.ones(state.nv)
+    ])
+    xub = np.concatenate([
+        maxfloat * np.ones(6),  # dimension of the SE(3) manifold
+        rmodel.upperPositionLimit[7:],
+        maxfloat * np.ones(state.nv)
+    ])
+    bounds = crocoddyl.ActivationBounds(xlb, xub, 1.)
+    xLimitResidual = crocoddyl.ResidualModelState(state, x0, actuation.nu)
+    xLimitActivation = crocoddyl.ActivationModelQuadraticBarrier(bounds)
+    limitCost = crocoddyl.CostModelResidual(state, xLimitActivation, xLimitResidual)
+
+    # Cost for state and control
+    xResidual = crocoddyl.ResidualModelState(state, x0, actuation.nu)
+    xActivation = crocoddyl.ActivationModelWeightedQuad(
+        np.array([0] * 3 + [10.] * 3 + [0.01] * (state.nv - 6) + [10] * state.nv)**2)
+    uResidual = crocoddyl.ResidualModelControl(state, actuation.nu)
+    xTActivation = crocoddyl.ActivationModelWeightedQuad(
+        np.array([0] * 3 + [10.] * 3 + [0.01] * (state.nv - 6) + [100] * state.nv)**2)
+    xRegCost = crocoddyl.CostModelResidual(state, xActivation, xResidual)
+    uRegCost = crocoddyl.CostModelResidual(state, uResidual)
+    xRegTermCost = crocoddyl.CostModelResidual(state, xTActivation, xResidual)
+
+    # Cost for target reaching: hand and foot
+    handTrackingResidual = crocoddyl.ResidualModelFramePlacement(state, endEffectorId, pin.SE3(np.eye(3), target),
+                                                                actuation.nu)
+    handTrackingActivation = crocoddyl.ActivationModelWeightedQuad(np.array([1] * 3 + [0.0001] * 3)**2)
+    handTrackingCost = crocoddyl.CostModelResidual(state, handTrackingActivation, handTrackingResidual)
+
+    footTrackingResidual = crocoddyl.ResidualModelFramePlacement(state, leftFootId,
+                                                                pin.SE3(np.eye(3), np.array([0., 0.4, 0.])),
+                                                                actuation.nu)
+    footTrackingActivation = crocoddyl.ActivationModelWeightedQuad(np.array([1, 1, 0.1] + [1.] * 3)**2)
+    footTrackingCost1 = crocoddyl.CostModelResidual(state, footTrackingActivation, footTrackingResidual)
+    footTrackingResidual = crocoddyl.ResidualModelFramePlacement(state, leftFootId,
+                                                                pin.SE3(np.eye(3), np.array([0.3, 0.15, 0.35])),
+                                                                actuation.nu)
+    footTrackingCost2 = crocoddyl.CostModelResidual(state, footTrackingActivation, footTrackingResidual)
+
+    # Cost for CoM reference
+    comResidual = crocoddyl.ResidualModelCoMPosition(state, comRef, actuation.nu)
+    comTrack = crocoddyl.CostModelResidual(state, comResidual)
+
+    # Create cost model per each action model. We divide the motion in 3 phases plus its terminal model
+    runningCostModel1 = crocoddyl.CostModelSum(state, actuation.nu)
+    runningCostModel2 = crocoddyl.CostModelSum(state, actuation.nu)
+    runningCostModel3 = crocoddyl.CostModelSum(state, actuation.nu)
+    terminalCostModel = crocoddyl.CostModelSum(state, actuation.nu)
+
+    # Then let's added the running and terminal cost functions
+    runningCostModel1.addCost("gripperPose", handTrackingCost, 1e2)
+    runningCostModel1.addCost("stateReg", xRegCost, 1e-3)
+    runningCostModel1.addCost("ctrlReg", uRegCost, 1e-4)
+    runningCostModel1.addCost("limitCost", limitCost, 1e3)
+
+    runningCostModel2.addCost("gripperPose", handTrackingCost, 1e2)
+    runningCostModel2.addCost("footPose", footTrackingCost1, 1e1)
+    runningCostModel2.addCost("stateReg", xRegCost, 1e-3)
+    runningCostModel2.addCost("ctrlReg", uRegCost, 1e-4)
+    runningCostModel2.addCost("limitCost", limitCost, 1e3)
+
+    runningCostModel3.addCost("gripperPose", handTrackingCost, 1e2)
+    runningCostModel3.addCost("footPose", footTrackingCost2, 1e1)
+    runningCostModel3.addCost("stateReg", xRegCost, 1e-3)
+    runningCostModel3.addCost("ctrlReg", uRegCost, 1e-4)
+    runningCostModel3.addCost("limitCost", limitCost, 1e3)
+
+    terminalCostModel.addCost("gripperPose", handTrackingCost, 1e2)
+    terminalCostModel.addCost("stateReg", xRegTermCost, 1e-3)
+    terminalCostModel.addCost("limitCost", limitCost, 1e3)
+
+    # Create the action model
+    dmodelRunning1 = crocoddyl.DifferentialActionModelContactFwdDynamics(state, actuation, contactModel2Feet,
+                                                                        runningCostModel1)
+    dmodelRunning2 = crocoddyl.DifferentialActionModelContactFwdDynamics(state, actuation, contactModel1Foot,
+                                                                        runningCostModel2)
+    dmodelRunning3 = crocoddyl.DifferentialActionModelContactFwdDynamics(state, actuation, contactModel1Foot,
+                                                                        runningCostModel3)
+    dmodelTerminal = crocoddyl.DifferentialActionModelContactFwdDynamics(state, actuation, contactModel1Foot,
+                                                                        terminalCostModel)
+
+    runningModel1 = crocoddyl.IntegratedActionModelEuler(dmodelRunning1, DT)
+    runningModel2 = crocoddyl.IntegratedActionModelEuler(dmodelRunning2, DT)
+    runningModel3 = crocoddyl.IntegratedActionModelEuler(dmodelRunning3, DT)
+    terminalModel = crocoddyl.IntegratedActionModelEuler(dmodelTerminal, 0)
+
+    # Problem definition
+    x0 = np.concatenate([q0, pin.utils.zero(state.nv)])
+    problem = crocoddyl.ShootingProblem(x0, [runningModel1] * T + [runningModel2] * T + [runningModel3] * T, terminalModel)
+
+    # Warm-start 
+    # Solving it with the DDP algorithm
+    xs_init = [x0] * (problem.T + 1)
+    us_init = problem.quasiStatic([x0] * problem.T)
     return problem, xs_init, us_init
