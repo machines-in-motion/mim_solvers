@@ -105,7 +105,7 @@ void exposeSolverCSQP() {
                     "KKT residual norm")
                     
       .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
-                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+                    "Penalty term for dynamic violation in the merit function (default: 10.)")
       .add_property("eps_abs", bp::make_function(&SolverCSQP::get_eps_abs), bp::make_function(&SolverCSQP::set_eps_abs),
                     "sets epsillon absolute termination criteria for qp solver")
       .add_property("eps_rel", bp::make_function(&SolverCSQP::get_eps_rel), bp::make_function(&SolverCSQP::set_eps_rel),

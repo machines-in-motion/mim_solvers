@@ -1,62 +1,60 @@
-"""__init__
+"""
 License: BSD 3-Clause License
-Copyright (C) 2023, New York University
+Copyright (C) 2024, New York University
 
 Copyright note valid unless otherwise stated in individual files.
 All rights reserved.
+
+This file checks that the python and c++ sqp implementation match without regularization.
 """
+
 
 import pathlib
 import os
 import numpy as np
 import mim_solvers
 
-python_path = pathlib.Path('.').absolute().parent/'python'
+python_path = pathlib.Path('.').absolute().parent.parent/'python'
 print(python_path)
 os.sys.path.insert(1, str(python_path))
 
-from py_mim_solvers import SQP
+from sqp import SQP
 
-from problems import create_double_pendulum_problem, create_quadrotor_problem
+from problems import create_double_pendulum_problem, create_quadrotor_problem, create_unconstrained_ur5, create_taichi
 import pinocchio as pin
 
 # Solver params
-MAXITER     = 10
-TOL         = 1e-4 
-CALLBACKS   = True
+MAXITER     = 100
+TOL         = 1e-4
+with_callbacks   = True
 FILTER_SIZE = MAXITER
 
 # Create 1 solver of each type for each problem
 
-problems = [create_double_pendulum_problem(), create_quadrotor_problem()]
+problems = [create_double_pendulum_problem(), create_quadrotor_problem(), create_unconstrained_ur5(), create_taichi()]
 
-for problem in problems:
+for problem, xs_init, us_init in problems:
 
     x0 = problem.x0.copy()
-
     # Create solver SQP (MS)
     solverSQP = mim_solvers.SolverSQP(problem)
-    solverSQP.xs = [solverSQP.problem.x0] * (solverSQP.problem.T + 1)  
-    solverSQP.us = solverSQP.problem.quasiStatic([solverSQP.problem.x0] * solverSQP.problem.T)
     solverSQP.termination_tolerance  = TOL
     solverSQP.use_filter_line_search = True
     solverSQP.filter_size            = MAXITER
-    solverSQP.with_callbacks         = CALLBACKS
+    solverSQP.with_callbacks         = with_callbacks
     solverSQP.reg_min                = 0.0 # This turns of regularization completely. 
     reginit                          = 0.0
 
     # Create python solver
-    pysolverSQP = SQP(problem, VERBOSE = CALLBACKS)
+    pysolverSQP = SQP(problem, with_callbacks=with_callbacks)
     pysolverSQP.termination_tolerance  = TOL
+    pysolverSQP.use_filter_line_search  = True
+    pysolverSQP.filter_size  = MAXITER
 
     # SQP    
-    solverSQP.xs = [x0] * (problem.T + 1)
-    solverSQP.us = problem.quasiStatic([x0] * problem.T)
-    solverSQP.solve(solverSQP.xs.copy() , solverSQP.us.copy(), MAXITER, False, reginit)
+    solverSQP.solve(xs_init , us_init, MAXITER, False, reginit)
 
-    pysolverSQP.xs = [x0] * (problem.T + 1) 
-    pysolverSQP.us = problem.quasiStatic([x0] * problem.T)
-    pysolverSQP.solve(pysolverSQP.xs.copy(), pysolverSQP.us.copy(), MAXITER)
+    pysolverSQP.solve(xs_init, us_init, MAXITER)
 
 ##### UNIT TEST #####################################
 

@@ -15,7 +15,6 @@ import scipy.linalg as scl
 import collections
 LINE_WIDTH = 100 
 
-VERBOSE = False    
 
 def rev_enumerate(l):
     return reversed(list(enumerate(l)))
@@ -28,23 +27,20 @@ def raiseIfNan(A, error=None):
         raise error
 
 class SQP(SolverAbstract):
-    def __init__(self, shootingProblem, use_filter_ls=True, VERBOSE=False):
+    def __init__(self, shootingProblem, use_filter_line_search=True, with_callbacks=False):
         SolverAbstract.__init__(self, shootingProblem)
-        self.x_reg = 0
-        self.u_reg = 0
-        self.regFactor = 10
-        self.regMax = 1e9
-        self.regMin = 1e-9
-        self.mu = 1e0
-        self.termination_tolerance = 1e-8
+        # self.x_reg = 0
+        # self.u_reg = 0
+        # self.regFactor = 10
+        # self.regMax = 1e9
+        # self.regMin = 1e-9
+        self.mu = 1.
+        self.termination_tolerance = 1e-6
 
 
-        self.use_filter_ls = use_filter_ls
-        self.filter_size = 10
-        self.gap_list = collections.deque(self.filter_size * [np.inf], maxlen=self.filter_size)
-        self.cost_list = collections.deque(self.filter_size * [np.inf], maxlen=self.filter_size)
-
-        self.VERBOSE = VERBOSE
+        self.use_filter_line_search = use_filter_line_search
+        self.filter_size = 1
+        self.with_callbacks = with_callbacks
         
         self.allocateData()
 
@@ -183,7 +179,7 @@ class SQP(SolverAbstract):
 
             h = r + B.T@(self.s[t+1] + self.S[t+1]@self.gap[t])
             G = P + B.T@self.S[t+1]@A
-            self.H = R + B.T@self.S[t+1]@B 
+            self.H = R + B.T@self.S[t+1]@B #+ 1e-9 * np.eye(model.nu)
 
             if len(G.shape) == 1:
                 G = np.resize(G,(1,G.shape[0]))
@@ -212,24 +208,33 @@ class SQP(SolverAbstract):
         if init_us is None or len(init_us) < 1:
             init_us = [np.zeros(m.nu) for m in self.problem.runningModels] 
 
-        init_xs[0][:] = self.problem.x0.copy() # Initial condition guess must be x0
+        init_xs[0] = self.problem.x0.copy() # Initial condition guess must be x0
         
-        # self.setCandidate(init_xs, init_us, False)
+        self.gap_list = collections.deque(self.filter_size * [np.inf], maxlen=self.filter_size)
+        self.cost_list = collections.deque(self.filter_size * [np.inf], maxlen=self.filter_size)
+
+        self.setCandidate(init_xs, init_us, False)
+
         alpha = None
-        if (self.VERBOSE):
+        if (self.with_callbacks):
             headings = ["iter", "merit", "cost", "grad", "step", "||gaps||", "KKT"]
             
             print("{:>3} {:>9} {:>10} {:>11} {:>8} {:>11} {:>8}".format(*headings))
         for iter in range(maxiter):
             recalc = True   # this will recalculated derivatives in Compute Direction 
             self.computeDirection(recalc=recalc)
+
+            # self.check_optimality()
+            if self.KKT < self.termination_tolerance:
+                return True
+
             self.gap_list.append(self.gap_norm)
             self.cost_list.append(self.cost)
             alpha = 1.
-            max_search = 20
+            max_search = 10
             for k in range(max_search):
                 self.tryStep(alpha)
-                if self.use_filter_ls:
+                if self.use_filter_line_search:
                     is_worse_than_memory = False
                     count = 0
                     while count < self.filter_size and not is_worse_than_memory and count <= iter:
@@ -250,11 +255,8 @@ class SQP(SolverAbstract):
 
                 alpha *= 0.5
 
-            # self.check_optimality()
-            if self.KKT < self.termination_tolerance:
-                return True
             
-            if(self.VERBOSE):
+            if(self.with_callbacks):
                 print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
 
         return False 
