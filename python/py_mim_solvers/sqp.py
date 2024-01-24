@@ -179,7 +179,7 @@ class SQP(SolverAbstract):
 
             h = r + B.T@(self.s[t+1] + self.S[t+1]@self.gap[t])
             G = P + B.T@self.S[t+1]@A
-            self.H = R + B.T@self.S[t+1]@B + 1e-9 * np.eye(model.nu)
+            self.H = R + B.T@self.S[t+1]@B #+ 1e-9 * np.eye(model.nu)
 
             if len(G.shape) == 1:
                 G = np.resize(G,(1,G.shape[0]))

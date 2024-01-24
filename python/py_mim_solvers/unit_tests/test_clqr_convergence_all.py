@@ -1,0 +1,99 @@
+import pathlib
+import os
+python_path = pathlib.Path('.').absolute().parent
+os.sys.path.insert(1, str(python_path))
+
+import numpy as np
+import crocoddyl
+import matplotlib.pyplot as plt
+from csqp import CSQP
+
+import mim_solvers
+from clqr_problem import create_clqr_problem
+
+LINE_WIDTH = 100
+
+problem, xs_init, us_init = create_clqr_problem()
+
+print(" TEST CLQR PROBLEM ".center(LINE_WIDTH, "-"))
+
+ddp1 = mim_solvers.SolverCSQP(problem)
+ddp2 = CSQP(problem, "StagewiseQP")
+ddp3 = CSQP(problem, "CustomOSQP")
+ddp4 = CSQP(problem, "StagewiseQPKKT")
+ddp5 = CSQP(problem, "OSQP")
+ddp6 = CSQP(problem, "ProxQP")
+
+ddp1.with_callbacks = True
+ddp2.with_callbacks = True
+ddp3.with_callbacks = True
+ddp4.with_callbacks = True
+ddp5.with_callbacks = True
+ddp6.with_callbacks = True
+
+termination_tolerance = 1e-4
+ddp1.termination_tolerance = termination_tolerance
+ddp2.termination_tolerance = termination_tolerance
+ddp3.termination_tolerance = termination_tolerance
+ddp4.termination_tolerance = termination_tolerance
+ddp5.termination_tolerance = termination_tolerance
+ddp6.termination_tolerance = termination_tolerance
+
+max_qp_iters = 10000
+ddp1.max_qp_iters = max_qp_iters
+ddp2.max_qp_iters = max_qp_iters
+ddp3.max_qp_iters = max_qp_iters
+ddp4.max_qp_iters = max_qp_iters
+ddp5.max_qp_iters = max_qp_iters
+ddp6.max_qp_iters = max_qp_iters
+
+eps_abs = 1e-8
+eps_rel = 0.
+ddp1.eps_abs = eps_abs
+ddp2.eps_abs = eps_abs
+ddp3.eps_abs = eps_abs
+ddp4.eps_abs = eps_abs
+ddp5.eps_abs = eps_abs
+ddp6.eps_abs = eps_abs
+ddp1.eps_rel = eps_rel
+ddp2.eps_rel = eps_rel
+ddp3.eps_rel = eps_rel
+ddp4.eps_rel = eps_rel
+ddp5.eps_rel = eps_rel
+ddp6.eps_rel = eps_rel
+
+
+
+converged = ddp1.solve(xs_init, us_init, 2)
+converged = ddp2.solve(xs_init, us_init, 2)
+converged = ddp3.solve(xs_init, us_init, 2)
+converged = ddp4.solve(xs_init, us_init, 2)
+converged = ddp5.solve(xs_init, us_init, 2)
+converged = ddp6.solve(xs_init, us_init, 2)
+
+################################## TEST CONVERGENCE #####################################
+set_tol = 1e-6
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol, "Test failed"
+
+
+
+ddp1.iter == 1
+ddp2.iter == 0
+ddp3.iter == 0
+ddp4.iter == 0
+ddp5.iter == 0
+ddp6.iter == 0
+
+
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp3.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp3.us)) < set_tol, "Test failed"
+
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp4.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp4.us)) < set_tol, "Test failed"
+
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp5.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp5.us)) < set_tol, "Test failed"
+
+

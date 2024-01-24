@@ -156,8 +156,16 @@ class CSQP(StagewiseADMM, QPSolvers):
             
             print("{:>3} {:>9} {:>10} {:>11} {:>8} {:>11} {:>11} {:>8} {:>8}".format(*headings))
         for iter in range(maxiter):
-            self.computeDirection()
+
+            if self.using_qp:
+                self.computeDirectionFullQP()
+            else:
+                self.computeDirection()
+            # self.LQ_problem_KKT_check()
             if self.KKT < self.termination_tolerance:
+
+                if(self.with_callbacks):
+                    print("{:>4} {:.5e} {:.5e} {:.5e} {:>4} {:.6e} {:.6e} {:.6e} {:>4}".format("END", float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, " ---- ", self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
                 return True
             
             self.gap_list.append(self.gap_norm)
