@@ -119,10 +119,10 @@ ddp2.termination_tolerance = termination_tolerance
 ddp1.max_qp_iters = 2000
 ddp2.max_qp_iters = 2000
 
-ddp1.eps_abs = 1e-6
+ddp1.eps_abs = 1e-4
 ddp1.eps_rel = 0.
 
-ddp2.eps_abs = 1e-6
+ddp2.eps_abs = 1e-4
 ddp2.eps_rel = 0.
 
 converged = ddp1.solve(xs_init_1, us_init_1, 20)
