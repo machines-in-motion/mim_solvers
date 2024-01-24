@@ -128,16 +128,34 @@ int main(){
     // DEFINE SOLVER
     mim_solvers::SolverCSQP solver = mim_solvers::SolverCSQP(problem);
     solver.set_termination_tolerance(1e-4);
-    solver.setCallbacks(true);
+    solver.setCallbacks(false);
+    solver.set_eps_abs(0.0);
+    solver.set_eps_rel(0.0);
+    
+    const int max_iter = 1;
 
-    const int max_iter = 100;
-
+    // SETTING UP STATISTICS
+    const int nb = 100;
     mim_solvers::Timer timer;
-    timer.start();
-    solver.solve(xs, us, max_iter);
-    timer.stop();
+    Eigen::VectorXd duration(nb);
+    for (unsigned i = 0; i < nb; ++i){
+        timer.start();
+        solver.solve(xs, us, max_iter);
+        timer.stop();
+        duration[i] = timer.elapsed().user;
+    }
 
-    std::cout << "Problem solved in : " << timer.elapsed().user << "milli-seconds" << std::endl;
+    double avrg_duration = duration.mean();
+    double min_duration = duration.minCoeff();
+    double max_duration = duration.maxCoeff();
+
+    double const std_dev = std::sqrt((duration.array() - avrg_duration).square().sum() / (nb - 1));
+    
+    std::cout << "All Problem solved in "    << std::endl;
+    std::cout << "The Mean Solve time    : " << avrg_duration << " milli-seconds" << std::endl;
+    std::cout << "The standard Deviation : " << std_dev << " milli-seconds" << std::endl;
+    std::cout << "The Max Solve time     : " << max_duration << " milli-seconds" << std::endl;
+    std::cout << "The Min Solve time     : " << min_duration << " milli-seconds" << std::endl;
 
 
     return 0;
