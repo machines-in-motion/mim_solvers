@@ -45,10 +45,10 @@ struct Timer {
     std::chrono::time_point<std::chrono::steady_clock> current_clock =
         std::chrono::steady_clock::now();
     current.user += static_cast<double>(
-                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
                             current_clock - m_start)
                             .count()) *
-                    1e-3;
+                    1e-6;
     return current;
   }
 
@@ -72,10 +72,10 @@ struct Timer {
 
     m_end = std::chrono::steady_clock::now();
     m_times.user += static_cast<double>(
-                        std::chrono::duration_cast<std::chrono::nanoseconds>(
+                        std::chrono::duration_cast<std::chrono::milliseconds>(
                             m_end - m_start)
                             .count()) *
-                    1e-3;
+                    1e-6;
 
   }
 
