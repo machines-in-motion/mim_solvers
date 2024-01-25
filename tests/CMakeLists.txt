@@ -19,9 +19,6 @@ target_link_libraries(
 add_unit_test(test_solvers test_solvers.cpp)
 target_link_libraries(test_solvers PUBLIC ${PROJECT_NAME}_unittest)
 
-add_executable(timings timings.cpp)
-target_link_libraries(timings PUBLIC ${PROJECT_NAME})
-
 
 if(BUILD_PYTHON_INTERFACE)
   add_python_unit_test("py-test-clqr-convergence-all" "tests/python/test_clqr_convergence_all.py" src tests)

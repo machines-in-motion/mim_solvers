@@ -69,7 +69,6 @@ set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/fddp.hpp
   include/${PROJECT_NAME}/sqp.hpp
   include/${PROJECT_NAME}/csqp.hpp
-  include/${PROJECT_NAME}/timings.hpp
   )
 
 set(${PROJECT_NAME}_SOURCES
@@ -108,6 +107,11 @@ endif()
 if(BUILD_TESTING)
   add_subdirectory(tests)
 endif(BUILD_TESTING)
+
+# Benchmarks
+# if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
+# endif(BUILD_BENCHMARKS)
 
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)

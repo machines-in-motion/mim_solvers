@@ -48,7 +48,7 @@ struct Timer {
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
                             current_clock - m_start)
                             .count()) *
-                    1e-3;
+                    1e-6;
     return current;
   }
 
@@ -75,7 +75,7 @@ struct Timer {
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
                             m_end - m_start)
                             .count()) *
-                    1e-3;
+                    1e-6;
 
   }
 

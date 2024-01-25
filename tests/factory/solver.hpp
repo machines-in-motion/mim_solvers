@@ -18,7 +18,9 @@
 
 #include "mim_solvers/sqp.hpp"
 #include "mim_solvers/csqp.hpp"
-#include "mim_solvers/csqp_proxqp.hpp"
+#ifdef MIM_SOLVERS_WITH_PROXQP
+  #include "mim_solvers/csqp_proxqp.hpp"
+#endif
 #include "problem.hpp"
 
 namespace mim_solvers {
