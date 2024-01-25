@@ -224,19 +224,26 @@ void SolverSQP::checkKKTConditions(){
 
 void SolverSQP::forwardPass(){
     START_PROFILER("SolverSQP::forwardPass");
-    x_grad_norm_ = 0; u_grad_norm_ = 0;
+    x_grad_norm_ = 0; 
+    u_grad_norm_ = 0;
 
     const std::size_t T = problem_->get_T();
     const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
     for (std::size_t t = 0; t < T; ++t) {
       const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
-      lag_mul_[t].noalias() = Vxx_[t] * (dx_[t] - fs_[t]) + Vx_[t];
-      du_[t].noalias() = -K_[t]*(dx_[t]) - k_[t];
-      dx_[t+1].noalias() = (d->Fx - (d->Fu * K_[t]))*(dx_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
+      lag_mul_[t].noalias() = Vxx_[t] * (dx_[t] - fs_[t]);
+      lag_mul_[t].noalias() += Vx_[t];
+      du_[t].noalias() = - K_[t] * dx_[t];
+      du_[t].noalias() -= k_[t];
+      dx_[t+1].noalias() = fs_[t+1];
+      dx_[t+1].noalias() += d->Fu * du_[t];
+      dx_[t+1].noalias() += d->Fx * dx_[t];
       x_grad_norm_ += dx_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
       u_grad_norm_ += du_[t].lpNorm<1>();
     }
-    lag_mul_.back() = Vxx_.back() * (dx_.back() - fs_.back()) + Vx_.back();
+
+    lag_mul_.back() = Vx_.back();
+    lag_mul_.back().noalias() += Vxx_.back() * (dx_.back() - fs_.back());
     x_grad_norm_ += dx_.back().lpNorm<1>(); // assuming that there is no gap in the initial state
     x_grad_norm_ = x_grad_norm_/(double)(T+1);
     u_grad_norm_ = u_grad_norm_/(double)T; 

@@ -803,7 +803,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     START_PROFILER("SolverCSQP::Qx");
-    Qx_[t] = d->Lx 
+    Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
 
     if (t > 0 && nc != 0){ //constraint model
@@ -817,7 +817,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
     STOP_PROFILER("SolverCSQP::Qxx");
     if (nu != 0) {
       START_PROFILER("SolverCSQP::Qu");
-      Qu_[t] = d->Lu 
+      Qu_[t] = d->Lu;
       Qu_[t].noalias() -= sigma_ * du_[t];
       if (nc != 0){ //constraint model
         dual_cwise_prod = y_[t]; 
