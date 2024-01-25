@@ -139,10 +139,10 @@ for i in range(3):
     axs[i].plot(time_lin, p_traj[:, i])
     axs[i].plot(time_lin[-1], endeff_translation[i], "o")
 fig.suptitle("End effector trajectory")
-# plt.show()
+plt.show()
 
 # viewer
-WITHDISPLAY = False
+WITHDISPLAY = True
 if WITHDISPLAY:
     import time
     display = crocoddyl.MeshcatDisplay(robot)
