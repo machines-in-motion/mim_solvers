@@ -736,7 +736,7 @@ void SolverCSQP::backwardPass_without_constraints() {
       Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
       STOP_PROFILER("SolverCSQP::Quu");
       START_PROFILER("SolverCSQP::Qxu");
-      Qxu_[t] = d->Lxu; // TODO : check if this should also have added terms
+      Qxu_[t] = d->Lxu; 
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
       STOP_PROFILER("SolverCSQP::Qxu");
 
@@ -762,11 +762,6 @@ void SolverCSQP::backwardPass_without_constraints() {
     if (!std::isnan(preg_)) {
       Vxx_[t].diagonal().array() += preg_;
     }
-
-    // Compute and store the Vx gradient at end of the interval (rollout state)
-    // if (!is_feasible_) {
-    //   Vx_[t].noalias() += Vxx_[t] * fs_[t];
-    // }
 
     if (raiseIfNaN(Vx_[t].lpNorm<Eigen::Infinity>())) {
       throw_pretty("backward_error");
@@ -807,7 +802,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
     Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
 
-    if (t > 0 && nc != 0){ //constraint model
+    if (t > 0 && nc != 0){ 
       tmp_dual_cwise_[t] = y_[t]; 
       tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
@@ -820,7 +815,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
       START_PROFILER("SolverCSQP::Qu");
       Qu_[t] = d->Lu;
       Qu_[t].noalias() -= sigma_ * du_[t];
-      if (nc != 0){ //constraint model
+      if (nc != 0){ 
         tmp_dual_cwise_[t] = y_[t]; 
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
         Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
@@ -897,9 +892,9 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
       tmp_vec_x_.noalias() = d->Gx.transpose() * tmp_dual_cwise_[t];
       tmp_vec_u_[t].noalias() = d->Gu.transpose() * tmp_dual_cwise_[t];
-
       norm_dual_ = std::max(norm_dual_, std::max(tmp_vec_x_.lpNorm<Eigen::Infinity>(), tmp_vec_u_[t].lpNorm<Eigen::Infinity>()));
       norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_[t] - z_[t]).lpNorm<Eigen::Infinity>());
+      
       norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_[t].lpNorm<Eigen::Infinity>());
       norm_primal_rel_= std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
       tmp_vec_x_.noalias() = d->Gx.transpose() * y_[t];
