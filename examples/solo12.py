@@ -21,7 +21,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 pinRef        = pin.LOCAL_WORLD_ALIGNED
-FRICTION_CSTR = False
+FRICTION_CSTR = True
 MU = 0.8     # friction coefficient
 
 PLOT_OCP_SOL = False
