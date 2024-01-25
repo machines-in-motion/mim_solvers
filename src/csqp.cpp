@@ -524,13 +524,13 @@ void SolverCSQP::checkKKTConditions(){
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
     const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    tmp_vec_x_ = d->Lx;
+    tmp_vec_x_.noalias() += d->Fx.transpose() * lag_mul_[t+1];
+    tmp_vec_x_ -= lag_mul_[t];
     if (t > 0){
-      tmp_vec_x_ = d->Lx;
-      tmp_vec_x_.noalias() += d->Fx.transpose() * lag_mul_[t+1];
-      tmp_vec_x_ -= lag_mul_[t];
       tmp_vec_x_.noalias() += d->Gx.transpose() * y_[t];
-      KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
     }
+    KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
     tmp_vec_u_[t] = d->Lu;
     tmp_vec_u_[t].noalias() += d->Fu.transpose() * lag_mul_[t+1];
     tmp_vec_u_[t].noalias() += d->Gu.transpose() * y_[t];
@@ -544,6 +544,7 @@ void SolverCSQP::checkKKTConditions(){
   tmp_vec_x_ += d_ter->Gx.transpose() * y_.back();
   KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
+  KKT_ = std::max(KKT_, constraint_norm_);
 }
 
 
