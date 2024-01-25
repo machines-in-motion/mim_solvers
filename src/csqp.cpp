@@ -26,10 +26,6 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       
       const std::size_t T = this->problem_->get_T();
       const std::size_t ndx = problem_->get_ndx();
-      sigma_diag_x = sigma_* Eigen::MatrixXd::Identity(ndx, ndx);
-      sigma_diag_u.resize(T);
-      Cdx_Cdu.resize(T+1);
-      Vx_tmp.resize(T+1);
       constraint_list_.resize(filter_size_);
       gap_list_.resize(filter_size_);
       cost_list_.resize(filter_size_);
@@ -38,25 +34,26 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       fs_flat_.setZero();
       lag_mul_.resize(T+1);
       du_.resize(T);
-      
       dx_.resize(T+1); dxtilde_.resize(T+1);
       du_.resize(T); dutilde_.resize(T);
       z_.resize(T+1); z_relaxed_.resize(T+1); y_.resize(T+1); rho_vec_.resize(T+1); inv_rho_vec_.resize(T+1);
       z_prev_.resize(T+1);
       xs_try_.resize(T+1); us_try_.resize(T);
-
       rho_sparse_base_ = rho_sparse_;
-
       std::size_t n_eq_crocoddyl = 0;
-
-      Vx_tmp = Eigen::VectorXd::Zero(ndx);
-      dual_cwise_prod = Eigen::VectorXd::Zero(ndx);
+      
+      tmp_Cdx_Cdu_.resize(T+1);
+      tmp_Vx_.resize(ndx);
+      tmp_dual_cwise_.resize(T+1);
+      tmp_rhoGx_mat_.resize(T+1);
+      tmp_rhoGu_mat_.resize(T);
+      tmp_vec_x_.resize(ndx);
+      tmp_vec_u_.resize(T);
 
       const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
       for (std::size_t t = 0; t < T; ++t) {
         const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
         const std::size_t nu = model->get_nu();
-        sigma_diag_u[t] = sigma_ * Eigen::MatrixXd::Identity(nu, nu);
         xs_try_[t] = model->get_state()->zero();
         us_try_[t] = Eigen::VectorXd::Zero(nu);
 
@@ -74,7 +71,11 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
         std::size_t nc = model->get_ng(); 
         n_eq_crocoddyl += model->get_nh();
 
-        Cdx_Cdu[t].resize(nc); Cdx_Cdu[t].setZero();
+        tmp_rhoGx_mat_[t].resize(nc, ndx);
+        tmp_rhoGu_mat_[t].resize(nc, nu);
+        tmp_dual_cwise_[t].resize(nc);
+        tmp_vec_u_[t].resize(nu);
+        tmp_Cdx_Cdu_[t].resize(nc); tmp_Cdx_Cdu_[t].setZero();
 
         z_[t].resize(nc); z_[t].setZero();
         z_prev_[t].resize(nc); z_prev_[t].setZero();
@@ -114,7 +115,6 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       fs_try_.back().resize(ndx);
       fs_try_.back() = Eigen::VectorXd::Zero(ndx);
 
-
       std::size_t nc = problem_->get_terminalModel()->get_ng(); 
 
       // Check that no equality constraint was specified through Crocoddyl's API
@@ -125,7 +125,9 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
                      "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
       } 
 
-      Cdx_Cdu.back().resize(nc); Cdx_Cdu.back().setZero();
+      tmp_Cdx_Cdu_.back().resize(nc); tmp_Cdx_Cdu_.back().setZero();
+      tmp_rhoGx_mat_.back().resize(nc, ndx);
+      tmp_dual_cwise_.back().resize(nc);
 
       // Constraint Models
       z_.back().resize(nc); z_.back().setZero();
@@ -574,23 +576,20 @@ void SolverCSQP::backwardPass() {
 
   const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
-  Vxx_.back() = d_T->Lxx + sigma_diag_x;
-  Vx_.back() = d_T->Lx - sigma_ * dx_.back();
+  Vxx_.back() = d_T->Lxx; 
+  Vxx_.back().diagonal().array() += sigma_;
+  Vx_.back() = d_T->Lx;
+  Vx_.back().noalias() -= sigma_ * dx_.back();
 
   if (problem_->get_terminalModel()->get_ng()){ // constraint model
-    // TODO : make sure this is not used later
-    Vxx_.back().noalias() += d_T->Gx.transpose() * rho_vec_.back().asDiagonal() * d_T->Gx;
-    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back());
-    Vx_.back() += d_T->Gx.transpose() * (y_.back() - dual_cwise_prod);
+    tmp_rhoGx_mat_.back().noalias() = rho_vec_.back().asDiagonal() * d_T->Gx;
+    Vxx_.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
+    tmp_dual_cwise_.back() = y_.back() - rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
   if (!std::isnan(preg_)) {
     Vxx_.back().diagonal().array() += preg_;
   }
-
-  // if (!is_feasible_) {
-  //   Vx_.back().noalias() += Vxx_.back() * fs_.back();
-  // }
-
 
 
   const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
@@ -599,57 +598,59 @@ void SolverCSQP::backwardPass() {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
-    const Eigen::VectorXd& Vx_p = Vx_[t + 1] + Vxx_[t+1] * fs_[t+1];
+
+    tmp_Vx_.noalias() = Vxx_[t+1] * fs_[t+1];
+    tmp_Vx_.noalias() += Vx_[t + 1];
+
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
     START_PROFILER("SolverCSQP::Qx");
-    Qx_[t] = d->Lx - sigma_ * dx_[t];
-
-    if (t > 0 && nc != 0){ //constraint model
-      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
-      Qx_[t] += d->Gx.transpose() * (y_[t] -  dual_cwise_prod);
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dx_[t];
+    if (t > 0 && nc != 0){ 
+      tmp_dual_cwise_[t] = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
+      Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
-    
-    Qx_[t].noalias() += d->Fx.transpose() * Vx_p;
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
     STOP_PROFILER("SolverCSQP::Qx");
+
     START_PROFILER("SolverCSQP::Qxx");
-    Qxx_[t] = d->Lxx + sigma_diag_x;
-    if (t > 0 && nc != 0){ //constraint model
-      Qxx_[t].noalias() += d->Gx.transpose() * rho_vec_[t].asDiagonal() * d->Gx;
-
+    Qxx_[t] = d->Lxx; 
+    Qxx_[t].diagonal().array() += sigma_;
+    if (t > 0 && nc != 0){ 
+      tmp_rhoGx_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gx;
+      Qxx_[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
     }
-
     Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
     STOP_PROFILER("SolverCSQP::Qxx");
+
     if (nu != 0) {
-      FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
       START_PROFILER("SolverCSQP::Qu");
+      FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
       Qu_[t] = d->Lu - sigma_ * du_[t];
-      if (nc != 0){ //constraint model
-        dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t]);
-        Qu_[t] += d->Gu.transpose() * (y_[t] - dual_cwise_prod);
+      if (nc != 0){ 
+        tmp_dual_cwise_[t] = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
+        Qu_[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
-      
-
-      Qu_[t].noalias() += d->Fu.transpose() * Vx_p;
-
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
       STOP_PROFILER("SolverCSQP::Qu");
+
       START_PROFILER("SolverCSQP::Quu");
-      Quu_[t] = d->Luu + sigma_diag_u[t];
-      if (nc != 0){ //constraint model
-        Quu_[t].noalias() += d->Gu.transpose() * rho_vec_[t].asDiagonal() * d->Gu;
-      }
-
+      Quu_[t] = d->Luu; 
+      Quu_[t].diagonal().array() += sigma_;
       Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
-      STOP_PROFILER("SolverCSQP::Quu");
-      START_PROFILER("SolverCSQP::Qxu");
-      Qxu_[t] = d->Lxu; // TODO : check if this should also have added terms
-      if (nc != 0){ //constraint model
-        Qxu_[t].noalias() += d->Gx.transpose() * rho_vec_[t].asDiagonal() * d->Gu;
+      if (nc != 0){ 
+        tmp_rhoGu_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gu;
+        Quu_[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
       }
+      STOP_PROFILER("SolverCSQP::Quu");
 
-
+      START_PROFILER("SolverCSQP::Qxu");
+      Qxu_[t] = d->Lxu;
+      if (t > 0 && nc != 0){ 
+        Qxu_[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
+      }
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
       STOP_PROFILER("SolverCSQP::Qxu");
 
@@ -673,11 +674,6 @@ void SolverCSQP::backwardPass() {
       Vxx_[t].diagonal().array() += preg_;
     }
 
-    // Compute and store the Vx gradient at end of the interval (rollout state)
-    // if (!is_feasible_) {
-    //   Vx_[t].noalias() += Vxx_[t] * fs_[t];
-    // }
-
     if (raiseIfNaN(Vx_[t].lpNorm<Eigen::Infinity>())) {
       throw_pretty("backward_error");
     }
@@ -700,23 +696,20 @@ void SolverCSQP::backwardPass_without_constraints() {
     Vxx_.back().diagonal().array() += preg_;
   }
 
-  // if (!is_feasible_) {
-  //   Vx_.back().noalias() += Vxx_.back() * fs_.back();
-  // }
-
   const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
   const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
-    const Eigen::VectorXd& Vx_p = Vx_[t + 1] + Vxx_[t+1] * fs_[t+1];
+    tmp_Vx_.noalias() = Vxx_[t+1] * fs_[t+1];
+    tmp_Vx_.noalias() += Vx_[t + 1];
     const std::size_t nu = m->get_nu();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
     START_PROFILER("SolverCSQP::Qx");
     Qx_[t] = d->Lx;
 
-    Qx_[t].noalias() += d->Fx.transpose() * Vx_p;
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
     STOP_PROFILER("SolverCSQP::Qx");
     START_PROFILER("SolverCSQP::Qxx");
     Qxx_[t] = d->Lxx;
@@ -727,7 +720,7 @@ void SolverCSQP::backwardPass_without_constraints() {
       FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
       START_PROFILER("SolverCSQP::Qu");
       Qu_[t] = d->Lu;
-      Qu_[t].noalias() += d->Fu.transpose() * Vx_p;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
 
       STOP_PROFILER("SolverCSQP::Qu");
       START_PROFILER("SolverCSQP::Quu");
@@ -788,9 +781,9 @@ void SolverCSQP::backwardPass_without_rho_update() {
   Vx_.back().noalias() -= sigma_ * dx_.back();
 
   if (m_T->get_ng()){ // constraint model
-    dual_cwise_prod = y_.back();
-    dual_cwise_prod.noalias() -= rho_vec_.back().cwiseProduct(z_.back());
-    Vx_.back().noalias() += d_T->Gx.transpose() * dual_cwise_prod;
+    tmp_dual_cwise_.back() = y_.back();
+    tmp_dual_cwise_.back().noalias() -= rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
 
   const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
@@ -798,8 +791,8 @@ void SolverCSQP::backwardPass_without_rho_update() {
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-    Vx_tmp.noalias() = Vxx_[t+1] * fs_[t+1];
-    Vx_tmp.noalias() += Vx_[t + 1];
+    tmp_Vx_.noalias() = Vxx_[t+1] * fs_[t+1];
+    tmp_Vx_.noalias() += Vx_[t + 1];
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     START_PROFILER("SolverCSQP::Qx");
@@ -807,12 +800,12 @@ void SolverCSQP::backwardPass_without_rho_update() {
     Qx_[t].noalias() -= sigma_ * dx_[t];
 
     if (t > 0 && nc != 0){ //constraint model
-      dual_cwise_prod = y_[t]; 
-      dual_cwise_prod.noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
-      Qx_[t].noalias() += d->Gx.transpose() * dual_cwise_prod;
+      tmp_dual_cwise_[t] = y_[t]; 
+      tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+      Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
 
-    Qx_[t].noalias() += d->Fx.transpose() * Vx_tmp;
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
 
     STOP_PROFILER("SolverCSQP::Qxx");
     if (nu != 0) {
@@ -820,12 +813,12 @@ void SolverCSQP::backwardPass_without_rho_update() {
       Qu_[t] = d->Lu;
       Qu_[t].noalias() -= sigma_ * du_[t];
       if (nc != 0){ //constraint model
-        dual_cwise_prod = y_[t]; 
-        dual_cwise_prod.noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
-        Qu_[t].noalias() += d->Gu.transpose() * dual_cwise_prod;
+        tmp_dual_cwise_[t] = y_[t]; 
+        tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
 
-      Qu_[t].noalias() += d->Fu.transpose() * Vx_tmp;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
 
     }
 
@@ -873,17 +866,17 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       }
 
       z_prev_[t] = z_[t];
-      Cdx_Cdu[t].noalias() = d->Gx * dxtilde_[t];
-      Cdx_Cdu[t].noalias() += d->Gu * dutilde_[t];
-      z_relaxed_[t].noalias() = alpha_ * Cdx_Cdu[t];
+      tmp_Cdx_Cdu_[t].noalias() = d->Gx * dxtilde_[t];
+      tmp_Cdx_Cdu_[t].noalias() += d->Gu * dutilde_[t];
+      z_relaxed_[t].noalias() = alpha_ * tmp_Cdx_Cdu_[t];
       z_relaxed_[t].noalias() += (1 - alpha_) * z_[t];
 
 
       const auto ub = m->get_g_ub(); 
       const auto lb = m->get_g_lb();
-      dual_cwise_prod = y_[t].cwiseProduct(inv_rho_vec_[t]);
+      tmp_dual_cwise_[t] = y_[t].cwiseProduct(inv_rho_vec_[t]);
 
-      z_[t] = (z_relaxed_[t] + dual_cwise_prod);
+      z_[t] = (z_relaxed_[t] + tmp_dual_cwise_[t]);
       z_[t] = z_[t].cwiseMax(lb - d->g).cwiseMin(ub - d->g);
      
       if (update_y){
@@ -893,18 +886,18 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       du_[t] = dutilde_[t];
 
       // operation repeated
-      dual_cwise_prod = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
-      dual_vecx.noalias() = d->Gx.transpose() * dual_cwise_prod;
-      dual_vecu.noalias() = d->Gu.transpose() * dual_cwise_prod;
+      tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
+      tmp_vec_x_.noalias() = d->Gx.transpose() * tmp_dual_cwise_[t];
+      tmp_vec_u_[t].noalias() = d->Gu.transpose() * tmp_dual_cwise_[t];
 
-      norm_dual_ = std::max(norm_dual_, std::max(dual_vecx.lpNorm<Eigen::Infinity>(), dual_vecu.lpNorm<Eigen::Infinity>()));
-      norm_primal_ = std::max(norm_primal_, (Cdx_Cdu[t] - z_[t]).lpNorm<Eigen::Infinity>());
-      norm_primal_rel_= std::max(norm_primal_rel_, Cdx_Cdu[t].lpNorm<Eigen::Infinity>());
+      norm_dual_ = std::max(norm_dual_, std::max(tmp_vec_x_.lpNorm<Eigen::Infinity>(), tmp_vec_u_[t].lpNorm<Eigen::Infinity>()));
+      norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_[t] - z_[t]).lpNorm<Eigen::Infinity>());
+      norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_[t].lpNorm<Eigen::Infinity>());
       norm_primal_rel_= std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
-      dual_vecx.noalias() = d->Gx.transpose() * y_[t];
-      dual_vecu.noalias() = d->Gu.transpose() * y_[t];
-      norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecx.lpNorm<Eigen::Infinity>());
-      norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecu.lpNorm<Eigen::Infinity>());
+      tmp_vec_x_.noalias() = d->Gx.transpose() * y_[t];
+      tmp_vec_u_[t].noalias() = d->Gu.transpose() * y_[t];
+      norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+      norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
     }
 
   dx_.back() = dxtilde_.back();
@@ -914,15 +907,15 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
 
   if (nc != 0){
     z_prev_.back() = z_.back();
-    Cdx_Cdu.back().noalias() = d_T->Gx * dxtilde_.back() ;
-    z_relaxed_.back().noalias() = alpha_ * Cdx_Cdu.back();
+    tmp_Cdx_Cdu_.back().noalias() = d_T->Gx * dxtilde_.back() ;
+    z_relaxed_.back().noalias() = alpha_ * tmp_Cdx_Cdu_.back();
     z_relaxed_.back().noalias() += (1 - alpha_) * z_.back();
 
     auto ub = m_T->get_g_ub(); 
     auto lb = m_T->get_g_lb(); 
 
-    dual_cwise_prod = y_.back().cwiseProduct(inv_rho_vec_.back());
-    z_.back() = (z_relaxed_.back() + dual_cwise_prod);
+    tmp_dual_cwise_.back() = y_.back().cwiseProduct(inv_rho_vec_.back());
+    z_.back() = (z_relaxed_.back() + tmp_dual_cwise_.back());
     z_.back() = z_.back().cwiseMax(lb - d_T->g).cwiseMin(ub - d_T->g);
 
     if (update_y){
@@ -930,15 +923,15 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
     }
     dx_.back() = dxtilde_.back();
 
-    dual_cwise_prod = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
-    dual_vecx.noalias() = d_T->Gx.transpose() * dual_cwise_prod;
+    tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
+    tmp_vec_x_.noalias() = d_T->Gx.transpose() * tmp_dual_cwise_.back();
 
-    norm_dual_ = std::max(norm_dual_, dual_vecx.lpNorm<Eigen::Infinity>());
-    norm_primal_ = std::max(norm_primal_, (Cdx_Cdu.back() - z_.back()).lpNorm<Eigen::Infinity>());
-    norm_primal_rel_= std::max(norm_primal_rel_, Cdx_Cdu.back().lpNorm<Eigen::Infinity>());
+    norm_dual_ = std::max(norm_dual_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+    norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
+    norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
     norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-    dual_vecx.noalias() = d_T->Gx.transpose() * y_.back();
-    norm_dual_rel_ = std::max(norm_dual_rel_, dual_vecx.lpNorm<Eigen::Infinity>());
+    tmp_vec_x_.noalias() = d_T->Gx.transpose() * y_.back();
+    norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
   }
 
 }
@@ -965,7 +958,8 @@ double SolverCSQP::tryStep(const double steplength) {
       const std::size_t nu = m->get_nu();
 
       if (nu != 0) {
-        us_try_[t].noalias() = us_[t] + steplength * du_[t];
+        us_try_[t] = us_[t];
+        us_try_[t].noalias() += steplength * du_[t];
         }        
       } 
 
@@ -1052,14 +1046,5 @@ void SolverCSQP::setCallbacks(bool inCallbacks){
 bool SolverCSQP::getCallbacks(){
   return with_callbacks_;
 }
-// double SolverCSQP::get_th_acceptnegstep() const { return th_acceptnegstep_; }
-
-// void SolverCSQP::set_th_acceptnegstep(const double th_acceptnegstep) {
-//   if (0. > th_acceptnegstep) {
-//     throw_pretty("Invalid argument: "
-//                  << "th_acceptnegstep value has to be positive.");
-//   }
-//   th_acceptnegstep_ = th_acceptnegstep;
-// }
 
 }  // namespace mim_solvers

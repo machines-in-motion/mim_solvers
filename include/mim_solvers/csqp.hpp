@@ -265,16 +265,15 @@ class SolverCSQP : public SolverDDP {
 
  private:
   double th_acceptnegstep_;                                   //!< Threshold used for accepting step along ascent direction
-  Eigen::VectorXd dual_vecx;
-  Eigen::VectorXd dual_vecu;
-  Eigen::VectorXd dual_cwise_prod;                            //!< Temporary variable
-  Eigen::VectorXd Vx_tmp;                                     //!< Temporary variable
+  bool is_worse_than_memory_ = false;                         //!< Boolean for filter line-search criteria 
 
-  Eigen::MatrixXd sigma_diag_x;                // This is the sigma * eye(ndx)
-  std::vector<Eigen::MatrixXd> sigma_diag_u;   // This is the sigma * eye(nu)
-  std::vector<Eigen::VectorXd> Cdx_Cdu;
-  bool is_worse_than_memory_ = false;          //!< Boolean for filter line-search criteria 
-
+  Eigen::VectorXd tmp_vec_x_;                                 //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_vec_u_;                    //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_dual_cwise_;               //!< Temporary variable
+  Eigen::VectorXd tmp_Vx_;                                    //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_Cdx_Cdu_;                       //!< Temporary variable
+  std::vector<Eigen::MatrixXd> tmp_rhoGx_mat_;                //!< Temporary variable
+  std::vector<Eigen::MatrixXd> tmp_rhoGu_mat_;                //!< Temporary variable
 };
 
 }  // namespace mim_solvers
