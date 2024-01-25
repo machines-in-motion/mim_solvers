@@ -516,24 +516,34 @@ void SolverCSQP::update_rho_sparse(int iter){
   }
 }
 
+
 void SolverCSQP::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
     if (t > 0){
-      KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lag_mul_[t+1] + d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+      tmp_vec_x_ = d->Lx;
+      tmp_vec_x_.noalias() += d->Fx.transpose() * lag_mul_[t+1];
+      tmp_vec_x_ -= lag_mul_[t];
+      tmp_vec_x_.noalias() += d->Gx.transpose() * y_[t];
+      KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
     }
-    KKT_ = std::max(KKT_, (d->Lx + d->Fx.transpose() * lag_mul_[t+1] - lag_mul_[t] + d->Gx.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+    tmp_vec_u_[t] = d->Lu;
+    tmp_vec_u_[t].noalias() += d->Fu.transpose() * lag_mul_[t+1];
+    tmp_vec_u_[t].noalias() += d->Gu.transpose() * y_[t];
+    KKT_ = std::max(KKT_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
     fs_flat_.segment(t*ndx, ndx) = fs_[t];
   }
   fs_flat_.tail(ndx) = fs_.back();
-  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter = problem_->get_terminalData();
-  KKT_ = std::max(KKT_, (d_ter->Lx - lag_mul_.back() + d_ter->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
+  const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
+  tmp_vec_x_ = d_ter->Lx;
+  tmp_vec_x_ -= lag_mul_.back();
+  tmp_vec_x_ += d_ter->Gx.transpose() * y_.back();
+  KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
-  KKT_ = std::max(KKT_, constraint_norm_);
 }
 
 
@@ -549,10 +559,8 @@ void SolverCSQP::forwardPass(){
       lag_mul_[t].noalias() = Vx_[t];
       lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
 
-      dutilde_[t].noalias() = -K_[t]*dxtilde_[t];
+      dutilde_[t].noalias() = -K_[t] * dxtilde_[t];
       dutilde_[t].noalias() -= k_[t];
-      // dxtilde_[t+1].noalias() = (d->Fx - (d->Fu * K_[t]))*(dxtilde_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
-      // dxtilde_[t+1].noalias() = d->Fx * (dxtilde_[t]) - d->Fu * (K_[t]*dxtilde_[t]) - (d->Fu * (k_[t])) + fs_[t+1];
       dxtilde_[t+1].noalias() = d->Fx * dxtilde_[t];
       dxtilde_[t+1].noalias() += d->Fu * dutilde_[t];
       dxtilde_[t+1].noalias() += fs_[t+1];
