@@ -1,5 +1,6 @@
 set(${PROJECT_NAME}_BENCHMARK
   ur5
+  solo12
   )
 
 
