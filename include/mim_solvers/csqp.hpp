@@ -229,6 +229,7 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
   bool warm_start_y_ = false;
   bool reset_rho_ = false;
+  bool update_rho_with_heuristic_ = false;
 
  protected:
   double merit_ = 0;                                           //!< merit function at nominal traj
@@ -274,6 +275,7 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::VectorXd> tmp_Cdx_Cdu_;                       //!< Temporary variable
   std::vector<Eigen::MatrixXd> tmp_rhoGx_mat_;                //!< Temporary variable
   std::vector<Eigen::MatrixXd> tmp_rhoGu_mat_;                //!< Temporary variable
+  std::vector<Eigen::VectorXd> Vxx_fs_;                       //!< Temporary variable
 };
 
 }  // namespace mim_solvers

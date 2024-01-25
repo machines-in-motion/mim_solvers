@@ -80,6 +80,7 @@ void exposeSolverCSQP() {
       .def_readwrite("z", &SolverCSQP::z_, "z")
       .def_readwrite("warm_start_y", &SolverCSQP::warm_start_y_, "Warm-start ADMM Lagrange multipliers with previous solution (default: False, i.e. reset to 0)")
       .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. not reset to base values)")
+      .def_readwrite("update_rho_with_heuristic", &SolverCSQP::update_rho_with_heuristic_, "Update the heuristic for the rho update (default: False)")
 
 
       .add_property("with_callbacks", bp::make_function(&SolverCSQP::getCallbacks), bp::make_function(&SolverCSQP::setCallbacks),
