@@ -214,7 +214,6 @@ void SolverCSQP::reset_params(){
 
     }
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model = problem_->get_terminalModel();
-    lag_mul_.back().setZero();
     std::size_t nc = model->get_ng();
     z_.back().setZero();
     z_prev_.back().setZero();
@@ -251,7 +250,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
                        const std::size_t maxiter, const bool is_feasible, const double reginit) {
   
   (void)is_feasible;
-  (void)reginit;
 
   START_PROFILER("SolverCSQP::solve");
   if (problem_->is_updated()) {
@@ -261,51 +259,62 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
   xs_[0] = problem_->get_x0();      // Otherwise xs[0] is overwritten by init_xs inside setCandidate()
   xs_try_[0] = problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
 
-  // REMOVED REGULARIZATION : 
-  // if (std::isnan(reginit)) {
-  //   preg_ = reg_min_;
-  //   dreg_ = reg_min_;
-  // } else {
-  //   preg_ = reginit;
-  //   dreg_ = reginit;
-  // }
+  // Optionally remove Crocoddyl's regularization
+  if(remove_reg_){
+    preg_ = 0.;
+    dreg_ = 0;
+  } 
+  else {
+    if (std::isnan(reginit)) {
+      preg_ = reg_min_;
+      dreg_ = reg_min_;
+    } else {
+      preg_ = reginit;
+      dreg_ = reginit;
+    }
+  }
 
+  // Main SQP loop
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
 
-    // Check SQP convergence
+    // Compute gradients
     calc(true);
-    if(iter_ > 0 && use_kkt_criteria_){
-      checkKKTConditions();
-      if (KKT_  <= termination_tol_) {
-        if(with_callbacks_){
-          printCallbacks();
-        }
-        STOP_PROFILER("SolverCSQP::solve");
-        return true;
-      }
-    }  
 
     // Solve QP
-    while (true) {
-      try {
-        computeDirection(true);
-      } 
-      catch (std::exception& e) {
-        increaseRegularization();
-        if (preg_ == reg_max_) {
-          return false;
-        } else {
-          continue;
+    if(remove_reg_){
+      computeDirection(true);
+    } else {
+      while (true) {
+        try {
+          computeDirection(true);
+        } 
+        catch (std::exception& e) {
+          increaseRegularization();
+          if (preg_ == reg_max_) {
+            return false;
+          } else {
+            continue;
+          }
         }
+        break;
       }
-      break;
     }
+
+    // Check KKT criteria
+    checkKKTConditions();
+    if (KKT_  <= termination_tol_) {
+      if(with_callbacks_){
+        printCallbacks();
+      }
+      STOP_PROFILER("SolverCSQP::solve");
+      return true;
+    }
+  
 
     // Line search
     constraint_list_.push_back(constraint_norm_);
     gap_list_.push_back(gap_norm_);
     cost_list_.push_back(cost_);
-
     // We need to recalculate the derivatives when the step length passes
     for (std::vector<double>::const_iterator it = alphas_.begin(); it != alphas_.end(); ++it) {
       steplength_ = *it;
@@ -336,20 +345,64 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       }
     }
 
-    if (steplength_ > th_stepdec_) {
-      decreaseRegularization();
-    }
-    if (steplength_ <= th_stepinc_) {
-      increaseRegularization();
-      if (preg_ == reg_max_) {
-        STOP_PROFILER("SolverCSQP::solve");
-        return false;
+    // Regularization logic
+    if(remove_reg_ == false){
+      if (steplength_ > th_stepdec_) {
+        decreaseRegularization();
+      }
+      if (steplength_ <= th_stepinc_) {
+        increaseRegularization();
+        if (preg_ == reg_max_) {
+          STOP_PROFILER("SolverCSQP::solve");
+          return false;
+        }
       }
     }
+
+    // Print
     if(with_callbacks_){
       printCallbacks();
     }
   }
+
+  // If reached max iter, still compute KKT residual
+  if (extra_iteration_for_last_kkt_){
+    // Compute gradients
+    calc(true);
+
+    // Solve QP
+    if(remove_reg_){
+      computeDirection(true);
+    } else {
+      while (true) {
+        try {
+          computeDirection(true);
+        } 
+        catch (std::exception& e) {
+          increaseRegularization();
+          if (preg_ == reg_max_) {
+            return false;
+          } else {
+            continue;
+          }
+        }
+        break;
+      }
+    }    
+
+    // Check KKT criteria
+    checkKKTConditions();
+    if(with_callbacks_){
+      printCallbacks(true);
+    }
+
+    if (KKT_  <= termination_tol_) {
+      STOP_PROFILER("SolverCSQP::solve");
+      return true;
+    }
+  
+  }
+
   STOP_PROFILER("SolverCSQP::solve");
   return false;
 }
@@ -519,7 +572,6 @@ void SolverCSQP::checkKKTConditions(){
   }
   lag_mul_.back().noalias() = Vx_.back();
   lag_mul_.back().noalias() += Vxx_.back() * dxtilde_.back() ;
-
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
@@ -1030,7 +1082,7 @@ double SolverCSQP::tryStep(const double steplength) {
     return merit_try_;
 }
 
-void SolverCSQP::printCallbacks(){
+void SolverCSQP::printCallbacks(bool isLastIteration){
   if (this->get_iter() % 10 == 0) {
     std::cout << std::scientific << std::setprecision(4) <<  "iter"               << "  "; // Iteration number
     std::cout << std::scientific << std::setprecision(4) <<  "   merit"           << "  "; // Merit function value
@@ -1043,7 +1095,7 @@ void SolverCSQP::printCallbacks(){
     std::cout << std::fixed      << std::setprecision(4) <<  "QP iters"           << " ";  // Number of QP iterations
     std::cout << std::endl;
   }
-  if(KKT_ < termination_tol_){
+  if(KKT_ < termination_tol_ || isLastIteration){
     std::cout << std::setw(4) << "END" << "  ";
     std::cout << std::scientific << std::setprecision(4) << this->get_merit()     << "   ";    
     std::cout << std::scientific << std::setprecision(4) << this->get_cost()      << "   ";

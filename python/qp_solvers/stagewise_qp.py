@@ -93,10 +93,7 @@ class StagewiseADMM(SolverAbstract):
 
         self.merit =  self.cost + self.mu1 * self.gap_norm + self.mu2 * self.constraint_norm
 
-    def computeDirection(self, KKT=True):
-        self.calc(True)
-        if KKT:
-            self.KKT_check()
+    def computeDirection(self):
 
         self.reset_params()
         self.backwardPass_without_constraints()
@@ -268,7 +265,7 @@ class StagewiseADMM(SolverAbstract):
         """ computes step updates dx and du """
         assert np.linalg.norm(self.dx[0]) < 1e-6
         for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
-                self.lag_mul[t] = self.Vxx[t] @ self.dx_tilde[t] + self.Vx[t]
+                # self.lag_mul[t] = self.Vxx[t] @ self.dx_tilde[t] + self.Vx[t]
                 self.du_tilde[t][:] = - self.K[t].dot(self.dx_tilde[t]) - self.k[t] 
                 A = data.Fx.copy()
                 B = data.Fu.copy()      
@@ -280,7 +277,7 @@ class StagewiseADMM(SolverAbstract):
                     BK = B@self.K[t]
                 self.dx_tilde[t+1] = (A - BK)@self.dx_tilde[t] - bk + self.gap[t].copy()  
 
-        self.lag_mul[-1] = self.Vxx[-1] @ self.dx_tilde[-1] + self.Vx[-1]
+        # self.lag_mul[-1] = self.Vxx[-1] @ self.dx_tilde[-1] + self.Vx[-1]
 
         self.x_grad_norm = np.linalg.norm(self.dx_tilde)/(self.problem.T+1)
         self.u_grad_norm = np.linalg.norm(self.du_tilde)/self.problem.T

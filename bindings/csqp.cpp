@@ -81,12 +81,13 @@ void exposeSolverCSQP() {
       .def_readwrite("warm_start_y", &SolverCSQP::warm_start_y_, "Warm-start ADMM Lagrange multipliers with previous solution (default: False, i.e. reset to 0)")
       .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. not reset to base values)")
       .def_readwrite("update_rho_with_heuristic", &SolverCSQP::update_rho_with_heuristic_, "Update the heuristic for the rho update (default: False)")
+      .def_readwrite("remove_reg", &SolverCSQP::remove_reg_, "Removes Crocoddyl's regularization by setting (preg,dreg)=0 when True (default: False)")
 
 
       .add_property("with_callbacks", bp::make_function(&SolverCSQP::getCallbacks), bp::make_function(&SolverCSQP::setCallbacks),
                     "Activates the callbacks when true (default: False)")
-      .add_property("use_kkt_criteria", bp::make_function(&SolverCSQP::get_use_kkt_criteria), bp::make_function(&SolverCSQP::set_use_kkt_criteria),
-                    "Use the KKT residual condition as a termination criteria (default: True)")
+      .add_property("extra_iteration_for_last_kkt", bp::make_function(&SolverCSQP::get_extra_iteration_for_last_kkt), bp::make_function(&SolverCSQP::set_extra_iteration_for_last_kkt),
+                    "Additional iteration if SQP max. iter reached (default: False)")
       .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
       .add_property("xs", make_function(&SolverCSQP::get_xs, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverCSQP::set_xs), "xs")

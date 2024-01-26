@@ -38,6 +38,7 @@ class CSQP(StagewiseADMM, QPSolvers):
         self.use_filter_line_search = use_filter_line_search
         self.filter_size = 1
         self.with_callbacks = with_callbacks
+        self.extra_iteration_for_last_kkt = False
 
     def models(self):
         mod = [m for m in self.problem.runningModels]
@@ -115,6 +116,10 @@ class CSQP(StagewiseADMM, QPSolvers):
         print("\n This should match the tolerance of the QP solver ", KKT)
 
     def KKT_check(self):
+        if not self.using_qp:
+            for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
+                self.lag_mul[t] = self.Vxx[t] @ self.dx_tilde[t] + self.Vx[t]
+            self.lag_mul[-1] = self.Vxx[-1] @ self.dx_tilde[-1] + self.Vx[-1]
         self.KKT = 0
         for t, data in enumerate(self.problem.runningDatas):
             Cx, Cu = data.Gx, data.Gu
@@ -157,16 +162,20 @@ class CSQP(StagewiseADMM, QPSolvers):
             print("{:>3} {:>9} {:>10} {:>11} {:>8} {:>11} {:>11} {:>8} {:>8}".format(*headings))
         for iter in range(maxiter):
 
+            self.calc(True)
             if self.using_qp:
                 self.computeDirectionFullQP()
             else:
                 self.computeDirection()
             # self.LQ_problem_KKT_check()
+
+            self.KKT_check()
             if self.KKT < self.termination_tolerance:
 
                 if(self.with_callbacks):
                     print("{:>4} {:.5e} {:.5e} {:.5e} {:>4} {:.6e} {:.6e} {:.6e} {:>4}".format("END", float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, " ---- ", self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
                 return True
+            
             
             self.gap_list.append(self.gap_norm)
             self.cost_list.append(self.cost)
@@ -197,6 +206,19 @@ class CSQP(StagewiseADMM, QPSolvers):
                 alpha *= 0.5
 
             if(self.with_callbacks):
-                print("{:>4} {:.5e} {:.5e} {:.5e} {:.5f} {:.6e} {:.6e} {:.6e} {:>4}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+                print("{:>4} {:.5e} {:.5e} {:.5e} {:.5f} {:.6e} {:.6e} {:.6e} {:>4}".format(iter + 1, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+
+        if self.extra_iteration_for_last_kkt:
+            self.calc(True)
+            if self.using_qp:
+                self.computeDirectionFullQP()
+            else:
+                self.computeDirection()
+            self.KKT_check()
+            if(self.with_callbacks):
+                print("{:>4} {:.5e} {:.5e} {:.5e} {:>4} {:.6e} {:.6e} {:.6e} {:>4}".format("END", float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, " ---- ", self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+            if self.KKT < self.termination_tolerance:
+                return True
+
 
         return False 
