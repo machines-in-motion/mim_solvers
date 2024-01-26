@@ -14,7 +14,6 @@ import os
 python_path = pathlib.Path('.').absolute().parent.parent/'python'
 os.sys.path.insert(1, str(python_path))
 import numpy as np
-import matplotlib.pyplot as plt
 from csqp import CSQP
 from problems import create_clqr_problem
 
