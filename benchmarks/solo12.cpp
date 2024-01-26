@@ -49,13 +49,11 @@ int main(){
     // rmodel->foot_type = "POINT_FOOT";
     pinocchio::Data rdata = pinocchio::Data(*rmodel.get());
 
-    const std::array ee_frame_names = {"FL_FOOT", "FR_FOOT", "HL_FOOT", "HR_FOOT"};
-
     // set contact frame_names and_indices
-    const int lfFootId = rmodel->getFrameId(ee_frame_names[0]);
-    const int rfFootId = rmodel->getFrameId(ee_frame_names[1]);
-    const int lhFootId = rmodel->getFrameId(ee_frame_names[2]);
-    const int rhFootId = rmodel->getFrameId(ee_frame_names[3]);
+    const int lfFootId = rmodel->getFrameId("FL_FOOT");
+    const int rfFootId = rmodel->getFrameId("FR_FOOT");
+    const int lhFootId = rmodel->getFrameId("HL_FOOT");
+    const int rhFootId = rmodel->getFrameId("HR_FOOT");
 
     const int nq = rmodel->nq;
     const int nv = rmodel->nv;
