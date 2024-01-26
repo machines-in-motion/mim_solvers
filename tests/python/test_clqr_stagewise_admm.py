@@ -26,6 +26,8 @@ print(" TEST Stagewise ADMM PROBLEM ".center(LINE_WIDTH, "-"))
 problem, xs_init, us_init = create_clqr_problem()
 
 ddp1 = mim_solvers.SolverCSQP(problem)
+ddp1.remove_reg = True
+
 ddp2 = CSQP(problem, "StagewiseQP")
 ddp3 = CSQP(problem, "StagewiseQPKKT")
 

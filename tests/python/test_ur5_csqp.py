@@ -120,6 +120,9 @@ max_sqp_iter = 4
 ddp1.filter_size = max_sqp_iter 
 ddp2.filter_size = max_sqp_iter 
 
+ddp1.extra_iteration_for_last_kkt = True
+ddp2.extra_iteration_for_last_kkt = True
+
 termination_tolerance = 1e-8
 ddp1.termination_tolerance = termination_tolerance
 ddp2.termination_tolerance = termination_tolerance
@@ -133,6 +136,8 @@ ddp1.eps_rel = 0.
 ddp2.eps_abs = 1e-4
 ddp2.eps_rel = 0.
 
+# Remove regularization in cpp solver
+ddp1.remove_reg = True
 converged = ddp1.solve(xs_init_1, us_init_1, max_sqp_iter)
 converged = ddp2.solve(xs_init_2, us_init_2, max_sqp_iter)
 
