@@ -272,29 +272,10 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
 
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
 
-
-    was_feasible_ = false;
-    bool recalcDiff = true;
-    // computeDirection(recalcDiff);
-
-    while (true) {
-      try {
-        computeDirection(recalcDiff);
-      } 
-      catch (std::exception& e) {
-        recalcDiff = false;
-        increaseRegularization();
-        if (preg_ == reg_max_) {
-          return false;
-        } else {
-          continue;
-        }
-      }
-      break;
-    }
-    
-    // KKT termination criteria
-    if(use_kkt_criteria_){
+    // Check SQP convergence
+    calc(true);
+    if(iter_ > 0 && use_kkt_criteria_){
+      checkKKTConditions();
       if (KKT_  <= termination_tol_) {
         if(with_callbacks_){
           printCallbacks();
@@ -304,6 +285,23 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       }
     }  
 
+    // Solve QP
+    while (true) {
+      try {
+        computeDirection(true);
+      } 
+      catch (std::exception& e) {
+        increaseRegularization();
+        if (preg_ == reg_max_) {
+          return false;
+        } else {
+          continue;
+        }
+      }
+      break;
+    }
+
+    // Line search
     constraint_list_.push_back(constraint_norm_);
     gap_list_.push_back(gap_norm_);
     cost_list_.push_back(cost_);
@@ -317,7 +315,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         continue;
       }
       // Filter line search criteria 
-      // Equivalent to heuristic cost_ > cost_try_ || gap_norm_ > gap_norm_try_ when filter_size=1
       if(use_filter_line_search_){
         is_worse_than_memory_ = false;
         std::size_t count = 0.; 
@@ -327,7 +324,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         }
         if( is_worse_than_memory_ == false ) {
           setCandidate(xs_try_, us_try_, false);
-          recalcDiff = true;
           break;
         } 
       }
@@ -335,7 +331,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       else{
         if (merit_ > merit_try_) {
           setCandidate(xs_try_, us_try_, false);
-          recalcDiff = true;
           break;
         }
       }
@@ -405,13 +400,10 @@ void SolverCSQP::calc(const bool recalc){
 
 
 void SolverCSQP::computeDirection(const bool recalcDiff){
+
   START_PROFILER("SolverCSQP::computeDirection");
-  if (recalcDiff) {
-    calc(recalcDiff);
-  }
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }
+
+  (void)recalcDiff;
 
   if (warm_start_){
     reset_params();
@@ -430,7 +422,6 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     forwardPass();
     update_lagrangian_parameters(true);
     update_rho_sparse(iter);
-    
     // Because (eps_rel=0) x inf = NaN
     if(eps_rel_ == 0){
       norm_primal_tolerance_ = eps_abs_;
@@ -521,6 +512,14 @@ void SolverCSQP::update_rho_sparse(int iter){
 void SolverCSQP::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
+
+  for (std::size_t t = 0; t < T; ++t) {
+    lag_mul_[t].noalias() = Vx_[t];
+    lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
+  }
+  lag_mul_.back().noalias() = Vx_.back();
+  lag_mul_.back().noalias() += Vxx_.back() * dxtilde_.back() ;
+
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
@@ -558,8 +557,6 @@ void SolverCSQP::forwardPass(){
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
     for (std::size_t t = 0; t < T; ++t) {
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-      lag_mul_[t].noalias() = Vx_[t];
-      lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
 
       dutilde_[t].noalias() = -K_[t] * dxtilde_[t];
       dutilde_[t].noalias() -= k_[t];
@@ -567,14 +564,11 @@ void SolverCSQP::forwardPass(){
       dxtilde_[t+1].noalias() += d->Fu * dutilde_[t];
       dxtilde_[t+1].noalias() += fs_[t+1];
 
-      x_grad_norm_ += dxtilde_[t].lpNorm<1>(); // assuming that there is no gap in the initial state
+      x_grad_norm_ += dxtilde_[t].lpNorm<1>(); 
       u_grad_norm_ += dutilde_[t].lpNorm<1>();
     }
-    
-    lag_mul_.back().noalias() = Vx_.back();
-    lag_mul_.back().noalias() += Vxx_.back() * dxtilde_.back() ;
 
-    x_grad_norm_ += dxtilde_.back().lpNorm<1>(); // assuming that there is no gap in the initial state
+    x_grad_norm_ += dxtilde_.back().lpNorm<1>(); 
     x_grad_norm_ = x_grad_norm_/(T+1);
     u_grad_norm_ = u_grad_norm_/T; 
     STOP_PROFILER("SolverCSQP::forwardPass");
@@ -591,7 +585,7 @@ void SolverCSQP::backwardPass() {
   Vx_.back() = d_T->Lx;
   Vx_.back().noalias() -= sigma_ * dx_.back();
 
-  if (problem_->get_terminalModel()->get_ng()){ // constraint model
+  if (problem_->get_terminalModel()->get_ng()){ 
     tmp_rhoGx_mat_.back().noalias() = rho_vec_.back().asDiagonal() * d_T->Gx;
     Vxx_.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
     tmp_dual_cwise_.back() = y_.back() - rho_vec_.back().cwiseProduct(z_.back());
@@ -827,7 +821,6 @@ void SolverCSQP::backwardPass_without_rho_update() {
 
     }
 
-    // computing gains efficiently
     k_[t] = Qu_[t];
     Quu_llt_[t].solveInPlace(k_[t]);
 
@@ -890,7 +883,6 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       dx_[t] = dxtilde_[t];
       du_[t] = dutilde_[t];
 
-      // operation repeated
       if (update_rho_with_heuristic_){
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_[t].lpNorm<Eigen::Infinity>());
@@ -937,8 +929,6 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
     if (update_y){
       y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
     }
-    dx_.back() = dxtilde_.back();
-
 
     if (update_rho_with_heuristic_){
       tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
@@ -1042,27 +1032,42 @@ double SolverCSQP::tryStep(const double steplength) {
 
 void SolverCSQP::printCallbacks(){
   if (this->get_iter() % 10 == 0) {
-    std::cout << "iter     merit        cost         grad       step     ||gaps||       KKT       Constraint Norms    QP Iters";
+    std::cout << std::scientific << std::setprecision(4) <<  "iter"               << "  "; // Iteration number
+    std::cout << std::scientific << std::setprecision(4) <<  "   merit"           << "  "; // Merit function value
+    std::cout << std::scientific << std::setprecision(4) <<  "      cost"         << "  "; // Cost function value
+    std::cout << std::scientific << std::setprecision(4) <<  "     ||gaps||"      << "  "; // Gaps norm 
+    std::cout << std::scientific << std::setprecision(4) <<  " ||Constraint||"    << "";   // Constraint norm 
+    std::cout << std::scientific << std::setprecision(4) <<  "  ||(dx,du)||"      << " ";  // Step norm
+    std::cout << std::fixed      << std::setprecision(4) <<  "    step"           << "  "; // Step size
+    std::cout << std::scientific << std::setprecision(4) <<  " KKT criteria"      << "  "; // KKT residual norm
+    std::cout << std::fixed      << std::setprecision(4) <<  "QP iters"           << " ";  // Number of QP iterations
     std::cout << std::endl;
   }
   if(KKT_ < termination_tol_){
     std::cout << std::setw(4) << "END" << "  ";
+    std::cout << std::scientific << std::setprecision(4) << this->get_merit()     << "   ";    
+    std::cout << std::scientific << std::setprecision(4) << this->get_cost()      << "   ";
+    std::cout << std::scientific << std::setprecision(4) << this->get_gap_norm()  << "    ";
+    std::cout << std::scientific << std::setprecision(4) << constraint_norm_      << "    ";
+    std::cout << std::fixed <<      std::setprecision(5) << "   ---- "            << "    ";
+    std::cout << std::scientific << std::setprecision(4) << "    ---- "           << "   ";
+    std::cout << std::scientific << std::setprecision(4) << KKT_                  << "    ";
+    std::cout << std::fixed <<      std::setprecision(4) << "-----";
   } else {
     std::cout << std::setw(4) << this->get_iter()+1 << "  ";
+    std::cout << std::scientific << std::setprecision(4) << this->get_merit()                                     << "   ";
+    std::cout << std::scientific << std::setprecision(4) << this->get_cost()                                      << "   ";
+    std::cout << std::scientific << std::setprecision(4) << this->get_gap_norm()                                  << "    ";
+    std::cout << std::scientific << std::setprecision(4) << constraint_norm_                                      << "    ";
+    std::cout << std::scientific << std::setprecision(5) << (this->get_xgrad_norm() + this->get_ugrad_norm()) / 2 << "    ";
+    std::cout << std::fixed      << std::setprecision(4) << this->get_steplength()                                << "   ";
+    if(iter_ == 0){
+      std::cout << std::scientific << std::setprecision(4) << "   ----   "                                        << "     ";
+    } else {
+      std::cout << std::scientific << std::setprecision(4) << KKT_                                                << "     ";
+    }
+    std::cout << std::fixed      << std::setprecision(4) << qp_iters_;
   }
-  std::cout << std::scientific << std::setprecision(5) << this->get_merit() << "  ";
-  std::cout << std::scientific << std::setprecision(5) << this->get_cost() << "  ";
-  std::cout << this->get_xgrad_norm() + this->get_ugrad_norm() << "  ";
-  if(KKT_ < termination_tol_){
-    std::cout << std::fixed << std::setprecision(4) << " ---- " << "  ";
-  } else {
-    std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
-  }
-  std::cout << std::scientific << std::setprecision(5) << this->get_gap_norm() << "  ";
-  std::cout << std::scientific << std::setprecision(5) << KKT_ << "    ";
-  std::cout << std::scientific << std::setprecision(5) << constraint_norm_ << "         ";
-  std::cout << std::scientific << std::setprecision(5) << qp_iters_;
-
   std::cout << std::endl;
   std::cout << std::flush;
 }
