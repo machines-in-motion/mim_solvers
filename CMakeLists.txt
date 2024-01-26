@@ -104,14 +104,10 @@ if(BUILD_PYTHON_INTERFACE)
 endif()
 
 # Unit tests
-if(BUILD_TESTING)
-  add_subdirectory(tests)
-endif(BUILD_TESTING)
+add_subdirectory(tests)
 
 # Benchmarks
-# if(BUILD_BENCHMARKS)
-  add_subdirectory(benchmarks)
-# endif(BUILD_BENCHMARKS)
+add_subdirectory(benchmarks)
 
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
