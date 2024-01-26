@@ -91,11 +91,10 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     dreg_ = reginit;
   }
   
+  bool recalcDiff = true;
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
 
-
-    was_feasible_ = false;
-    bool recalcDiff = true;
+    recalcDiff = true;
 
     while (true) {
       try {
@@ -114,15 +113,15 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     }
 
     // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        if(with_callbacks_){
-          printCallbacks();
-        }
-        STOP_PROFILER("SolverSQP::solve");
-        return true;
+    checkKKTConditions();
+    if (KKT_  <= termination_tol_) {
+      if(with_callbacks_){
+        printCallbacks();
       }
-    }  
+      STOP_PROFILER("SolverSQP::solve");
+      return true;
+    }
+      
 
     gap_list_.push_back(gap_norm_);
     cost_list_.push_back(cost_);
@@ -175,6 +174,39 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
       printCallbacks();
     }
   }
+
+
+  if (extra_iteration_for_last_kkt_){
+    recalcDiff = true;
+
+    while (true) {
+      try {
+        computeDirection(recalcDiff);
+      } 
+      catch (std::exception& e) {
+        recalcDiff = false;
+        increaseRegularization();
+        if (preg_ == reg_max_) {
+          return false;
+        } else {
+          continue;
+        }
+      }
+      break;
+    }
+
+    // KKT termination criteria
+    checkKKTConditions();
+    if (KKT_  <= termination_tol_) {
+      if(with_callbacks_){
+        printCallbacks();
+      }
+      STOP_PROFILER("SolverSQP::solve");
+      return true;
+    }
+  }
+
+
   STOP_PROFILER("SolverSQP::solve");
   return false;
 }
@@ -193,11 +225,6 @@ void SolverSQP::computeDirection(const bool recalcDiff){
   gap_norm_ += fs_.back().lpNorm<1>();   
 
   merit_ = cost_ + mu_*gap_norm_;
-
-  // KKT termination criteria
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }  
 
   backwardPass();
   forwardPass();

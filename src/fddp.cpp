@@ -85,12 +85,11 @@ bool SolverFDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     updateExpectedImprovement();
 
     // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        STOP_PROFILER("SolverFDDP::solve");
-        return true;
-      }
-    } 
+    checkKKTConditions();
+    if (KKT_  <= termination_tol_) {
+      STOP_PROFILER("SolverFDDP::solve");
+      return true;
+    }
 
     gap_list_.push_back(gap_norm_);
     cost_list_.push_back(cost_);
@@ -182,10 +181,6 @@ void SolverFDDP::computeDirection(const bool recalcDiff) {
   }
   gap_norm_ += fs_.back().lpNorm<1>();
 
-  // KKT termination criteria
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }  
   backwardPass();
   STOP_PROFILER("SolverFDDP::computeDirection");
 }

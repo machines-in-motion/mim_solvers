@@ -127,7 +127,6 @@ class SolverPROXQP : public SolverDDP {
   double get_xgrad_norm() const { return x_grad_norm_; };
   double get_ugrad_norm() const { return u_grad_norm_; };
   double get_merit() const { return merit_; };
-  bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
   double get_mu2() const { return mu2_; };
@@ -149,7 +148,6 @@ class SolverPROXQP : public SolverDDP {
   void set_mu2(double mu2) { mu2_ = mu2; };
   
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
-  void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
   void set_filter_size(const std::size_t inFilterSize) { filter_size_ = inFilterSize; 
                                                         gap_list_.resize(filter_size_); 
@@ -202,7 +200,6 @@ class SolverPROXQP : public SolverDDP {
   double mu2_ = 1e1;                                           //!< penalty no constraint violation
   double termination_tol_ = 1e-8;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
-  bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
   int max_qp_iters_ = 1000;                                    //!< maximum number of QP iterations
   int qp_iters_ = 0;                                           //!< current number of QP iterations
 

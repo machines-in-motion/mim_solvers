@@ -64,11 +64,9 @@ bool SolverKKT::solve(const std::vector<Eigen::VectorXd>& init_xs,
     expectedImprovement();
 
     // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        return true;
-      }
-    } 
+    if (KKT_  <= termination_tol_) {
+      return true;
+    }
 
     for (std::vector<double>::const_iterator it = alphas_.begin();
          it != alphas_.end(); ++it) {
@@ -130,9 +128,7 @@ void SolverKKT::computeDirection(const bool recalc) {
   dxs_.back() = p_x.segment(ix, ndxi);
   lambdas_.back() = dual_.segment(ix, ndxi);
   // KKT termination criteria
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }  
+  checkKKTConditions();
 }
 
 double SolverKKT::tryStep(const double steplength) {

@@ -139,8 +139,6 @@ void exposeSolverDDP() {
       .add_property("KKT", bp::make_function(&SolverDDP::get_KKT),
                     "KKT residual norm")
 
-      .add_property("use_kkt_criteria", bp::make_function(&SolverDDP::get_use_kkt_criteria), bp::make_function(&SolverDDP::set_use_kkt_criteria),
-                    "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverDDP::get_termination_tolerance), bp::make_function(&SolverDDP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-8)");
 }

@@ -42,6 +42,7 @@ class SQP(SolverAbstract):
         self.filter_size = 1
         self.with_callbacks = with_callbacks
         
+        self.extra_iteration_for_last_kkt = False
         self.allocateData()
 
     def models(self):
@@ -68,7 +69,6 @@ class SQP(SolverAbstract):
 
     def computeDirection(self, recalc=True):
         self.calc()
-        self.KKT_check()
         self.backwardPass()  
         self.computeUpdates()
 
@@ -225,7 +225,11 @@ class SQP(SolverAbstract):
             self.computeDirection(recalc=recalc)
 
             # self.check_optimality()
-            if self.KKT < self.termination_tolerance:
+
+            self.KKT_check()
+            if self.KKT < self.termination_tolerance:            
+                if(self.with_callbacks):
+                    print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
                 return True
 
             self.gap_list.append(self.gap_norm)
@@ -259,6 +263,17 @@ class SQP(SolverAbstract):
             if(self.with_callbacks):
                 print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
 
+        if self.extra_iteration_for_last_kkt:
+            recalc = True   # this will recalculated derivatives in Compute Direction 
+            self.computeDirection(recalc=recalc)
+
+            # self.check_optimality()
+
+            self.KKT_check()
+            if self.KKT < self.termination_tolerance:            
+                if(self.with_callbacks):
+                    print("{:>4} {:.5e} {:.5e} {:.5e} {:.4f} {:.5e} {:.5e}".format(iter, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT))
+                return True
         return False 
 
     def allocateData(self):

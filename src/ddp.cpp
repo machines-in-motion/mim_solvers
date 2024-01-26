@@ -94,12 +94,11 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     expectedImprovement();
 
     // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        STOP_PROFILER("SolverDDP::solve");
-        return true;
-      }
-    } 
+    checkKKTConditions();
+    if (KKT_  <= termination_tol_) {
+      STOP_PROFILER("SolverDDP::solve");
+      return true;
+    }
 
     // We need to recalculate the derivatives when the step length passes
     recalcDiff = false;
@@ -156,10 +155,6 @@ void SolverDDP::computeDirection(const bool recalcDiff) {
   if (recalcDiff) {
     calcDiff();
   }
-  // KKT termination criteria
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }  
   backwardPass();
   STOP_PROFILER("SolverDDP::computeDirection");
 }

@@ -171,14 +171,12 @@ bool SolverPROXQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std:
     }
 
     // KKT termination criteria
-    if(use_kkt_criteria_){
-      if (KKT_  <= termination_tol_) {
-        if(with_callbacks_){
-          printCallbacks();
-        }
-        STOP_PROFILER("SolverPROXQP::solve");
-        return true;
+    if (KKT_  <= termination_tol_) {
+      if(with_callbacks_){
+        printCallbacks();
       }
+      STOP_PROFILER("SolverPROXQP::solve");
+      return true;
     }
 
     constraint_list_.push_back(constraint_norm_);
@@ -340,9 +338,7 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   if (recalcDiff) {
     calc(recalcDiff);
   }
-  if(use_kkt_criteria_){
-    checkKKTConditions();
-  }
+  checkKKTConditions();
 
   // proxsuite::proxqp::dense::QP<double> qp_(n_vars, n_eq, n_in);
   // qp_.init(P_, q_, A_, b_, C_, l_, u_);
