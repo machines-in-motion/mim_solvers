@@ -132,7 +132,7 @@ class SolverCSQP : public SolverDDP {
   double get_xgrad_norm() const { return x_grad_norm_; };
   double get_ugrad_norm() const { return u_grad_norm_; };
   double get_merit() const { return merit_; };
-  bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
+  bool get_extra_iteration_for_last_kkt() const { return extra_iteration_for_last_kkt_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
   double get_mu2() const { return mu2_; };
@@ -162,7 +162,7 @@ class SolverCSQP : public SolverDDP {
   double get_rho_max() { return rho_max_;};
 
 
-  void printCallbacks();
+  void printCallbacks(bool isLastIteration = false);
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
 
@@ -179,7 +179,7 @@ class SolverCSQP : public SolverDDP {
   void set_warm_start(bool warm_start) { warm_start_ = warm_start; };
 
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
-  void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
+  void set_extra_iteration_for_last_kkt(bool inBool) { extra_iteration_for_last_kkt_ = inBool; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
   void set_filter_size(const std::size_t inFilterSize) { filter_size_ = inFilterSize; 
                                                         gap_list_.resize(filter_size_); 
@@ -229,6 +229,8 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
   bool warm_start_y_ = false;
   bool reset_rho_ = false;
+  bool update_rho_with_heuristic_ = false;
+  bool remove_reg_ = false;                                    //!< Removes Crocoddyl's regularization (preg,dreg)
 
  protected:
   double merit_ = 0;                                           //!< merit function at nominal traj
@@ -244,7 +246,7 @@ class SolverCSQP : public SolverDDP {
   double mu2_ = 1e1;                                           //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
-  bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
+  bool extra_iteration_for_last_kkt_ = false;                  //!< Additional iteration if SQP max. iter reached
   double sigma_ = 1e-6;                                        //!< proximal term
   double alpha_ = 1.6;                                         //!< relaxed step size
   std::size_t max_qp_iters_ = 1000;                            //!< max qp iters
@@ -265,16 +267,16 @@ class SolverCSQP : public SolverDDP {
 
  private:
   double th_acceptnegstep_;                                   //!< Threshold used for accepting step along ascent direction
-  Eigen::VectorXd dual_vecx;
-  Eigen::VectorXd dual_vecu;
-  Eigen::VectorXd dual_cwise_prod;
-  Eigen::VectorXd Vx_tmp;
+  bool is_worse_than_memory_ = false;                         //!< Boolean for filter line-search criteria 
 
-  Eigen::MatrixXd sigma_diag_x;                // This is the sigma * eye(ndx)
-  std::vector<Eigen::MatrixXd> sigma_diag_u;   // This is the sigma * eye(nu)
-  std::vector<Eigen::VectorXd> Cdx_Cdu;
-  bool is_worse_than_memory_ = false;          //!< Boolean for filter line-search criteria 
-
+  Eigen::VectorXd tmp_vec_x_;                                 //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_vec_u_;                    //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_dual_cwise_;               //!< Temporary variable
+  Eigen::VectorXd tmp_Vx_;                                    //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_Cdx_Cdu_;                       //!< Temporary variable
+  std::vector<Eigen::MatrixXd> tmp_rhoGx_mat_;                //!< Temporary variable
+  std::vector<Eigen::MatrixXd> tmp_rhoGu_mat_;                //!< Temporary variable
+  std::vector<Eigen::VectorXd> Vxx_fs_;                       //!< Temporary variable
 };
 
 }  // namespace mim_solvers

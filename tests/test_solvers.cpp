@@ -46,7 +46,6 @@ void test_sqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e0);
   BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-6);
   BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
-  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
   BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
   // Test setters
@@ -56,9 +55,6 @@ void test_sqp_core(){
   const double termination_tolerance = 1e-4;
   solver_cast->set_termination_tolerance(termination_tolerance);
   BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
-  const bool use_kkt_criteria = false;
-  solver_cast->set_use_kkt_criteria(use_kkt_criteria);
-  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
   const bool use_filter_line_search = false;
   solver_cast->set_use_filter_line_search(use_filter_line_search);
   BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);
@@ -91,7 +87,6 @@ void test_csqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
   BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
   BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
-  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
   BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
   BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
   BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
@@ -135,9 +130,6 @@ void test_csqp_core(){
   const double termination_tolerance = 1e-4;
   solver_cast->set_termination_tolerance(termination_tolerance);
   BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
-  const bool use_kkt_criteria = false;
-  solver_cast->set_use_kkt_criteria(use_kkt_criteria);
-  BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
   const bool use_filter_line_search = false;
   solver_cast->set_use_filter_line_search(use_filter_line_search);
   BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);
@@ -189,7 +181,6 @@ void test_csqp_core(){
     BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
     BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
     BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
-    BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), true);
     BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
     BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
     BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
@@ -213,9 +204,6 @@ void test_csqp_core(){
     const double termination_tolerance = 1e-4;
     solver_cast->set_termination_tolerance(termination_tolerance);
     BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
-    const bool use_kkt_criteria = false;
-    solver_cast->set_use_kkt_criteria(use_kkt_criteria);
-    BOOST_CHECK_EQUAL(solver_cast->get_use_kkt_criteria(), false);
     const bool use_filter_line_search = false;
     solver_cast->set_use_filter_line_search(use_filter_line_search);
     BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), false);

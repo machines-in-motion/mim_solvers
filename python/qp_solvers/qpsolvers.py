@@ -69,10 +69,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         self.gap = self.gap.copy()
 
 
-    def computeDirectionFullQP(self, KKT=True):
-        self.calc(True)
-        if KKT:
-            self.KKT_check()
+    def computeDirectionFullQP(self):
         self.n_vars  = self.problem.T*(self.ndx + self.nu)
 
         P = np.zeros((self.problem.T*(self.ndx + self.nu), self.problem.T*(self.ndx + self.nu)))

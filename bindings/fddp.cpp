@@ -61,8 +61,6 @@ void exposeSolverFDDP() {
       .add_property("KKT", bp::make_function(&SolverFDDP::get_KKT),
                     "KKT residual norm")
 
-      .add_property("use_kkt_criteria", bp::make_function(&SolverFDDP::get_use_kkt_criteria), bp::make_function(&SolverFDDP::set_use_kkt_criteria),
-                    "Use the KKT residual condition as a termination criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverFDDP::get_termination_tolerance), bp::make_function(&SolverFDDP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-6)")
       .add_property("th_acceptNegStep", bp::make_function(&SolverFDDP::get_th_acceptnegstep),

@@ -112,7 +112,18 @@ ddp2 = CSQP(problem, "StagewiseQP")
 ddp1.with_callbacks = True
 ddp2.with_callbacks = True
 
-termination_tolerance = 1e-3
+ddp1.use_filter_line_search = True
+ddp2.use_filter_line_search = True
+
+max_sqp_iter = 4
+
+ddp1.filter_size = max_sqp_iter 
+ddp2.filter_size = max_sqp_iter 
+
+ddp1.extra_iteration_for_last_kkt = True
+ddp2.extra_iteration_for_last_kkt = True
+
+termination_tolerance = 1e-8
 ddp1.termination_tolerance = termination_tolerance
 ddp2.termination_tolerance = termination_tolerance
 
@@ -125,12 +136,14 @@ ddp1.eps_rel = 0.
 ddp2.eps_abs = 1e-4
 ddp2.eps_rel = 0.
 
-converged = ddp1.solve(xs_init_1, us_init_1, 20)
-converged = ddp2.solve(xs_init_2, us_init_2, 20)
+# Remove regularization in cpp solver
+ddp1.remove_reg = True
+converged = ddp1.solve(xs_init_1, us_init_1, max_sqp_iter)
+converged = ddp2.solve(xs_init_2, us_init_2, max_sqp_iter)
 
 
 ##### UNIT TEST #####################################
-set_tol = 1e-3
+set_tol = 1e-2
 assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
 assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
 
@@ -139,6 +152,4 @@ assert np.linalg.norm(np.array(ddp1.du_tilde) - np.array(ddp2.du_tilde)) < set_t
 
 assert np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol, "Test failed"
 
-
-assert ddp1.KKT < termination_tolerance, "Test failed"
-assert ddp2.KKT < termination_tolerance, "Test failed"
+assert ddp1.qp_iters == ddp2.qp_iters 

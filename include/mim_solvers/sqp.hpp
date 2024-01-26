@@ -106,7 +106,7 @@ class SolverSQP : public SolverDDP {
   double get_xgrad_norm() const { return x_grad_norm_; };
   double get_ugrad_norm() const { return u_grad_norm_; };
   double get_merit() const { return merit_; };
-  bool get_use_kkt_criteria() const { return use_kkt_criteria_; };
+  bool get_extra_iteration_for_last_kkt() const { return extra_iteration_for_last_kkt_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
   double get_mu() const { return mu_; };
   double get_termination_tolerance() const { return termination_tol_; };
@@ -119,7 +119,7 @@ class SolverSQP : public SolverDDP {
 
   void set_mu(double mu) { mu_ = mu; };
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
-  void set_use_kkt_criteria(bool inBool) { use_kkt_criteria_ = inBool; };
+  void set_extra_iteration_for_last_kkt(bool inBool) { extra_iteration_for_last_kkt_ = inBool; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
   void set_filter_size(const std::size_t inFilterSize) { filter_size_ = inFilterSize; 
                                                          gap_list_.resize(filter_size_); 
@@ -129,14 +129,14 @@ class SolverSQP : public SolverDDP {
   using SolverDDP::xs_try_;
   using SolverDDP::us_try_;
   using SolverDDP::cost_try_;
-  std::vector<Eigen::VectorXd> fs_try_;                                //!< Gaps/defects between shooting nodes
-  std::vector<Eigen::VectorXd> dx_;                                    //!< the descent direction for x
-  std::vector<Eigen::VectorXd> du_;                                    //!< the descent direction for u
-  std::vector<Eigen::VectorXd> lag_mul_;                               //!< the Lagrange multiplier of the dynamics constraint
-  boost::circular_buffer<double> gap_list_;                            //!< memory buffer of gap norms (used in filter line-search)
-  boost::circular_buffer<double> cost_list_;                           //!< memory buffer of gap norms (used in filter line-search)
-  Eigen::VectorXd fs_flat_;                                            //!< Gaps/defects between shooting nodes (1D array)
-  bool use_filter_line_search_ = true;                                 //!< Use filter line search
+  std::vector<Eigen::VectorXd> fs_try_;                        //!< Gaps/defects between shooting nodes
+  std::vector<Eigen::VectorXd> dx_;                            //!< the descent direction for x
+  std::vector<Eigen::VectorXd> du_;                            //!< the descent direction for u
+  std::vector<Eigen::VectorXd> lag_mul_;                       //!< the Lagrange multiplier of the dynamics constraint
+  boost::circular_buffer<double> gap_list_;                    //!< memory buffer of gap norms (used in filter line-search)
+  boost::circular_buffer<double> cost_list_;                   //!< memory buffer of gap norms (used in filter line-search)
+  Eigen::VectorXd fs_flat_;                                    //!< Gaps/defects between shooting nodes (1D array)
+  bool use_filter_line_search_ = true;                         //!< Use filter line search
   
  protected:
   double merit_ = 0;                                           //!< merit function at nominal traj
@@ -149,13 +149,15 @@ class SolverSQP : public SolverDDP {
   double mu_ = 1e0;                                            //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
-  bool use_kkt_criteria_ = true;                               //!< Use KKT conditions as termination criteria 
+  bool extra_iteration_for_last_kkt_ = false;                  //!< Additional iteration if SQP max. iter reached
   std::size_t filter_size_ = 1;                                //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();       //!< KKT conditions residual
 
  private:
-  double th_acceptnegstep_;           //!< Threshold used for accepting step along ascent direction
-  bool is_worse_than_memory_ = false; //!< Boolean for filter line-search criteria 
+  double th_acceptnegstep_;                                    //!< Threshold used for accepting step along ascent direction
+  bool is_worse_than_memory_ = false;                          //!< Boolean for filter line-search criteria 
+  Eigen::VectorXd tmp_vec_x_;                                  //!< Temporary variable
+  std::vector<Eigen::VectorXd> tmp_vec_u_;                     //!< Temporary variable
 };
 
 }  // namespace mim_solvers
