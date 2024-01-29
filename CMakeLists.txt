@@ -18,6 +18,7 @@ add_compile_options(--warn-no-conversion)
 option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
+option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -107,7 +108,9 @@ endif()
 add_subdirectory(tests)
 
 # Benchmarks
-add_subdirectory(benchmarks)
+if(BUILD_BENCHMARKS)
+  add_subdirectory(benchmarks)
+endif()
 
 # Installation
 install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME} DESTINATION lib)
