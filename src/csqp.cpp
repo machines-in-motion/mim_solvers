@@ -29,59 +29,84 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       constraint_list_.resize(filter_size_);
       gap_list_.resize(filter_size_);
       cost_list_.resize(filter_size_);
-      fs_try_.resize(T + 1);
+
       fs_flat_.resize(ndx*(T + 1));
       fs_flat_.setZero();
-      lag_mul_.resize(T+1);
+      
+      xs_try_.resize(T+1); 
+      us_try_.resize(T);
+      dx_.resize(T+1); 
       du_.resize(T);
-      dx_.resize(T+1); dxtilde_.resize(T+1);
-      du_.resize(T); dutilde_.resize(T);
-      z_.resize(T+1); z_relaxed_.resize(T+1); y_.resize(T+1); rho_vec_.resize(T+1); inv_rho_vec_.resize(T+1);
+      dxtilde_.resize(T+1);
+      dutilde_.resize(T);
+      lag_mul_.resize(T+1);
+      fs_try_.resize(T + 1);
+      
+      z_.resize(T+1); 
+      z_relaxed_.resize(T+1); 
       z_prev_.resize(T+1);
-      xs_try_.resize(T+1); us_try_.resize(T);
+      y_.resize(T+1); 
+      rho_vec_.resize(T+1); 
+      inv_rho_vec_.resize(T+1);
       rho_sparse_base_ = rho_sparse_;
       std::size_t n_eq_crocoddyl = 0;
       
+      tmp_Vx_.resize(ndx); 
+      tmp_Vx_.setZero();
+      tmp_vec_x_.resize(ndx);
+      tmp_vec_x_.setZero();
+
       tmp_Cdx_Cdu_.resize(T+1);
-      tmp_Vx_.resize(ndx);
       tmp_dual_cwise_.resize(T+1);
       tmp_rhoGx_mat_.resize(T+1);
       tmp_rhoGu_mat_.resize(T);
-      tmp_vec_x_.resize(ndx);
       tmp_vec_u_.resize(T);
       Vxx_fs_.resize(T);
+
       const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
       for (std::size_t t = 0; t < T; ++t) {
         const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
         const std::size_t nu = model->get_nu();
-        xs_try_[t] = model->get_state()->zero();
-        us_try_[t] = Eigen::VectorXd::Zero(nu);
-
-        dx_[t].resize(ndx); du_[t].resize(nu);
-        dxtilde_[t].resize(ndx); dutilde_[t].resize(nu);
-        fs_try_[t].resize(ndx);
-        lag_mul_[t].resize(ndx); 
-        lag_mul_[t].setZero();
-        dx_[t].setZero(); dxtilde_[t].setZero();
-        du_[t] = Eigen::VectorXd::Zero(nu);
-        dutilde_[t] = Eigen::VectorXd::Zero(nu);
-
-        fs_try_[t] = Eigen::VectorXd::Zero(ndx);
-
         std::size_t nc = model->get_ng(); 
         n_eq_crocoddyl += model->get_nh();
 
-        tmp_rhoGx_mat_[t].resize(nc, ndx);
-        tmp_rhoGu_mat_[t].resize(nc, nu);
-        tmp_dual_cwise_[t].resize(nc);
-        tmp_vec_u_[t].resize(nu);
-        tmp_Cdx_Cdu_[t].resize(nc); tmp_Cdx_Cdu_[t].setZero();
-        Vxx_fs_[t].resize(ndx);
+        xs_try_[t] = model->get_state()->zero();
+        us_try_[t] = Eigen::VectorXd::Zero(nu);
+        dx_[t].resize(ndx); 
+        dx_[t].setZero(); 
+        du_[t].resize(nu);
+        du_[t] = Eigen::VectorXd::Zero(nu);
+        dxtilde_[t].resize(ndx); 
+        dxtilde_[t].setZero();
+        dutilde_[t].resize(nu);
+        dutilde_[t] = Eigen::VectorXd::Zero(nu);
+        lag_mul_[t].resize(ndx); 
+        lag_mul_[t].setZero();
+        fs_try_[t].resize(ndx);
+        fs_try_[t] = Eigen::VectorXd::Zero(ndx);     
 
-        z_[t].resize(nc); z_[t].setZero();
-        z_prev_[t].resize(nc); z_prev_[t].setZero();
-        z_relaxed_[t].resize(nc); z_relaxed_[t].setZero();
-        y_[t].resize(nc); y_[t].setZero();
+        z_[t].resize(nc); 
+        z_[t].setZero();
+        z_relaxed_[t].resize(nc); 
+        z_relaxed_[t].setZero();
+        z_prev_[t].resize(nc); 
+        z_prev_[t].setZero();
+        y_[t].resize(nc); 
+        y_[t].setZero();
+
+        tmp_Cdx_Cdu_[t].resize(nc); 
+        tmp_Cdx_Cdu_[t].setZero();
+        tmp_dual_cwise_[t].resize(nc); 
+        tmp_dual_cwise_[t].setZero();
+        tmp_rhoGx_mat_[t].resize(nc, ndx);  
+        tmp_rhoGx_mat_[t].setZero();
+        tmp_rhoGu_mat_[t].resize(nc, nu);   
+        tmp_rhoGu_mat_[t].setZero();
+        tmp_vec_u_[t].resize(nu); 
+        tmp_vec_u_[t].setZero();
+        Vxx_fs_[t].resize(ndx);
+        Vxx_fs_[t].setZero();
+
         rho_vec_[t].resize(nc); 
         inv_rho_vec_[t].resize(nc); 
 
@@ -108,15 +133,35 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       }
 
       xs_try_.back() = problem_->get_terminalModel()->get_state()->zero();
-
+      dx_.back().resize(ndx); 
+      dx_.back().setZero(); 
+      dxtilde_.back().resize(ndx);
+      dxtilde_.back().setZero();
       lag_mul_.back().resize(ndx);
       lag_mul_.back().setZero();
-      dx_.back().resize(ndx); dxtilde_.back().resize(ndx);
-      dx_.back().setZero(); dxtilde_.back().setZero();
       fs_try_.back().resize(ndx);
       fs_try_.back() = Eigen::VectorXd::Zero(ndx);
 
       std::size_t nc = problem_->get_terminalModel()->get_ng(); 
+
+      z_.back().resize(nc); 
+      z_.back().setZero();
+      z_relaxed_.back().resize(nc); 
+      z_relaxed_.back().setZero();
+      z_prev_.back().resize(nc); 
+      z_prev_.back().setZero();
+      y_.back().resize(nc); 
+      y_.back().setZero();
+
+      tmp_Cdx_Cdu_.back().resize(nc); 
+      tmp_Cdx_Cdu_.back().setZero();
+      tmp_dual_cwise_.back().resize(nc);
+      tmp_dual_cwise_.back().setZero();
+      tmp_rhoGx_mat_.back().resize(nc, ndx);
+      tmp_rhoGx_mat_.back().setZero();
+
+
+
 
       // Check that no equality constraint was specified through Crocoddyl's API
       n_eq_crocoddyl += problem_->get_terminalModel()->get_nh(); 
@@ -126,18 +171,10 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
                      "     lower and upper bounds in the constructor of the constraint model residual or by setting g_ub and g_lb.")
       } 
 
-      tmp_Cdx_Cdu_.back().resize(nc); tmp_Cdx_Cdu_.back().setZero();
-      tmp_rhoGx_mat_.back().resize(nc, ndx);
-      tmp_dual_cwise_.back().resize(nc);
 
-      // Constraint Models
-      z_.back().resize(nc); z_.back().setZero();
-      z_prev_.back().resize(nc); z_prev_.back().setZero();
-      z_relaxed_.back().resize(nc); z_relaxed_.back().setZero();
-      y_.back().resize(nc); y_.back().setZero();
+
       rho_vec_.back().resize(nc);
       inv_rho_vec_.back().resize(nc);
-
       for (std::size_t k = 0; k < nc; ++k){
         auto lb = problem_->get_terminalModel()->get_g_lb(); 
         auto ub = problem_->get_terminalModel()->get_g_ub();
@@ -464,6 +501,10 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     forwardPass();
     update_lagrangian_parameters(false);
   }
+  if(with_qp_callbacks_){
+  std::cout << "Iters " << 0 << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
+                                    " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
+  }
   bool converged_ = false;
   for (std::size_t iter = 1; iter < max_qp_iters_+1; ++iter){
     if (iter % rho_update_interval_ == 1 || iter == 1){
@@ -489,8 +530,10 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
         converged_ = true;
         break;
     }
-    // std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
-    //                                  " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
+    if(with_qp_callbacks_){
+      std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
+                                      " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
+    }
   }
 
   if (!converged_){
@@ -1131,5 +1174,14 @@ void SolverCSQP::setCallbacks(bool inCallbacks){
 bool SolverCSQP::getCallbacks(){
   return with_callbacks_;
 }
+
+void SolverCSQP::setQPCallbacks(bool inQPCallbacks){
+  with_qp_callbacks_ = inQPCallbacks;
+}
+
+bool SolverCSQP::getQPCallbacks(){
+  return with_qp_callbacks_;
+}
+
 
 }  // namespace mim_solvers

@@ -86,6 +86,8 @@ void exposeSolverCSQP() {
 
       .add_property("with_callbacks", bp::make_function(&SolverCSQP::getCallbacks), bp::make_function(&SolverCSQP::setCallbacks),
                     "Activates the callbacks when true (default: False)")
+      .add_property("with_qp_callbacks", bp::make_function(&SolverCSQP::getQPCallbacks), bp::make_function(&SolverCSQP::setQPCallbacks),
+                    "Activates the QP callbacks when true (default: False)")
       .add_property("extra_iteration_for_last_kkt", bp::make_function(&SolverCSQP::get_extra_iteration_for_last_kkt), bp::make_function(&SolverCSQP::set_extra_iteration_for_last_kkt),
                     "Additional iteration if SQP max. iter reached (default: False)")
       .add_property("mu", bp::make_function(&SolverCSQP::get_mu), bp::make_function(&SolverCSQP::set_mu),

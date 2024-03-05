@@ -165,6 +165,9 @@ class SolverCSQP : public SolverDDP {
   void printCallbacks(bool isLastIteration = false);
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
+  void setQPCallbacks(bool inCallbacks);
+  bool getQPCallbacks();
+
 
 
 
@@ -246,6 +249,7 @@ class SolverCSQP : public SolverDDP {
   double mu2_ = 1e1;                                           //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
+  bool with_qp_callbacks_ = false;                         //!< With QP callbacks
   bool extra_iteration_for_last_kkt_ = false;                  //!< Additional iteration if SQP max. iter reached
   double sigma_ = 1e-6;                                        //!< proximal term
   double alpha_ = 1.6;                                         //!< relaxed step size
