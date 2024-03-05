@@ -63,7 +63,7 @@ void exposeSolverSQP() {
       .add_property("mu", bp::make_function(&SolverSQP::get_mu), bp::make_function(&SolverSQP::set_mu),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
       .add_property("use_filter_line_search", bp::make_function(&SolverSQP::get_use_filter_line_search), bp::make_function(&SolverSQP::set_use_filter_line_search),
-                    "Use the filter line search criteria (default: False)")
+                    "Use the filter line search criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverSQP::get_termination_tolerance), bp::make_function(&SolverSQP::set_termination_tolerance),
                     "Termination criteria to exit the iteration (default: 1e-6)")
       .add_property("filter_size", bp::make_function(&SolverSQP::get_filter_size), bp::make_function(&SolverSQP::set_filter_size),
