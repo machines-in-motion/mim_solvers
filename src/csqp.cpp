@@ -502,8 +502,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     update_lagrangian_parameters(false);
   }
   if(with_qp_callbacks_){
-  std::cout << "Iters " << 0 << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
-                                    " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
+    printQPCallbacks(0);
   }
   bool converged_ = false;
   for (std::size_t iter = 1; iter < max_qp_iters_+1; ++iter){
@@ -531,8 +530,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
         break;
     }
     if(with_qp_callbacks_){
-      std::cout << "Iters " << iter << " norm_primal=" << norm_primal_ << " norm_primal_tol=" << norm_primal_tolerance_ << 
-                                      " norm_dual= " << norm_dual_ << " norm_dual_tol=" << norm_dual_tolerance_ << std::endl;
+      printQPCallbacks(iter);
     }
   }
 
@@ -1163,6 +1161,16 @@ void SolverCSQP::printCallbacks(bool isLastIteration){
     }
     std::cout << std::fixed      << std::setprecision(4) << qp_iters_;
   }
+  std::cout << std::endl;
+  std::cout << std::flush;
+}
+
+void SolverCSQP::printQPCallbacks(int iter){
+  std::cout << "Iters " << iter;
+  std::cout << " norm_primal = "     << std::scientific << std::setprecision(4) << norm_primal_;
+  std::cout << " norm_primal_tol = " << std::scientific << std::setprecision(4) << norm_primal_tolerance_;
+  std::cout << " norm_dual =  "      << std::scientific << std::setprecision(4) << norm_dual_;
+  std::cout << " norm_dual_tol = "   << std::scientific << std::setprecision(4) << norm_dual_tolerance_;
   std::cout << std::endl;
   std::cout << std::flush;
 }

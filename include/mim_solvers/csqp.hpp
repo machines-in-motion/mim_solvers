@@ -163,6 +163,7 @@ class SolverCSQP : public SolverDDP {
 
 
   void printCallbacks(bool isLastIteration = false);
+  void printQPCallbacks(int iter);
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
   void setQPCallbacks(bool inCallbacks);
