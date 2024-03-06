@@ -236,16 +236,15 @@ void SolverCSQP::reset_params(){
     z_prev_[t].setZero();
     z_relaxed_[t].setZero();
 
-    // Warm start y
-    if(!warm_start_y_){
+    if(reset_y_){
       y_[t].setZero();
     } 
   }
   z_.back().setZero();
   z_prev_.back().setZero();
   z_relaxed_.back().setZero();
-  // Warm-start y
-  if(!warm_start_y_){
+
+  if(reset_y_){
     y_.back().setZero();
   }
 }

@@ -78,8 +78,8 @@ void exposeSolverCSQP() {
       .def_readwrite("rho_vec", &SolverCSQP::rho_vec_, "rho vector")
       .def_readwrite("y", &SolverCSQP::y_, "y")
       .def_readwrite("z", &SolverCSQP::z_, "z")
-      .def_readwrite("warm_start_y", &SolverCSQP::warm_start_y_, "Warm-start ADMM Lagrange multipliers with previous solution (default: False, i.e. reset to 0)")
-      .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. not reset to base values)")
+      .def_readwrite("reset_y", &SolverCSQP::reset_y_, "Reset ADMM Lagrange multipliers to zero (default: False, i.e. reset to previous)")
+      .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. reset to previous)")
       .def_readwrite("update_rho_with_heuristic", &SolverCSQP::update_rho_with_heuristic_, "Update the heuristic for the rho update (default: False)")
       .def_readwrite("remove_reg", &SolverCSQP::remove_reg_, "Removes Crocoddyl's regularization by setting (preg,dreg)=0 when True (default: False)")
 

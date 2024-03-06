@@ -158,7 +158,7 @@ class SolverCSQP : public SolverDDP {
   double get_norm_dual() { return norm_dual_;};
   double get_norm_dual_tolerance() { return norm_dual_tolerance_;};
 
-  double get_warm_start_y() { return warm_start_y_;};
+  double get_reset_y() { return reset_y_;};
   double get_reset_rho() { return reset_rho_;};
   double get_rho_min() { return rho_min_;};
   double get_rho_max() { return rho_max_;};
@@ -234,7 +234,7 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_rel_ = 0.0;                                 //!< norm dual relative residual
   double norm_primal_tolerance_ = 0.0;                         //!< tolerance of the primal residual norm
   double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
-  bool warm_start_y_ = false;
+  bool reset_y_ = false;
   bool reset_rho_ = false;
   bool update_rho_with_heuristic_ = false;
   bool remove_reg_ = false;                                    //!< Removes Crocoddyl's regularization (preg,dreg)

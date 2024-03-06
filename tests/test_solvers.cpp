@@ -105,7 +105,7 @@ void test_csqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_norm_primal_tolerance(), 0.);
   BOOST_CHECK_EQUAL(solver_cast->get_norm_dual(), 0.);
   BOOST_CHECK_EQUAL(solver_cast->get_norm_dual_tolerance(), 0.);
-  BOOST_CHECK_EQUAL(solver_cast->get_warm_start_y(), false);
+  BOOST_CHECK_EQUAL(solver_cast->get_reset_y(), false);
   BOOST_CHECK_EQUAL(solver_cast->get_reset_rho(), false);
   BOOST_CHECK_EQUAL(solver_cast->get_rho_min(), 1e-6);
   BOOST_CHECK_EQUAL(solver_cast->get_rho_max(), 1e3);
@@ -124,8 +124,8 @@ void test_csqp_core(){
   const double sigma = 1e-4;
   solver_cast->set_sigma(sigma);
   BOOST_CHECK_EQUAL(solver_cast->get_sigma(), 1e-4);
-  const bool warm_start = false;
-  solver_cast->set_equality_qp_initial_guess(warm_start);
+  const bool equality_qp_initial_guess = false;
+  solver_cast->set_equality_qp_initial_guess(equality_qp_initial_guess);
   BOOST_CHECK_EQUAL(solver_cast->get_equality_qp_initial_guess(), false);
   const double termination_tolerance = 1e-4;
   solver_cast->set_termination_tolerance(termination_tolerance);
