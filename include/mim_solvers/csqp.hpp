@@ -198,7 +198,8 @@ class SolverCSQP : public SolverDDP {
 
   void update_lagrangian_parameters();
   void set_rho_sparse(double rho_sparse) {rho_sparse_ = rho_sparse;};
-  void update_rho_sparse(int iter);
+  void update_rho_vec(int iter);
+  void apply_rho_update(double rho_sparse_);
 
   void set_max_qp_iters(int iters){ max_qp_iters_ = iters; };
   void set_eps_abs(double eps_abs) { eps_abs_ = eps_abs;};

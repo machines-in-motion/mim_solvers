@@ -60,7 +60,7 @@ void exposeSolverCSQP() {
            "")
       .def("backwardPass_without_rho_update", &SolverCSQP::backwardPass_without_rho_update, bp::args("self"),
            "")
-      .def("update_rho_sparse", &SolverCSQP::update_rho_sparse, bp::args("self", "iter"),
+      .def("update_rho_vec", &SolverCSQP::update_rho_vec, bp::args("self", "iter"),
            "")
       .def("computeDirection", &SolverCSQP::computeDirection, bp::args("self", "recalcDiff"),
            "")
