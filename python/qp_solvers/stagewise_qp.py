@@ -46,20 +46,28 @@ class StagewiseADMM(SolverAbstract):
 
         self.OSQP_update = True
 
+        self.reset_rho = False 
+        self.reset_y   = False 
+
+
+        self.sigma_sparse = 1e-6
+        self.rho_sparse_base = 1e-1
+        self.rho_min = 1e-6
+        self.rho_max = 1e3
+
         if self.verboseQP:
             print("USING StagewiseQP")
 
     def reset_params(self):
         
-        self.sigma_sparse = 1e-6
-        self.rho_sparse= 1e-1
-        self.rho_min = 1e-6
-        self.rho_max = 1e3
+        if self.reset_rho:
+            self.reset_rho_vec()
 
-        self.y = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
         self.z = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
+        self.dz_relaxed = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
-        self.reset_rho()
+        if self.reset_y:
+            self.y = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
     def models(self):
         mod = [m for m in self.problem.runningModels]
@@ -148,23 +156,26 @@ class StagewiseADMM(SolverAbstract):
             if self.rho_estimate_sparse > self.rho_sparse* self.adaptive_rho_tolerance or\
                 self.rho_estimate_sparse < self.rho_sparse/ self.adaptive_rho_tolerance :
                 self.rho_sparse = self.rho_estimate_sparse
-                for t, model in enumerate(self.problem.runningModels):   
-                    for k in range(model.ng):  
-                        if model.g_lb[k] == -np.inf and model.g_ub[k] == np.inf:
-                            self.rho_vec[t][k] = self.rho_min 
-                        elif abs(model.g_lb[k] - model.g_ub[k]) < 1e-6:
-                            self.rho_vec[t][k] = 1e3 * self.rho_sparse
-                        elif model.g_lb[k] != model.g_ub[k]:
-                            self.rho_vec[t][k] = self.rho_sparse
+                self.apply_rho_update(self.rho_sparse)
 
-                for k in range(self.problem.terminalModel.ng): 
-                    if self.problem.terminalModel.g_lb[k] == -np.inf and self.problem.terminalModel.g_ub[k] == np.inf:
-                        self.rho_vec[-1][k] = self.rho_min 
-                    elif abs(self.problem.terminalModel.g_lb[k] - self.problem.terminalModel.g_ub[k]) < 1e-6:
-                        self.rho_vec[-1][k] = 1e3 * self.rho_sparse
-                    elif self.problem.terminalModel.g_lb[k] != self.problem.terminalModel.g_ub[k]:
-                        self.rho_vec[-1][k] = self.rho_sparse
 
+    def apply_rho_update(self, rho_sparse):
+        for t, model in enumerate(self.problem.runningModels):   
+            for k in range(model.ng):  
+                if model.g_lb[k] == -np.inf and model.g_ub[k] == np.inf:
+                    self.rho_vec[t][k] = self.rho_min 
+                elif abs(model.g_lb[k] - model.g_ub[k]) < 1e-6:
+                    self.rho_vec[t][k] = 1e3 * rho_sparse
+                elif model.g_lb[k] != model.g_ub[k]:
+                    self.rho_vec[t][k] = rho_sparse
+
+        for k in range(self.problem.terminalModel.ng): 
+            if self.problem.terminalModel.g_lb[k] == -np.inf and self.problem.terminalModel.g_ub[k] == np.inf:
+                self.rho_vec[-1][k] = self.rho_min 
+            elif abs(self.problem.terminalModel.g_lb[k] - self.problem.terminalModel.g_ub[k]) < 1e-6:
+                self.rho_vec[-1][k] = 1e3 * rho_sparse
+            elif self.problem.terminalModel.g_lb[k] != self.problem.terminalModel.g_ub[k]:
+                self.rho_vec[-1][k] = rho_sparse
 
 
     def update_lagrangian_parameters(self):
@@ -390,7 +401,6 @@ class StagewiseADMM(SolverAbstract):
         self.computeDirection(KKT=False)
 
         self.acceptStep(alpha = 1.0)
-        # self.reset_params()
         
     def allocateQPData(self):
 
@@ -413,26 +423,9 @@ class StagewiseADMM(SolverAbstract):
         self.rho_vec = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
 
-    def reset_rho(self):
-        self.rho_estimate_sparse = 0.0
-        self.rho_sparse = min(max(self.rho_sparse, self.rho_min), self.rho_max) 
-        scaler = 1
-        for t, model in enumerate(self.problem.runningModels):   
-            for k in range(model.ng): 
-                if model.g_lb[k] == -np.inf and model.g_ub[k] == np.inf:
-                    self.rho_vec[t][k] = self.rho_min 
-                elif abs(model.g_lb[k] - model.g_ub[k]) < 1e-3:
-                    self.rho_vec[t][k] = scaler * 1e3 * self.rho_sparse
-                elif model.g_lb[k] != model.g_ub[k]:
-                    self.rho_vec[t][k] = scaler * self.rho_sparse
-
-        for k in range(self.problem.terminalModel.ng): 
-            if self.problem.terminalModel.g_lb[k] == -np.inf and self.problem.terminalModel.g_ub[k] == np.inf:
-                self.rho_vec[-1][k] = self.rho_min 
-            elif abs(self.problem.terminalModel.g_lb[k] - self.problem.terminalModel.g_ub[k]) < 1e-3:
-                self.rho_vec[-1][k] = scaler * 1e3 * self.rho_sparse
-            elif self.problem.terminalModel.g_lb[k] != self.problem.terminalModel.g_ub[k]:
-                self.rho_vec[-1][k] = scaler * self.rho_sparse
+    def reset_rho_vec(self):
+        self.rho_sparse = self.rho_sparse_base
+        self.apply_rho_update(self.rho_sparse)
 
 
 

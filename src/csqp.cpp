@@ -48,7 +48,7 @@ SolverCSQP::SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
       y_.resize(T+1); 
       rho_vec_.resize(T+1); 
       inv_rho_vec_.resize(T+1);
-      rho_sparse_base_ = rho_sparse_;
+      rho_sparse_ = rho_sparse_base_;
       std::size_t n_eq_crocoddyl = 0;
       
       tmp_Vx_.resize(ndx); 

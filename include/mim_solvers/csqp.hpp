@@ -263,8 +263,8 @@ class SolverCSQP : public SolverDDP {
   std::size_t qp_iters_ = 0;
 
   double rho_estimate_sparse_ = 0.0;                          //!< rho estimate
-  double rho_sparse_ = 1e-1;                                  //!< rho
-  double rho_sparse_base_;
+  double rho_sparse_;                                  //!< rho
+  double rho_sparse_base_ = 1e-1;
   double rho_min_ = 1e-6;                                     //!< rho min
   double rho_max_ = 1e3;                                      //!< rho max 
   std::size_t rho_update_interval_ = 25;                      //!< frequency of update of rho
