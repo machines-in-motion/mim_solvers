@@ -116,8 +116,8 @@ void exposeSolverCSQP() {
                     "sets epsillon relative termination criteria for qp solver")
       .add_property("rho_sparse", bp::make_function(&SolverCSQP::get_rho_sparse), bp::make_function(&SolverCSQP::set_rho_sparse),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
-      .add_property("warm_start", bp::make_function(&SolverCSQP::get_warm_start), bp::make_function(&SolverCSQP::set_warm_start),
-                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("equality_qp_initial_guess", bp::make_function(&SolverCSQP::get_equality_qp_initial_guess), bp::make_function(&SolverCSQP::set_equality_qp_initial_guess),
+                    "initialize each qp with the solution of the equality qp. (default: True)")
       .add_property("sigma", bp::make_function(&SolverCSQP::get_sigma), bp::make_function(&SolverCSQP::set_sigma),
                     "get and set sigma")
       .add_property("alpha", bp::make_function(&SolverCSQP::get_alpha), bp::make_function(&SolverCSQP::set_alpha),

@@ -100,6 +100,8 @@ class SolverCSQP : public SolverDDP {
 
   virtual void reset_params();
 
+  virtual void reset_rho_vec();
+
   // virtual void set_constraints(const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& constraint_models){
   //   constraint_models_ = constraint_models;
   // };
@@ -139,7 +141,7 @@ class SolverCSQP : public SolverDDP {
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
-  bool get_warm_start() { return warm_start_; };
+  bool get_equality_qp_initial_guess() { return equality_qp_initial_guess_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
 
@@ -180,7 +182,8 @@ class SolverCSQP : public SolverDDP {
   void set_alpha(double alpha) { alpha_ = alpha; };
   void set_sigma(double sigma) { sigma_ = sigma; };
 
-  void set_warm_start(bool warm_start) { warm_start_ = warm_start; };
+  void set_equality_qp_initial_guess(bool equality_qp_initial_guess) { equality_qp_initial_guess_ = equality_qp_initial_guess; };
+
 
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_extra_iteration_for_last_kkt(bool inBool) { extra_iteration_for_last_kkt_ = inBool; };
@@ -266,7 +269,7 @@ class SolverCSQP : public SolverDDP {
   double adaptive_rho_tolerance_ = 5; 
   double eps_abs_ = 1e-4;                                     //!< absolute termination criteria
   double eps_rel_ = 1e-4;                                     //!< relative termination criteria
-  double warm_start_ = true;
+  double equality_qp_initial_guess_ = true;
   std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();      //!< KKT conditions residual
 
