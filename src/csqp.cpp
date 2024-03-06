@@ -234,6 +234,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     // Compute gradients
     calc(true);
 
+    // reset rho only at the beginning of each solve if reset_rho_ is false 
+    // (after calc to get correct lb and ub)
     if (iter_ == 0 && !reset_rho_){
       reset_rho_vec();
     }
@@ -573,7 +575,10 @@ void SolverCSQP::checkKKTConditions(){
 }
 
 
-void SolverCSQP::forwardPass(){
+void SolverCSQP::forwardPass(const double stepLength){
+
+    (void)stepLength;
+
     START_PROFILER("SolverCSQP::forwardPass");
     x_grad_norm_ = 0; 
     u_grad_norm_ = 0;

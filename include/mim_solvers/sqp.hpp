@@ -85,7 +85,7 @@ class SolverSQP : public SolverDDP {
    */
   void updateExpectedImprovement();
 
-  virtual void forwardPass();
+  virtual void forwardPass(const double stepLength=0);
   /**
    * @brief Computes the merit function, gaps at the given xs, us along with delta x and delta u
    */

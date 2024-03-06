@@ -84,7 +84,7 @@ class SolverCSQP : public SolverDDP {
    */
   void updateExpectedImprovement();
 
-  virtual void forwardPass();
+  virtual void forwardPass(const double stepLength=0);
   virtual void forwardPass_without_constraints();
   virtual void backwardPass();
   virtual void backwardPass_without_rho_update();

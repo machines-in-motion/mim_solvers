@@ -258,7 +258,9 @@ void SolverSQP::checkKKTConditions(){
 }
 
 
-void SolverSQP::forwardPass(){
+void SolverSQP::forwardPass(const double stepLength){
+    (void)stepLength;
+
     START_PROFILER("SolverSQP::forwardPass");
     x_grad_norm_ = 0; 
     u_grad_norm_ = 0;
