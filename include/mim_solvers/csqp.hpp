@@ -85,6 +85,7 @@ class SolverCSQP : public SolverDDP {
   void updateExpectedImprovement();
 
   virtual void forwardPass();
+  virtual void forwardPass_without_constraints();
   virtual void backwardPass();
   virtual void backwardPass_without_rho_update();
   virtual void backwardPass_without_constraints();
@@ -195,7 +196,7 @@ class SolverCSQP : public SolverDDP {
 
 
 
-  void update_lagrangian_parameters(bool update_y);
+  void update_lagrangian_parameters();
   void set_rho_sparse(double rho_sparse) {rho_sparse_ = rho_sparse;};
   void update_rho_sparse(int iter);
 

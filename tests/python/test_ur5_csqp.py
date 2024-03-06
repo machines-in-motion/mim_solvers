@@ -127,14 +127,18 @@ termination_tolerance = 1e-8
 ddp1.termination_tolerance = termination_tolerance
 ddp2.termination_tolerance = termination_tolerance
 
-ddp1.max_qp_iters = 2000
-ddp2.max_qp_iters = 2000
+ddp1.max_qp_iters = 1000
+ddp2.max_qp_iters = 1000
 
 ddp1.eps_abs = 1e-4
 ddp1.eps_rel = 0.
 
 ddp2.eps_abs = 1e-4
 ddp2.eps_rel = 0.
+
+
+ddp1.reset_rho = True  # To-do: make sure that the python has the same default arguments
+ddp1.reset_y   = True 
 
 # Remove regularization in cpp solver
 ddp1.remove_reg = True
@@ -143,7 +147,7 @@ converged = ddp2.solve(xs_init_2, us_init_2, max_sqp_iter)
 
 
 ##### UNIT TEST #####################################
-set_tol = 1e-2
+set_tol = 1e-8
 assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
 assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
 

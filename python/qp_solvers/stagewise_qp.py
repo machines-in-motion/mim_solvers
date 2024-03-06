@@ -28,7 +28,6 @@ class StagewiseADMM(SolverAbstract):
     def __init__(self, shootingProblem, verboseQP = False):
         SolverAbstract.__init__(self, shootingProblem)        
 
-        self.reset_params()
         self.allocateQPData()
         self.allocateData()
 
@@ -40,6 +39,8 @@ class StagewiseADMM(SolverAbstract):
         self.rho_update_interval = 25
         self.regMin = 1e-6
         self.alpha = 1.6
+
+        self.equality_qp_initial_guess = True 
 
         self.verboseQP = verboseQP
 
@@ -58,6 +59,7 @@ class StagewiseADMM(SolverAbstract):
         self.y = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
         self.z = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
+        self.reset_rho()
 
     def models(self):
         mod = [m for m in self.problem.runningModels]
@@ -96,9 +98,10 @@ class StagewiseADMM(SolverAbstract):
     def computeDirection(self):
 
         self.reset_params()
-        self.backwardPass_without_constraints()
-        self.forwardPass()
-        self.update_lagrangian_parameters(False)
+
+        if self.equality_qp_initial_guess:
+            self.backwardPass_without_constraints()
+            self.forwardPass_without_constraints()
         
         iter = 0
         for iter in range(1, self.max_qp_iters+1):
@@ -110,7 +113,7 @@ class StagewiseADMM(SolverAbstract):
                 # self.backwardPass_without_rho_update() # To implement
             
             self.forwardPass()
-            self.update_lagrangian_parameters(True)
+            self.update_lagrangian_parameters()
             self.update_rho_sparse(iter)
 
             if self.norm_primal <= self.eps_abs + self.eps_rel*self.norm_primal_rel and\
@@ -164,7 +167,7 @@ class StagewiseADMM(SolverAbstract):
 
 
 
-    def update_lagrangian_parameters(self, update_y):
+    def update_lagrangian_parameters(self):
 
         self.norm_primal = -np.inf
         self.norm_dual = -np.inf
@@ -188,8 +191,7 @@ class StagewiseADMM(SolverAbstract):
             self.dz_relaxed[t] = self.alpha * (Cdx_Cdu) + (1 - self.alpha)*self.z[t]
 
             self.z[t] = np.clip(self.dz_relaxed[t] + np.divide(self.y[t], self.rho_vec[t]), model.g_lb - data.g, model.g_ub - data.g)
-            if update_y:
-                self.y[t] += np.multiply(self.rho_vec[t], (self.dz_relaxed[t] - self.z[t])) 
+            self.y[t] += np.multiply(self.rho_vec[t], (self.dz_relaxed[t] - self.z[t])) 
 
             self.dx[t] = self.dx_tilde[t].copy()
             self.du[t] = self.du_tilde[t].copy()
@@ -227,8 +229,7 @@ class StagewiseADMM(SolverAbstract):
             # print(data.g)
             # print(self.dz_relaxed[-1])
             
-            if update_y:
-                self.y[-1] += np.multiply(self.rho_vec[-1], (self.dz_relaxed[-1] - self.z[-1])) 
+            self.y[-1] += np.multiply(self.rho_vec[-1], (self.dz_relaxed[-1] - self.z[-1])) 
 
             self.dx[-1] = self.dx_tilde[-1].copy()
 
@@ -281,6 +282,23 @@ class StagewiseADMM(SolverAbstract):
 
         self.x_grad_norm = np.linalg.norm(self.dx_tilde)/(self.problem.T+1)
         self.u_grad_norm = np.linalg.norm(self.du_tilde)/self.problem.T
+
+
+    def forwardPass_without_constraints(self): 
+        """ computes step updates dx and du """
+        assert np.linalg.norm(self.dx[0]) < 1e-6
+        for t, data in enumerate(self.problem.runningDatas):
+
+                self.du[t][:] = - self.K[t].dot(self.dx[t]) - self.k[t] 
+                A = data.Fx.copy()
+                B = data.Fu.copy()      
+                if len(B.shape) == 1:
+                    bk = B.dot(self.k[t][0])
+                    BK = B.reshape(B.shape[0], 1)@self.K[t]
+                else: 
+                    bk = B @ self.k[t]
+                    BK = B@self.K[t]
+                self.dx[t+1] = (A - BK)@self.dx[t] - bk + self.gap[t].copy()  
 
 
 
@@ -393,12 +411,14 @@ class StagewiseADMM(SolverAbstract):
         self.dz_relaxed = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
         self.rho_vec = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
+
+
+    def reset_rho(self):
         self.rho_estimate_sparse = 0.0
         self.rho_sparse = min(max(self.rho_sparse, self.rho_min), self.rho_max) 
-
         scaler = 1
         for t, model in enumerate(self.problem.runningModels):   
-            for k in range(model.ng):  
+            for k in range(model.ng): 
                 if model.g_lb[k] == -np.inf and model.g_ub[k] == np.inf:
                     self.rho_vec[t][k] = self.rho_min 
                 elif abs(model.g_lb[k] - model.g_ub[k]) < 1e-3:
@@ -449,6 +469,8 @@ class StagewiseADMM(SolverAbstract):
         self.ndx = self.problem.terminalModel.state.ndx 
         self.nu = self.problem.runningModels[0].nu
 
+        self.y = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
+        self.z = [np.zeros(m.ng) for m in self.problem.runningModels] + [np.zeros(self.problem.terminalModel.ng)] 
 
         self.qp_iters = 0
 

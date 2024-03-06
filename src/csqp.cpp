@@ -471,16 +471,8 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
   reset_params();
 
   if (equality_qp_initial_guess_){
-    
     backwardPass_without_constraints();
-    forwardPass();
-    // update_lagrangian_parameters(false);
-    const std::size_t T = problem_->get_T();
-    for (std::size_t t = 0; t < T; ++t) {    
-        dx_[t] = dxtilde_[t];
-        du_[t] = dutilde_[t];
-    }
-    dx_.back() = dxtilde_.back();
+    forwardPass_without_constraints();
   }
 
   if(with_qp_callbacks_){
@@ -495,7 +487,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
       backwardPass_without_rho_update();
     }
     forwardPass();
-    update_lagrangian_parameters(true);
+    update_lagrangian_parameters();
     update_rho_sparse(iter);
     // Because (eps_rel=0) x inf = NaN
     if(eps_rel_ == 0){
@@ -649,6 +641,28 @@ void SolverCSQP::forwardPass(){
     STOP_PROFILER("SolverCSQP::forwardPass");
 
 }
+
+
+void SolverCSQP::forwardPass_without_constraints(){
+    START_PROFILER("SolverCSQP::forwardPass_without_constraints");
+
+    const std::size_t T = problem_->get_T();
+    const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+    for (std::size_t t = 0; t < T; ++t) {
+      const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+
+      du_[t].noalias() = -K_[t] * dx_[t];
+      du_[t].noalias() -= k_[t];
+      dx_[t+1].noalias() = d->Fx * dx_[t];
+      dx_[t+1].noalias() += d->Fu * du_[t];
+      dx_[t+1].noalias() += fs_[t+1];
+    }
+
+    STOP_PROFILER("SolverCSQP::forwardPass_without_constraints");
+
+}
+
+
 
 void SolverCSQP::backwardPass() {
   START_PROFILER("SolverCSQP::backwardPass");
@@ -915,7 +929,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
 }
 
 
-void SolverCSQP::update_lagrangian_parameters(bool update_y){
+void SolverCSQP::update_lagrangian_parameters(){
     norm_primal_ = -1* std::numeric_limits<double>::infinity();
     norm_dual_ = -1* std::numeric_limits<double>::infinity();
     norm_primal_rel_ = -1* std::numeric_limits<double>::infinity();
@@ -955,9 +969,9 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
       z_[t] = (z_relaxed_[t] + tmp_dual_cwise_[t]);
       z_[t] = z_[t].cwiseMax(lb - d->g).cwiseMin(ub - d->g);
      
-      if (update_y){
-        y_[t] += rho_vec_[t].cwiseProduct(z_relaxed_[t] - z_[t]);
-      }
+      
+      y_[t] += rho_vec_[t].cwiseProduct(z_relaxed_[t] - z_[t]);
+      
       dx_[t] = dxtilde_[t];
       du_[t] = dutilde_[t];
 
@@ -1003,10 +1017,8 @@ void SolverCSQP::update_lagrangian_parameters(bool update_y){
     tmp_dual_cwise_.back() = y_.back().cwiseProduct(inv_rho_vec_.back());
     z_.back() = (z_relaxed_.back() + tmp_dual_cwise_.back());
     z_.back() = z_.back().cwiseMax(lb - d_T->g).cwiseMin(ub - d_T->g);
-
-    if (update_y){
-      y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
-    }
+    y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
+    
 
     if (update_rho_with_heuristic_){
       tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
