@@ -145,7 +145,6 @@ class SolverSQP : public SolverDDP {
   double u_grad_norm_ = 0;                                     //!< 1 norm of the delta u
   double gap_norm_ = 0;                                        //!< 1 norm of the gaps
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double cost_ = 0;                                            //!< cost function
   double mu_ = 1e0;                                            //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks

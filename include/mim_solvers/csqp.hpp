@@ -141,7 +141,6 @@ class SolverCSQP : public SolverDDP {
   double get_mu2() const { return mu2_; };
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_max_qp_iters(){ return max_qp_iters_; };
-  double get_cost(){ return cost_;};
   bool get_equality_qp_initial_guess() { return equality_qp_initial_guess_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
@@ -250,7 +249,6 @@ class SolverCSQP : public SolverDDP {
   double constraint_norm_ = 0;                                 //!< 1 norm of constraint violation
   double constraint_norm_try_ = 0;                             //!< 1 norm of constraint violation try
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double cost_ = 0.0;                                          //!< cost function
   double mu_ = 1e1;                                            //!< penalty no constraint violation
   double mu2_ = 1e1;                                           //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
