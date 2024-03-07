@@ -60,7 +60,7 @@ void exposeSolverCSQP() {
            "")
       .def("backwardPass_without_rho_update", &SolverCSQP::backwardPass_without_rho_update, bp::args("self"),
            "")
-      .def("update_rho_sparse", &SolverCSQP::update_rho_sparse, bp::args("self", "iter"),
+      .def("update_rho_vec", &SolverCSQP::update_rho_vec, bp::args("self", "iter"),
            "")
       .def("computeDirection", &SolverCSQP::computeDirection, bp::args("self", "recalcDiff"),
            "")
@@ -78,8 +78,8 @@ void exposeSolverCSQP() {
       .def_readwrite("rho_vec", &SolverCSQP::rho_vec_, "rho vector")
       .def_readwrite("y", &SolverCSQP::y_, "y")
       .def_readwrite("z", &SolverCSQP::z_, "z")
-      .def_readwrite("warm_start_y", &SolverCSQP::warm_start_y_, "Warm-start ADMM Lagrange multipliers with previous solution (default: False, i.e. reset to 0)")
-      .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. not reset to base values)")
+      .def_readwrite("reset_y", &SolverCSQP::reset_y_, "Reset ADMM Lagrange multipliers to zero (default: False, i.e. reset to previous)")
+      .def_readwrite("reset_rho", &SolverCSQP::reset_rho_, "Reset the rho parameter (default: False, i.e. reset to previous)")
       .def_readwrite("update_rho_with_heuristic", &SolverCSQP::update_rho_with_heuristic_, "Update the heuristic for the rho update (default: False)")
       .def_readwrite("remove_reg", &SolverCSQP::remove_reg_, "Removes Crocoddyl's regularization by setting (preg,dreg)=0 when True (default: False)")
 
@@ -116,8 +116,8 @@ void exposeSolverCSQP() {
                     "sets epsillon relative termination criteria for qp solver")
       .add_property("rho_sparse", bp::make_function(&SolverCSQP::get_rho_sparse), bp::make_function(&SolverCSQP::set_rho_sparse),
                     "Penalty term for dynamic violation in the merit function (default: 1.)")
-      .add_property("warm_start", bp::make_function(&SolverCSQP::get_warm_start), bp::make_function(&SolverCSQP::set_warm_start),
-                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("equality_qp_initial_guess", bp::make_function(&SolverCSQP::get_equality_qp_initial_guess), bp::make_function(&SolverCSQP::set_equality_qp_initial_guess),
+                    "initialize each qp with the solution of the equality qp. (default: True)")
       .add_property("sigma", bp::make_function(&SolverCSQP::get_sigma), bp::make_function(&SolverCSQP::set_sigma),
                     "get and set sigma")
       .add_property("alpha", bp::make_function(&SolverCSQP::get_alpha), bp::make_function(&SolverCSQP::set_alpha),

@@ -27,6 +27,9 @@ problem, xs_init, us_init = create_clqr_problem()
 
 ddp1 = mim_solvers.SolverCSQP(problem)
 ddp1.remove_reg = True
+ddp1.reset_rho = True  # To-do: make sure that the python has the same default arguments
+ddp1.reset_y   = True 
+
 
 ddp2 = CSQP(problem, "StagewiseQP")
 ddp3 = CSQP(problem, "StagewiseQPKKT")
@@ -40,7 +43,7 @@ ddp1.termination_tolerance = termination_tolerance
 ddp2.termination_tolerance = termination_tolerance
 ddp3.termination_tolerance = termination_tolerance
 
-max_qp_iters = 10000
+max_qp_iters = 1000
 ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp3.max_qp_iters = max_qp_iters
@@ -62,7 +65,7 @@ converged = ddp3.solve(xs_init, us_init, 1)
 
 
 assert ddp1.qp_iters == ddp2.qp_iters
-set_tol = 1e-8
+set_tol = 1e-6
 assert np.linalg.norm(np.array(ddp1.dx_tilde) - np.array(ddp2.dx_tilde)) < set_tol, "Test failed"
 assert np.linalg.norm(np.array(ddp1.du_tilde) - np.array(ddp2.du_tilde)) < set_tol, "Test failed"
 

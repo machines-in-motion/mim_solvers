@@ -157,15 +157,18 @@ class CSQP(StagewiseADMM, QPSolvers):
 
         alpha = None
         if (self.with_callbacks):
-            headings = ["iter", "merit", "cost", "grad", "step", "||gaps||", "KKT", "Constraint norm", "QP Iters"]
+            headings = ["iter", "merit", "cost",  "||gaps||", "||Constraint||", "||(dx,du)||", "step", "KKT", "QP Iters"]
             
-            print("{:>3} {:>9} {:>10} {:>11} {:>8} {:>11} {:>11} {:>8} {:>8}".format(*headings))
+            print("{:>3} {:>7} {:>8} {:>8} {:>8} {:>11} {:>11} {:>8} {:>8}".format(*headings))
         for iter in range(maxiter):
 
             self.calc(True)
             if self.using_qp:
                 self.computeDirectionFullQP()
             else:
+                if iter == 0 and not self.reset_rho:
+                    self.reset_rho_vec()
+    
                 self.computeDirection()
             # self.LQ_problem_KKT_check()
 
@@ -173,7 +176,7 @@ class CSQP(StagewiseADMM, QPSolvers):
             if self.KKT < self.termination_tolerance:
 
                 if(self.with_callbacks):
-                    print("{:>4} {:.5e} {:.5e} {:.5e} {:>4} {:.6e} {:.6e} {:.6e} {:>4}".format("END", float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, " ---- ", self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+                    print("{:>4} {:.4e} {:.4e} {:.4e} {:>4} {:.4e} {:>4} {:.4e} {:>4}".format("END", float(self.merit), self.cost, self.gap_norm, self.constraint_norm, self.x_grad_norm + self.u_grad_norm, " ---- ",  self.KKT,  self.qp_iters))
                 return True
             
             
@@ -206,7 +209,7 @@ class CSQP(StagewiseADMM, QPSolvers):
                 alpha *= 0.5
 
             if(self.with_callbacks):
-                print("{:>4} {:.5e} {:.5e} {:.5e} {:.5f} {:.6e} {:.6e} {:.6e} {:>4}".format(iter + 1, float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, alpha, self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+                print("{:>4} {:.4e} {:.4e} {:.4e} {:.4e} {:.4e} {:.4f} {:.4e} {:>4}".format(iter + 1, float(self.merit), self.cost, self.gap_norm, self.constraint_norm, self.x_grad_norm + self.u_grad_norm, alpha, self.KKT, self.qp_iters))
 
         if self.extra_iteration_for_last_kkt:
             self.calc(True)
@@ -216,7 +219,7 @@ class CSQP(StagewiseADMM, QPSolvers):
                 self.computeDirection()
             self.KKT_check()
             if(self.with_callbacks):
-                print("{:>4} {:.5e} {:.5e} {:.5e} {:>4} {:.6e} {:.6e} {:.6e} {:>4}".format("END", float(self.merit), self.cost, self.x_grad_norm + self.u_grad_norm, " ---- ", self.gap_norm, self.KKT, self.constraint_norm, self.qp_iters))
+                print("{:>4} {:.4e} {:.4e} {:.4e} {:.4e} {:.4e} {:>4} {:.4e} {:>4}".format("END", float(self.merit), self.cost,  self.gap_norm, self.constraint_norm, self.x_grad_norm + self.u_grad_norm, " ---- ", self.KKT,  " ---- "))
             if self.KKT < self.termination_tolerance:
                 return True
 

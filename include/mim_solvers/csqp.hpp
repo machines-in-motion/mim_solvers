@@ -84,7 +84,8 @@ class SolverCSQP : public SolverDDP {
    */
   void updateExpectedImprovement();
 
-  virtual void forwardPass();
+  virtual void forwardPass(const double stepLength=0);
+  virtual void forwardPass_without_constraints();
   virtual void backwardPass();
   virtual void backwardPass_without_rho_update();
   virtual void backwardPass_without_constraints();
@@ -99,6 +100,8 @@ class SolverCSQP : public SolverDDP {
   virtual void calc(const bool recalc = true);
 
   virtual void reset_params();
+
+  virtual void reset_rho_vec();
 
   // virtual void set_constraints(const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& constraint_models){
   //   constraint_models_ = constraint_models;
@@ -139,7 +142,7 @@ class SolverCSQP : public SolverDDP {
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
-  bool get_warm_start() { return warm_start_; };
+  bool get_equality_qp_initial_guess() { return equality_qp_initial_guess_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
 
@@ -156,13 +159,14 @@ class SolverCSQP : public SolverDDP {
   double get_norm_dual() { return norm_dual_;};
   double get_norm_dual_tolerance() { return norm_dual_tolerance_;};
 
-  double get_warm_start_y() { return warm_start_y_;};
+  double get_reset_y() { return reset_y_;};
   double get_reset_rho() { return reset_rho_;};
   double get_rho_min() { return rho_min_;};
   double get_rho_max() { return rho_max_;};
 
 
   void printCallbacks(bool isLastIteration = false);
+  void printQPCallbacks(int iter);
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
   void setQPCallbacks(bool inCallbacks);
@@ -179,7 +183,8 @@ class SolverCSQP : public SolverDDP {
   void set_alpha(double alpha) { alpha_ = alpha; };
   void set_sigma(double sigma) { sigma_ = sigma; };
 
-  void set_warm_start(bool warm_start) { warm_start_ = warm_start; };
+  void set_equality_qp_initial_guess(bool equality_qp_initial_guess) { equality_qp_initial_guess_ = equality_qp_initial_guess; };
+
 
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_extra_iteration_for_last_kkt(bool inBool) { extra_iteration_for_last_kkt_ = inBool; };
@@ -191,9 +196,10 @@ class SolverCSQP : public SolverDDP {
 
 
 
-  void update_lagrangian_parameters(bool update_y);
+  void update_lagrangian_parameters();
   void set_rho_sparse(double rho_sparse) {rho_sparse_ = rho_sparse;};
-  void update_rho_sparse(int iter);
+  void update_rho_vec(int iter);
+  void apply_rho_update(double rho_sparse_);
 
   void set_max_qp_iters(int iters){ max_qp_iters_ = iters; };
   void set_eps_abs(double eps_abs) { eps_abs_ = eps_abs;};
@@ -230,7 +236,7 @@ class SolverCSQP : public SolverDDP {
   double norm_dual_rel_ = 0.0;                                 //!< norm dual relative residual
   double norm_primal_tolerance_ = 0.0;                         //!< tolerance of the primal residual norm
   double norm_dual_tolerance_ = 0.0;                           //!< tolerance of the primal residual norm
-  bool warm_start_y_ = false;
+  bool reset_y_ = false;
   bool reset_rho_ = false;
   bool update_rho_with_heuristic_ = false;
   bool remove_reg_ = false;                                    //!< Removes Crocoddyl's regularization (preg,dreg)
@@ -257,15 +263,15 @@ class SolverCSQP : public SolverDDP {
   std::size_t qp_iters_ = 0;
 
   double rho_estimate_sparse_ = 0.0;                          //!< rho estimate
-  double rho_sparse_ = 1e-1;                                  //!< rho
-  double rho_sparse_base_;
+  double rho_sparse_;                                  //!< rho
+  double rho_sparse_base_ = 1e-1;
   double rho_min_ = 1e-6;                                     //!< rho min
   double rho_max_ = 1e3;                                      //!< rho max 
   std::size_t rho_update_interval_ = 25;                      //!< frequency of update of rho
   double adaptive_rho_tolerance_ = 5; 
   double eps_abs_ = 1e-4;                                     //!< absolute termination criteria
   double eps_rel_ = 1e-4;                                     //!< relative termination criteria
-  double warm_start_ = true;
+  double equality_qp_initial_guess_ = true;
   std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();      //!< KKT conditions residual
 
