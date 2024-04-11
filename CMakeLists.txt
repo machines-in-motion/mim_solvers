@@ -85,7 +85,7 @@ endif()
 find_package(OpenMP REQUIRED COMPONENTS CXX)
 
 if(BUILD_PYTHON_INTERFACE)
-  string(REGEX REPLACE "-" "_" PY_NAME ${PROJECT_NAME})
+  set(PY_NAME ${PROJECT_NAME}_pywrap)
   set(${PY_NAME}_INSTALL_DIR ${PYTHON_SITELIB}/${PY_NAME})
 endif()
 
