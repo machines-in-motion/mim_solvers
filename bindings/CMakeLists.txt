@@ -13,7 +13,7 @@ target_link_libraries(${PY_NAME} PUBLIC ${PROJECT_NAME} eigenpy::eigenpy)
 
 set_target_properties(
   ${PY_NAME}
-  PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PY_NAME}
+  PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${PROJECT_NAME}
              PREFIX ""
              SUFFIX ${PYTHON_EXT_SUFFIX})
 
@@ -23,7 +23,7 @@ if(GENERATE_PYTHON_STUBS)
                  ${PY_NAME})
 endif(GENERATE_PYTHON_STUBS)
 
-set(${PY_NAME}_PYTHON ${PROJECT_NAME}/__init__.py)
+set(${PY_NAME}_PYTHON __init__.py)
 
 set(PYLIB_INSTALL_DIR ${PYTHON_SITELIB}/${PROJECT_NAME})
 if(UNIX)
@@ -32,4 +32,6 @@ if(UNIX)
 endif()
 
 install(TARGETS ${PY_NAME} LIBRARY DESTINATION ${PYLIB_INSTALL_DIR})
-install(FILES "${${PY_NAME}_PYTHON}" DESTINATION ${PYLIB_INSTALL_DIR})
+foreach(source ${${PY_NAME}_PYTHON})
+    python_install_on_site(${PROJECT_NAME} ${source})
+endforeach()
