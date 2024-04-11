@@ -23,9 +23,9 @@ if(GENERATE_PYTHON_STUBS)
                  ${PY_NAME})
 endif(GENERATE_PYTHON_STUBS)
 
-set(${PY_NAME}_PYTHON mim_solvers/__init__.py)
+set(${PY_NAME}_PYTHON ${PROJECT_NAME}/__init__.py)
 
-set(PYLIB_INSTALL_DIR ${PYTHON_SITELIB}/mim_solvers)
+set(PYLIB_INSTALL_DIR ${PYTHON_SITELIB}/${PROJECT_NAME})
 if(UNIX)
   get_relative_rpath(${PYLIB_INSTALL_DIR} PYLIB_RPATH)
   set_target_properties(${PY_NAME} PROPERTIES INSTALL_RPATH ${PYLIB_RPATH})
