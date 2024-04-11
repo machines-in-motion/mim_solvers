@@ -117,8 +117,12 @@ target_link_libraries(${PROJECT_NAME} crocoddyl::crocoddyl)
 if(BUILD_WITH_PROXSUITE)
   target_link_libraries(${PROJECT_NAME} proxsuite::proxsuite)
 endif()
-set_target_properties(${PROJECT_NAME} PROPERTIES INSTALL_RPATH
-                                                 "\$ORIGIN/../lib")
+
+if(UNIX)
+  get_relative_rpath(${CMAKE_INSTALL_LIBDIR} ${PROJECT_NAME}_INSTALL_RPATH)
+  set_target_properties(
+    ${PROJECT_NAME} PROPERTIES INSTALL_RPATH "${${PROJECT_NAME}_INSTALL_RPATH}")
+endif()
 
 # Python Bindings
 if(BUILD_PYTHON_INTERFACE)
