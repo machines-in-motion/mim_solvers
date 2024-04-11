@@ -1,5 +1,5 @@
 if(GENERATE_PYTHON_STUBS)
-  include(${PROJECT_SOURCE_DIR}/cmake/stubs.cmake)
+  include(${JRL_CMAKE_MODULES}/stubs.cmake)
 endif(GENERATE_PYTHON_STUBS)
 
 set(${PY_NAME}_SOURCES ddp.cpp fddp.cpp sqp.cpp csqp.cpp main.cpp)
