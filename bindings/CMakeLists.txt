@@ -33,5 +33,5 @@ endif()
 
 install(TARGETS ${PY_NAME} LIBRARY DESTINATION ${PYLIB_INSTALL_DIR})
 foreach(source ${${PY_NAME}_PYTHON})
-    python_install_on_site(${PROJECT_NAME} ${source})
+  python_install_on_site(${PROJECT_NAME} ${source})
 endforeach()
