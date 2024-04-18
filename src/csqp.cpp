@@ -15,6 +15,7 @@
 
 #include <crocoddyl/core/utils/exception.hpp>
 #include "mim_solvers/csqp.hpp"
+#include <crocoddyl/core/solver-base.hpp>
 
 using namespace crocoddyl;
 
@@ -262,10 +263,15 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
 
     // Check KKT criteria
     checkKKTConditions();
-    if (KKT_  <= termination_tol_) {
-      if(with_callbacks_){
-        printCallbacks();
-      }
+
+    // Perform callbacks
+    const std::size_t n_callbacks = callbacks_.size();
+    for (std::size_t c = 0; c < n_callbacks; ++c) {
+      CallbackAbstract& callback = *callbacks_[c];
+      callback(*this);
+    }
+
+    if (KKT_  <= termination_tol_) {  
       STOP_PROFILER("SolverCSQP::solve");
       return true;
     }
@@ -319,10 +325,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       }
     }
 
-    // Print
-    if(with_callbacks_){
-      printCallbacks();
-    }
   }
 
   // If reached max iter, still compute KKT residual
@@ -352,11 +354,16 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
 
     // Check KKT criteria
     checkKKTConditions();
-    if(with_callbacks_){
-      printCallbacks(true);
+
+    // Perform callbacks
+    const std::size_t n_callbacks = callbacks_.size();
+    for (std::size_t c = 0; c < n_callbacks; ++c) {
+      CallbackAbstract& callback = *callbacks_[c];
+      callback(*this);
     }
 
     if (KKT_  <= termination_tol_) {
+      
       STOP_PROFILER("SolverCSQP::solve");
       return true;
     }
@@ -1083,48 +1090,6 @@ double SolverCSQP::tryStep(const double steplength) {
     return merit_try_;
 }
 
-void SolverCSQP::printCallbacks(bool isLastIteration){
-  if (this->get_iter() % 10 == 0) {
-    std::cout << std::scientific << std::setprecision(4) <<  "iter"               << "  "; // Iteration number
-    std::cout << std::scientific << std::setprecision(4) <<  "   merit"           << "  "; // Merit function value
-    std::cout << std::scientific << std::setprecision(4) <<  "      cost"         << "  "; // Cost function value
-    std::cout << std::scientific << std::setprecision(4) <<  "     ||gaps||"      << "  "; // Gaps norm 
-    std::cout << std::scientific << std::setprecision(4) <<  " ||Constraint||"    << "";   // Constraint norm 
-    std::cout << std::scientific << std::setprecision(4) <<  "  ||(dx,du)||"      << " ";  // Step norm
-    std::cout << std::fixed      << std::setprecision(4) <<  "    step"           << "  "; // Step size
-    std::cout << std::scientific << std::setprecision(4) <<  " KKT criteria"      << "  "; // KKT residual norm
-    std::cout << std::fixed      << std::setprecision(4) <<  "QP iters"           << " ";  // Number of QP iterations
-    std::cout << std::endl;
-  }
-  if(KKT_ < termination_tol_ || isLastIteration){
-    std::cout << std::setw(4) << "END" << "  ";
-    std::cout << std::scientific << std::setprecision(4) << this->get_merit()     << "   ";    
-    std::cout << std::scientific << std::setprecision(4) << this->get_cost()      << "   ";
-    std::cout << std::scientific << std::setprecision(4) << this->get_gap_norm()  << "    ";
-    std::cout << std::scientific << std::setprecision(4) << constraint_norm_      << "    ";
-    std::cout << std::fixed <<      std::setprecision(5) << "   ---- "            << "    ";
-    std::cout << std::scientific << std::setprecision(4) << "    ---- "           << "   ";
-    std::cout << std::scientific << std::setprecision(4) << KKT_                  << "    ";
-    std::cout << std::fixed <<      std::setprecision(4) << "-----";
-  } else {
-    std::cout << std::setw(4) << this->get_iter()+1 << "  ";
-    std::cout << std::scientific << std::setprecision(4) << this->get_merit()                                     << "   ";
-    std::cout << std::scientific << std::setprecision(4) << this->get_cost()                                      << "   ";
-    std::cout << std::scientific << std::setprecision(4) << this->get_gap_norm()                                  << "    ";
-    std::cout << std::scientific << std::setprecision(4) << constraint_norm_                                      << "    ";
-    std::cout << std::scientific << std::setprecision(5) << (this->get_xgrad_norm() + this->get_ugrad_norm()) / 2 << "    ";
-    std::cout << std::fixed      << std::setprecision(4) << this->get_steplength()                                << "   ";
-    if(iter_ == 0){
-      std::cout << std::scientific << std::setprecision(4) << "   ----   "                                        << "     ";
-    } else {
-      std::cout << std::scientific << std::setprecision(4) << KKT_                                                << "     ";
-    }
-    std::cout << std::fixed      << std::setprecision(4) << qp_iters_;
-  }
-  std::cout << std::endl;
-  std::cout << std::flush;
-}
-
 void SolverCSQP::printQPCallbacks(int iter){
   std::cout << "Iters " << iter;
   std::cout << " norm_primal = "     << std::scientific << std::setprecision(4) << norm_primal_;
@@ -1133,14 +1098,6 @@ void SolverCSQP::printQPCallbacks(int iter){
   std::cout << " norm_dual_tol = "   << std::scientific << std::setprecision(4) << norm_dual_tolerance_;
   std::cout << std::endl;
   std::cout << std::flush;
-}
-
-void SolverCSQP::setCallbacks(bool inCallbacks){
-  with_callbacks_ = inCallbacks;
-}
-
-bool SolverCSQP::getCallbacks(){
-  return with_callbacks_;
 }
 
 void SolverCSQP::setQPCallbacks(bool inQPCallbacks){

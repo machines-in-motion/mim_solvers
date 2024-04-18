@@ -8,6 +8,7 @@ set(${PY_NAME}_SOURCES
   sqp.cpp
   csqp.cpp
   main.cpp
+  utils/callbacks.cpp
   )
 
 if(BUILD_WITH_PROXSUITE)

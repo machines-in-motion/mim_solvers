@@ -112,10 +112,6 @@ class SolverSQP : public SolverDDP {
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
-  void printCallbacks();
-  void setCallbacks(bool inCallbacks);
-  bool getCallbacks();
-
 
   void set_mu(double mu) { mu_ = mu; };
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
@@ -147,7 +143,7 @@ class SolverSQP : public SolverDDP {
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
   double mu_ = 1e0;                                            //!< penalty no constraint violation
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
-  bool with_callbacks_ = false;                                //!< With callbacks
+  // bool with_callbacks_ = false;                                //!< With callbacks
   bool extra_iteration_for_last_kkt_ = false;                  //!< Additional iteration if SQP max. iter reached
   std::size_t filter_size_ = 1;                                //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();       //!< KKT conditions residual

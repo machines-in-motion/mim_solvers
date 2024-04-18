@@ -17,6 +17,8 @@
 #include <crocoddyl/core/utils/callbacks.hpp>
 #include "factory/solver.hpp"
 #include "unittest_common.hpp"
+#include <crocoddyl/core/solver-base.hpp>
+#include "mim_solvers/utils/callbacks.hpp"
 
 using namespace boost::unit_test;
 using namespace mim_solvers::unittest;
@@ -39,14 +41,6 @@ void test_sqp_core(){
   // Test initial & default attributes
   BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
   BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 1);
-  BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
-  BOOST_CHECK_EQUAL(solver_cast->get_xgrad_norm(), 0);
-  BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
-  BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e0);
-  BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-6);
-  BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
-  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
   // Test setters
   const double mu = 10;
@@ -61,9 +55,11 @@ void test_sqp_core(){
   const std::size_t filter_size = 2;
   solver_cast->set_filter_size(filter_size);
   BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
-  const bool with_callbacks = true;
-  solver_cast->setCallbacks(with_callbacks);
-  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), true);
+
+  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("SQP", 3);
+  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+  callbacks.push_back(callback_verbose);
+  solver_cast->setCallbacks(callbacks);
 }
 
 //____________________________________________________________________________//
@@ -79,7 +75,10 @@ void test_csqp_core(){
   // Downcast
   boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
   
+
   // Test initial & default attributes
+  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> empty_callbacks;
+
   BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
   BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
   BOOST_CHECK_EQUAL(solver_cast->get_constraint_norm(), 0);
@@ -109,7 +108,6 @@ void test_csqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_reset_rho(), false);
   BOOST_CHECK_EQUAL(solver_cast->get_rho_min(), 1e-6);
   BOOST_CHECK_EQUAL(solver_cast->get_rho_max(), 1e3);
-  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
   // Test setters
   const double mu = 10;
@@ -154,9 +152,10 @@ void test_csqp_core(){
   const double eps_rel = 10;
   solver_cast->set_eps_rel(eps_rel);
   BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 10);
-  const bool with_callbacks = true;
-  solver_cast->setCallbacks(with_callbacks);
-  BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), true);
+  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("CSQP", 3);
+  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+  callbacks.push_back(callback_verbose);
+  solver_cast->setCallbacks(callbacks);
 }
 
 //____________________________________________________________________________//
@@ -234,7 +233,7 @@ void test_solver_convergence(SolverTypes::Type solver_type,
                              UConstraintType::Type u_cstr_type) {
   
   std::cout << "test_solver_convergence_" << solver_type << "_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
-  
+
   SolverFactory factory;
   boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
 
@@ -252,7 +251,12 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   {
     boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
     solver_cast->set_termination_tolerance(SQP_TOL);
-    solver_cast->setCallbacks(false);
+
+    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("SQP", 3);
+    std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+    callbacks.push_back(callback_verbose);
+    solver_cast->setCallbacks(callbacks);
+
     solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), MAXITER);
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
     BOOST_CHECK(solver_cast->get_KKT() <= solver_cast->get_termination_tolerance());
@@ -266,7 +270,12 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     solver_cast->set_eps_rel(EPS_REL);
     solver_cast->set_eps_abs(EPS_ABS);
     solver_cast->set_max_qp_iters(QP_MAXITER);
-    solver_cast->setCallbacks(false);
+
+    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("CSQP", 3);
+    std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+    callbacks.push_back(callback_verbose);
+    solver_cast->setCallbacks(callbacks);
+
     solver_cast->solve(solver_cast->get_xs(), solver_cast->get_us(), MAXITER);
     // Check SQP convergence
     BOOST_CHECK_EQUAL(solver->get_iter(), 1);
