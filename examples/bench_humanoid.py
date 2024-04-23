@@ -224,17 +224,18 @@ terminalCostModel.addCost("limitCost", limitCost, 1e3)
 
 constraintModelManager = crocoddyl.ConstraintModelManager(state, actuation.nu)
 
-FORCE_COST_AND_CONSTRAINT = False
-if FORCE_COST_AND_CONSTRAINT:
-    fref = pinocchio.Force.Zero()
-    ForceResidual = crocoddyl.ResidualModelContactForce(state, rightFootId, fref, 6, actuation.nu)
-    constraintFriction = crocoddyl.ConstraintModelResidual(state, ForceResidual, np.array([0., 0, 0]*2), np.array([np.inf, np.inf, np.inf]*2))
-    constraintModelManager.addConstraint("force", constraintFriction)
-
+FORCE_COST       = True
+FORCE_CONSTRAINT = True
+fref = pinocchio.Force.Zero()
+ForceResidual = crocoddyl.ResidualModelContactForce(state, rightFootId, fref, 6, actuation.nu)
+if FORCE_COST:
     Forcecost = crocoddyl.CostModelResidual(state, ForceResidual)
     runningCostModel1.addCost("forcecost1", Forcecost, 1e-3)
     runningCostModel2.addCost("forcecost2", Forcecost, 1e-3)
     runningCostModel3.addCost("forcecost3", Forcecost, 1e-3)
+if FORCE_CONSTRAINT:
+    constraintForce = crocoddyl.ConstraintModelResidual(state, ForceResidual, np.array([0., 0, 0]*2), np.array([np.inf, np.inf, np.inf]*2))
+    constraintModelManager.addConstraint("force", constraintForce)
 
 # Create the action model
 dmodelRunning1 = crocoddyl.DifferentialActionModelContactFwdDynamics(

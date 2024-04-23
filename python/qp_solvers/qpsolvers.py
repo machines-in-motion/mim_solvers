@@ -79,29 +79,37 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         A = np.zeros((self.problem.T*self.ndx, Asize))
         B = np.zeros(self.problem.T*self.ndx)
 
-        
+        NNZ_block_P = 0
+        NNZ_block_A = 0
         for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
             index_u = self.problem.T*self.ndx + t * self.nu
             if t>=1:
                 index_x = (t-1) * self.ndx
                 P[index_x:index_x+self.ndx, index_x:index_x+self.ndx] = data.Lxx.copy()
-                
+                NNZ_block_P += np.size(data.Lxx)
                 P[index_x:index_x+self.ndx, index_u:index_u+self.nu] = data.Lxu.copy()
+                NNZ_block_P += np.size(data.Lxu)
                 P[index_u:index_u+self.nu, index_x:index_x+self.ndx] = data.Lxu.T.copy()
+                NNZ_block_P += np.size(data.Lxu.T)
                 q[index_x:index_x+self.ndx] = data.Lx.copy()
 
             P[index_u:index_u+self.nu, index_u:index_u+self.nu] = data.Luu.copy()
+            NNZ_block_P += np.size(data.Luu)
             q[index_u:index_u+self.nu] = data.Lu.copy()
             
             A[t * self.ndx: (t+1) * self.ndx, index_u:index_u+self.nu] = - data.Fu.copy() 
+            NNZ_block_A += np.size(data.Fu)
             A[t * self.ndx: (t+1) * self.ndx, t * self.ndx: (t+1) * self.ndx] = np.eye(self.ndx)
+            NNZ_block_A += self.ndx
 
             if t >=1:
                 A[t * self.ndx: (t+1) * self.ndx, (t-1) * self.ndx: t * self.ndx] = - data.Fx.copy()
+                NNZ_block_A += np.size(data.Fx) 
             B[t * self.ndx: (t+1) * self.ndx] = self.gap[t].copy()
 
 
         P[(self.problem.T-1)*self.ndx:self.problem.T*self.ndx, self.problem.T*self.ndx-self.ndx:self.problem.T*self.ndx] = self.problem.terminalData.Lxx.copy()
+        NNZ_block_P += np.size(self.problem.terminalData.Lxx)
         q[(self.problem.T-1)*self.ndx:self.problem.T*self.ndx] = self.problem.terminalData.Lx.copy()
 
 
@@ -124,7 +132,9 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             u[nin_count: nin_count + model.ng] = model.g_ub - data.g
             if t > 0:
                 C[nin_count: nin_count + model.ng, (t-1)*self.ndx: t*self.ndx] = data.Gx
+                NNZ_block_A += np.size(data.Gx)
             C[nin_count: nin_count + model.ng, index_x+t*self.nu: index_x+(t+1)*self.nu] = data.Gu
+            NNZ_block_A += np.size(data.Gu)
             nin_count += model.ng
 
             # import pdb; pdb.set_trace()
@@ -135,6 +145,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             l[nin_count: nin_count + model.ng] = model.g_lb - data.g
             u[nin_count: nin_count + model.ng] = model.g_ub - data.g
             C[nin_count: nin_count + model.ng, (self.problem.T-1)*self.ndx: self.problem.T*self.ndx] = data.Gx
+            NNZ_block_A += np.size(data.Gx)
             nin_count += model.ng
 
 
@@ -189,8 +200,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
             P = sparse.csr_matrix(P)
 
-            print("P ", P.count_nonzero(), " out of ", P.shape[0] * P.shape[1], " = ", 100 *P.count_nonzero()/   P.shape[0] / P.shape[1])
-            print("A ", Aosqp.count_nonzero(), " out of ", Aosqp.shape[0] * Aosqp.shape[1], " = ", Aosqp.count_nonzero()/   Aosqp.shape[0] / Aosqp.shape[1])
+            print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
+            print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
 
             # print(P)
             prob = osqp.OSQP()

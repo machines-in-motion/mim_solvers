@@ -118,7 +118,7 @@ nu = actuation.nu
 
 comDes = []
 
-N_ocp = 1000
+N_ocp = 100
 dt = 0.02
 T = N_ocp * dt
 radius = 0.065
@@ -164,13 +164,15 @@ for t in range(N_ocp+1):
         ctrlResidual = crocoddyl.ResidualModelControl(state, nu)
         ctrlReg = crocoddyl.CostModelResidual(state, ctrlResidual)
         costModel.addCost("ctrlReg", ctrlReg, control_reg_weight)      
-
-        for frame_idx in supportFeetIds:
-            fref = pin.Force.Zero()# np.zeros(3)
-            # fref[2] = 1
-            ForceResidual = crocoddyl.ResidualModelContactForce(state, frame_idx, fref, 3, nu)
-            ForceRes = crocoddyl.CostModelResidual(state, ForceResidual)
-            costModel.addCost("ForceRes" + str(frame_idx), ForceRes, 1.)     
+        
+        FORCE_COST = True
+        if FORCE_COST:
+            for frame_idx in supportFeetIds:
+                fref = pin.Force.Zero()# np.zeros(3)
+                # fref[2] = 1
+                ForceResidual = crocoddyl.ResidualModelContactForce(state, frame_idx, fref, 3, nu)
+                ForceRes = crocoddyl.CostModelResidual(state, ForceResidual)
+                costModel.addCost("ForceRes" + str(frame_idx), ForceRes, 1.)     
 
 
     # Add COM task
