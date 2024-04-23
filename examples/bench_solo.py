@@ -118,7 +118,7 @@ nu = actuation.nu
 
 comDes = []
 
-N_ocp = 10
+N_ocp = 1000
 dt = 0.02
 T = N_ocp * dt
 radius = 0.065
@@ -221,7 +221,7 @@ ddp1.with_callbacks = False
 ddp2.with_callbacks = False
 ddp3.with_callbacks = False
 
-max_qp_iters = 1000
+max_qp_iters = 25
 ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp3.max_qp_iters = max_qp_iters

@@ -224,7 +224,7 @@ terminalCostModel.addCost("limitCost", limitCost, 1e3)
 
 constraintModelManager = crocoddyl.ConstraintModelManager(state, actuation.nu)
 
-FORCE_COST_AND_CONSTRAINT = True
+FORCE_COST_AND_CONSTRAINT = False
 if FORCE_COST_AND_CONSTRAINT:
     fref = pinocchio.Force.Zero()
     ForceResidual = crocoddyl.ResidualModelContactForce(state, rightFootId, fref, 6, actuation.nu)
@@ -280,7 +280,7 @@ ddp1.with_callbacks = False
 ddp2.with_callbacks = False
 ddp3.with_callbacks = False
 
-max_qp_iters = 1000
+max_qp_iters = 25
 ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp3.max_qp_iters = max_qp_iters

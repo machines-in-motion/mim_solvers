@@ -420,10 +420,10 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
 
   reset_params();
 
-  if (equality_qp_initial_guess_){
-    backwardPass_without_constraints();
-    forwardPass_without_constraints();
-  }
+  // if (equality_qp_initial_guess_){
+  //   backwardPass_without_constraints();
+  //   forwardPass_without_constraints();
+  // }
 
   if(with_qp_callbacks_){
     printQPCallbacks(0);
@@ -437,24 +437,27 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
       backwardPass_without_rho_update();
     }
     forwardPass();
-    update_lagrangian_parameters();
+    update_lagrangian_parameters(iter);
     update_rho_vec(iter);
+    
     // Because (eps_rel=0) x inf = NaN
-    if(eps_rel_ == 0){
-      norm_primal_tolerance_ = eps_abs_;
-      norm_dual_tolerance_   = eps_abs_;
-    } 
-    else{
-      norm_primal_tolerance_ = eps_abs_ + eps_rel_ * norm_primal_rel_;
-      norm_dual_tolerance_   = eps_abs_ + eps_rel_ * norm_dual_rel_;
-    }
-    if(norm_primal_ <= norm_primal_tolerance_ && norm_dual_ <= norm_dual_tolerance_){
-        qp_iters_ = iter;
-        converged_ = true;
-        break;
-    }
-    if(with_qp_callbacks_){
-      printQPCallbacks(iter);
+    if (iter % 25 == 0){
+      if(eps_rel_ == 0){
+        norm_primal_tolerance_ = eps_abs_;
+        norm_dual_tolerance_   = eps_abs_;
+      } 
+      else{
+        norm_primal_tolerance_ = eps_abs_ + eps_rel_ * norm_primal_rel_;
+        norm_dual_tolerance_   = eps_abs_ + eps_rel_ * norm_dual_rel_;
+      }
+      if(norm_primal_ <= norm_primal_tolerance_ && norm_dual_ <= norm_dual_tolerance_){
+          qp_iters_ = iter;
+          converged_ = true;
+          break;
+      }
+      if(with_qp_callbacks_){
+        printQPCallbacks(iter);
+      }
     }
   }
 
@@ -892,7 +895,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
 }
 
 
-void SolverCSQP::update_lagrangian_parameters(){
+void SolverCSQP::update_lagrangian_parameters(int iter){
     norm_primal_ = -1* std::numeric_limits<double>::infinity();
     norm_dual_ = -1* std::numeric_limits<double>::infinity();
     norm_primal_rel_ = -1* std::numeric_limits<double>::infinity();
@@ -938,6 +941,7 @@ void SolverCSQP::update_lagrangian_parameters(){
       dx_[t] = dxtilde_[t];
       du_[t] = dutilde_[t];
 
+    if (iter % 25 == 0){
       if (update_rho_with_heuristic_){
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_[t].lpNorm<Eigen::Infinity>());
@@ -962,6 +966,7 @@ void SolverCSQP::update_lagrangian_parameters(){
         norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
       }
     }
+    }
 
   dx_.back() = dxtilde_.back();
   const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
@@ -983,29 +988,32 @@ void SolverCSQP::update_lagrangian_parameters(){
     y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
     
 
-    if (update_rho_with_heuristic_){
-      tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
-      norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_.back().lpNorm<Eigen::Infinity>());
-      norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
+    if (iter % 25 == 0){
+      if (update_rho_with_heuristic_){
+        tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
+        norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_.back().lpNorm<Eigen::Infinity>());
+        norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
 
-      norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
-      norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-      norm_dual_rel_ = std::max(norm_dual_rel_, y_.back().lpNorm<Eigen::Infinity>());
-    }
-    else {
-      tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
-      tmp_vec_x_.noalias() = d_T->Gx.transpose() * tmp_dual_cwise_.back();
-      norm_dual_ = std::max(norm_dual_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
-      norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
+        norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
+        norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
+        norm_dual_rel_ = std::max(norm_dual_rel_, y_.back().lpNorm<Eigen::Infinity>());
+      }
+      else {
+        tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
+        tmp_vec_x_.noalias() = d_T->Gx.transpose() * tmp_dual_cwise_.back();
+        norm_dual_ = std::max(norm_dual_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+        norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
 
-      norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
-      norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-      tmp_vec_x_.noalias() = d_T->Gx.transpose() * y_.back();
-      norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+        norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
+        norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
+        tmp_vec_x_.noalias() = d_T->Gx.transpose() * y_.back();
+        norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+      }
     }
   }
-
 }
+
+
 
 double SolverCSQP::tryStep(const double steplength) {
     if (steplength > 1. || steplength < 0.) {
