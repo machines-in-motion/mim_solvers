@@ -52,6 +52,7 @@ class StagewiseADMM(SolverAbstract):
 
         self.sigma_sparse = 1e-6
         self.rho_sparse_base = 1e-1
+        self.rho_sparse = self.rho_sparse_base
         self.rho_min = 1e-6
         self.rho_max = 1e3
 
@@ -121,16 +122,17 @@ class StagewiseADMM(SolverAbstract):
                 # self.backwardPass_without_rho_update() # To implement
             
             self.forwardPass()
-            self.update_lagrangian_parameters()
+            self.update_lagrangian_parameters(iter)
             self.update_rho_sparse(iter)
 
-            if self.norm_primal <= self.eps_abs + self.eps_rel*self.norm_primal_rel and\
-                    self.norm_dual <= self.eps_abs + self.eps_rel*self.norm_dual_rel:
-                        if self.verboseQP:
-                            print("Iters", iter, "res-primal", pp(self.norm_primal), "res-dual", pp(self.norm_dual)\
-                                , "optimal rho estimate", pp(self.rho_estimate_sparse), "rho", pp(self.rho_sparse)) 
-                            print("StagewiseQP converged", "\n")
-                        break
+            if (iter) % self.rho_update_interval == 0 and iter > 1:
+                if self.norm_primal <= self.eps_abs + self.eps_rel*self.norm_primal_rel and\
+                        self.norm_dual <= self.eps_abs + self.eps_rel*self.norm_dual_rel:
+                            if self.verboseQP:
+                                print("Iters", iter, "res-primal", pp(self.norm_primal), "res-dual", pp(self.norm_dual)\
+                                    , "optimal rho estimate", pp(self.rho_estimate_sparse), "rho", pp(self.rho_sparse)) 
+                                print("StagewiseQP converged", "\n")
+                            break
 
             if (iter) % self.rho_update_interval == 0 and iter > 1:
                 if self.verboseQP:
@@ -178,7 +180,7 @@ class StagewiseADMM(SolverAbstract):
                 self.rho_vec[-1][k] = rho_sparse
 
 
-    def update_lagrangian_parameters(self):
+    def update_lagrangian_parameters(self, iter):
 
         self.norm_primal = -np.inf
         self.norm_dual = -np.inf
@@ -208,22 +210,23 @@ class StagewiseADMM(SolverAbstract):
             self.du[t] = self.du_tilde[t].copy()
 
             # OSQP
-            dual_vecx = Cx.T @  np.multiply(self.rho_vec[t], (self.z[t] - z_prev)) 
-            dual_vecu = Cu.T @  np.multiply(self.rho_vec[t], (self.z[t] - z_prev)) 
-            self.norm_dual = max(self.norm_dual, max(abs(dual_vecx)), max(abs(dual_vecu)))
-            self.norm_primal = max(self.norm_primal, max(abs(Cdx_Cdu - self.z[t])))
+            if (iter) % self.rho_update_interval == 0 and iter > 1:
+                dual_vecx = Cx.T @  np.multiply(self.rho_vec[t], (self.z[t] - z_prev)) 
+                dual_vecu = Cu.T @  np.multiply(self.rho_vec[t], (self.z[t] - z_prev)) 
+                self.norm_dual = max(self.norm_dual, max(abs(dual_vecx)), max(abs(dual_vecu)))
+                self.norm_primal = max(self.norm_primal, max(abs(Cdx_Cdu - self.z[t])))
 
-            # KKT
-            dual_vecx = data.Lxx @ self.dx[t] + data.Lxu @ self.du[t] + data.Lx + data.Fx.T @ self.lag_mul[t+1] - self.lag_mul[t] + Cx.T @ self.y[t]
-            dual_vecu = data.Luu @ self.du[t] + data.Lxu.T @ self.dx[t] + data.Lu + data.Fu.T @ self.lag_mul[t+1] + Cu.T @ self.y[t]
-            self.kkt_dual = max(self.kkt_dual, max(abs(dual_vecx)), max(abs(dual_vecu)))
-            l1 = np.max(np.abs(np.clip(model.g_lb - Cx @ self.dx[t] - Cu @ self.du[t] - data.g, 0, np.inf)))
-            l2 = np.max(np.abs(np.clip( Cx @ self.dx[t] + Cu @ self.du[t] + data.g - model.g_ub, 0, np.inf)))
-            self.kkt_primal = max(self.kkt_primal, l1, l2)
+                # KKT
+                dual_vecx = data.Lxx @ self.dx[t] + data.Lxu @ self.du[t] + data.Lx + data.Fx.T @ self.lag_mul[t+1] - self.lag_mul[t] + Cx.T @ self.y[t]
+                dual_vecu = data.Luu @ self.du[t] + data.Lxu.T @ self.dx[t] + data.Lu + data.Fu.T @ self.lag_mul[t+1] + Cu.T @ self.y[t]
+                self.kkt_dual = max(self.kkt_dual, max(abs(dual_vecx)), max(abs(dual_vecu)))
+                l1 = np.max(np.abs(np.clip(model.g_lb - Cx @ self.dx[t] - Cu @ self.du[t] - data.g, 0, np.inf)))
+                l2 = np.max(np.abs(np.clip( Cx @ self.dx[t] + Cu @ self.du[t] + data.g - model.g_ub, 0, np.inf)))
+                self.kkt_primal = max(self.kkt_primal, l1, l2)
 
-            self.norm_primal_rel[0] = max(self.norm_primal_rel[0], max(abs(Cdx_Cdu)))
-            self.norm_primal_rel[1] = max(self.norm_primal_rel[1], max(abs(self.z[t])))
-            self.norm_dual_rel = max(self.norm_dual_rel, max(abs(Cx.T@self.y[t])), max(abs(Cu.T@self.y[t])))
+                self.norm_primal_rel[0] = max(self.norm_primal_rel[0], max(abs(Cdx_Cdu)))
+                self.norm_primal_rel[1] = max(self.norm_primal_rel[1], max(abs(self.z[t])))
+                self.norm_dual_rel = max(self.norm_dual_rel, max(abs(Cx.T@self.y[t])), max(abs(Cu.T@self.y[t])))
 
         self.dx[-1] = self.dx_tilde[-1].copy()
         if self.problem.terminalModel.ng != 0:
@@ -245,21 +248,22 @@ class StagewiseADMM(SolverAbstract):
             self.dx[-1] = self.dx_tilde[-1].copy()
 
             # OSQP
-            self.norm_primal = max(self.norm_primal, max(abs(Cdx - self.z[-1])))
-            dual_vec = Cx.T@np.multiply(self.rho_vec[-1], (self.z[-1] - z_prev))
-            self.norm_dual = max(self.norm_dual, max(abs(dual_vec)))
+            if (iter) % self.rho_update_interval == 0 and iter > 1:
+                self.norm_primal = max(self.norm_primal, max(abs(Cdx - self.z[-1])))
+                dual_vec = Cx.T@np.multiply(self.rho_vec[-1], (self.z[-1] - z_prev))
+                self.norm_dual = max(self.norm_dual, max(abs(dual_vec)))
 
-            # KKT
-            dual_vec = self.problem.terminalData.Lxx @ self.dx[-1] + self.problem.terminalData.Lx - self.lag_mul[-1] +  Cx.T @ self.y[-1]
-            self.kkt_dual = max(self.kkt_dual, max(abs(dual_vec)))
-            l1 = np.max(np.abs(np.clip(model.g_lb - Cx @ self.dx[-1] - data.g, 0, np.inf)))
-            l2 = np.max(np.abs(np.clip( Cx @ self.dx[-1] + data.g - model.g_ub, 0, np.inf)))
-            self.kkt_primal = max(self.kkt_primal, l1, l2)
+                # KKT
+                dual_vec = self.problem.terminalData.Lxx @ self.dx[-1] + self.problem.terminalData.Lx - self.lag_mul[-1] +  Cx.T @ self.y[-1]
+                self.kkt_dual = max(self.kkt_dual, max(abs(dual_vec)))
+                l1 = np.max(np.abs(np.clip(model.g_lb - Cx @ self.dx[-1] - data.g, 0, np.inf)))
+                l2 = np.max(np.abs(np.clip( Cx @ self.dx[-1] + data.g - model.g_ub, 0, np.inf)))
+                self.kkt_primal = max(self.kkt_primal, l1, l2)
 
 
-            self.norm_primal_rel[0] = max(self.norm_primal_rel[0], max(abs(Cx@self.dx[-1])))
-            self.norm_primal_rel[1] = max(self.norm_primal_rel[1], max(abs(self.z[-1])))
-            self.norm_dual_rel = max(self.norm_dual_rel, max(abs(Cx.T@self.y[-1])))
+                self.norm_primal_rel[0] = max(self.norm_primal_rel[0], max(abs(Cx@self.dx[-1])))
+                self.norm_primal_rel[1] = max(self.norm_primal_rel[1], max(abs(self.z[-1])))
+                self.norm_dual_rel = max(self.norm_dual_rel, max(abs(Cx.T@self.y[-1])))
         self.norm_primal_rel = max(self.norm_primal_rel)
 
 
