@@ -79,11 +79,13 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         A = np.zeros((self.problem.T*self.ndx, Asize))
         B = np.zeros(self.problem.T*self.ndx)
 
+        
         for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
             index_u = self.problem.T*self.ndx + t * self.nu
             if t>=1:
                 index_x = (t-1) * self.ndx
                 P[index_x:index_x+self.ndx, index_x:index_x+self.ndx] = data.Lxx.copy()
+                
                 P[index_x:index_x+self.ndx, index_u:index_u+self.nu] = data.Lxu.copy()
                 P[index_u:index_u+self.nu, index_x:index_x+self.ndx] = data.Lxu.T.copy()
                 q[index_x:index_x+self.ndx] = data.Lx.copy()
@@ -96,7 +98,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
             if t >=1:
                 A[t * self.ndx: (t+1) * self.ndx, (t-1) * self.ndx: t * self.ndx] = - data.Fx.copy()
-
             B[t * self.ndx: (t+1) * self.ndx] = self.gap[t].copy()
 
 
@@ -137,14 +138,21 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             nin_count += model.ng
 
 
+        
+
         if self.method == "ProxQP":
             qp = proxsuite.proxqp.sparse.QP(n, self.n_eq, self.n_in)
             qp.settings.eps_abs = self.eps_abs
-            qp.settings.eps_abs = self.eps_rel
-            qp.settings.max_iter = 100
-            qp.settings.max_iter_in = 100
+            qp.settings.eps_rel = self.eps_rel
+            # qp.settings.max_iter = 100
+            # qp.settings.max_iter_in = 100
             qp.init(P, q, A, B, C, l, u)      
+
+            print("start PROXQP")
+            import time 
+            t1 = time.time()
             qp.solve()
+            print("PROXQP time : ", time.time() - t1)
             res = qp.results.x
             self.z_k = qp.results.z
             self.y_k = qp.results.y
@@ -180,18 +188,27 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             uosqp = np.hstack([B, u])
 
             P = sparse.csr_matrix(P)
+
+            print("P ", P.count_nonzero(), " out of ", P.shape[0] * P.shape[1], " = ", 100 *P.count_nonzero()/   P.shape[0] / P.shape[1])
+            print("A ", Aosqp.count_nonzero(), " out of ", Aosqp.shape[0] * Aosqp.shape[1], " = ", Aosqp.count_nonzero()/   Aosqp.shape[0] / Aosqp.shape[1])
+
+            # print(P)
             prob = osqp.OSQP()
             prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
                             adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
             # import pdb; pdb.set_trace()
             prob.eps_abs = self.eps_abs
             prob.eps_rel = self.eps_rel
-  
+
+            import time 
+            t1 = time.time()
+            print("start osqp")
             tmp = prob.solve()
+            print("OSQP time : ", time.time() - t1)
             res = tmp.x
             self.y_k = tmp.y
             self.qp_iters = tmp.info.iter
-            
+            # print(res)
         elif self.method == "CustomOSQP" :
             Aeq = sparse.csr_matrix(A)
             Aineq = sparse.csr_matrix(C)
