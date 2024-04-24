@@ -63,7 +63,7 @@ actuation = crocoddyl.ActuationModelFloatingBase(state)
 
 # Set integration time
 DT = 5e-2
-T = 40
+T = 10
 target = np.array([0.4, 0, 1.2])
 
 # Initialize reference state, target and reference CoM
@@ -200,26 +200,32 @@ runningCostModel3 = crocoddyl.CostModelSum(state, actuation.nu)
 terminalCostModel = crocoddyl.CostModelSum(state, actuation.nu)
 
 # Then let's added the running and terminal cost functions
+JOINT_CONSTRAINT = True
+
 runningCostModel1.addCost("gripperPose", handTrackingCost, 1e2)
 runningCostModel1.addCost("stateReg", xRegCost, 1e-3)
 runningCostModel1.addCost("ctrlReg", uRegCost, 1e-4)
-runningCostModel1.addCost("limitCost", limitCost, 1e3)
+if not JOINT_CONSTRAINT:
+    runningCostModel1.addCost("limitCost", limitCost, 1e3)
 
 runningCostModel2.addCost("gripperPose", handTrackingCost, 1e2)
 runningCostModel2.addCost("footPose", footTrackingCost1, 1e1)
 runningCostModel2.addCost("stateReg", xRegCost, 1e-3)
 runningCostModel2.addCost("ctrlReg", uRegCost, 1e-4)
-runningCostModel2.addCost("limitCost", limitCost, 1e3)
+if not JOINT_CONSTRAINT:
+    runningCostModel2.addCost("limitCost", limitCost, 1e3)
 
 runningCostModel3.addCost("gripperPose", handTrackingCost, 1e2)
 runningCostModel3.addCost("footPose", footTrackingCost2, 1e1)
 runningCostModel3.addCost("stateReg", xRegCost, 1e-3)
 runningCostModel3.addCost("ctrlReg", uRegCost, 1e-4)
-runningCostModel3.addCost("limitCost", limitCost, 1e3)
+if not JOINT_CONSTRAINT:
+    runningCostModel3.addCost("limitCost", limitCost, 1e3)
 
 terminalCostModel.addCost("gripperPose", handTrackingCost, 1e2)
 terminalCostModel.addCost("stateReg", xRegTermCost, 1e-3)
-terminalCostModel.addCost("limitCost", limitCost, 1e3)
+if not JOINT_CONSTRAINT:
+    terminalCostModel.addCost("limitCost", limitCost, 1e3)
 
 
 constraintModelManager = crocoddyl.ConstraintModelManager(state, actuation.nu)
@@ -236,6 +242,9 @@ if FORCE_COST:
 if FORCE_CONSTRAINT:
     constraintForce = crocoddyl.ConstraintModelResidual(state, ForceResidual, np.array([0., 0, 0]*2), np.array([np.inf, np.inf, np.inf]*2))
     constraintModelManager.addConstraint("force", constraintForce)
+if JOINT_CONSTRAINT:
+    constraintState = crocoddyl.ConstraintModelResidual(state, xLimitResidual, xlb, xub)
+    constraintModelManager.addConstraint("state", constraintState)
 
 # Create the action model
 dmodelRunning1 = crocoddyl.DifferentialActionModelContactFwdDynamics(

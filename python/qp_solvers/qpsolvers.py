@@ -191,6 +191,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             
 
         elif self.method == "OSQP":
+
             Aeq = sparse.csr_matrix(A)
             Aineq = sparse.csr_matrix(C)
             Aosqp = sparse.vstack([Aeq, Aineq])
@@ -210,10 +211,9 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             # import pdb; pdb.set_trace()
             prob.eps_abs = self.eps_abs
             prob.eps_rel = self.eps_rel
-
+            print("start osqp")
             import time 
             t1 = time.time()
-            print("start osqp")
             tmp = prob.solve()
             print("OSQP time : ", time.time() - t1)
             res = tmp.x
