@@ -10,6 +10,7 @@ from scipy import sparse
 from . py_osqp import CustomOSQP
 from . stagewise_qp_kkt import StagewiseQPKKT
 from crocoddyl import SolverAbstract
+import hpipm_python
 
 class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
@@ -18,7 +19,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         SolverAbstract.__init__(self, shootingProblem)        
 
         assert method == "ProxQP" or method=="OSQP"\
-              or method=="CustomOSQP" or method =="StagewiseQPKKT" 
+              or method=="CustomOSQP" or method =="StagewiseQPKKT"\
+              or method=="HPIPM"
         self.method = method
         if method == "CustomOSQP":
             CustomOSQP.__init__(self)
@@ -220,6 +222,44 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             self.y_k = tmp.y
             self.qp_iters = tmp.info.iter
             # print(res)
+        
+        elif self.method == "HPIPM":
+            # QP dimensions
+            dim = hpipm_python.hpipm_dense_qp_dim()
+            dim.set('nv', self.problem.T*(self.ndx + self.nu))  # number of variables
+            dim.set('nb', 0)                                    # number of box constraints
+            dim.set('ne', self.n_eq)                            # number of equality constraints
+            dim.set('ng', self.n_in)                            # number of general (inequality) constraints
+            # Create QP
+            qp = hpipm_python.hpipm_dense_qp(dim)
+            qp.set('H', P)
+            qp.set('g', q)
+            qp.set('C', C)
+            qp.set('ug', u)
+            qp.set('lg', l)  # arbitrary
+            # qp.set('lg_mask', np.zeros(3))  # disable lower bound
+            qp.set('A', A)
+            qp.set('b', B)
+            qp_sol = hpipm_python.hpipm_dense_qp_sol(dim)
+            # set up solver arg
+            #mode = 'speed_abs'
+            mode = 'speed'
+            #mode = 'balance'
+            #mode = 'robust'
+            # create and set default arg based on mode
+            arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, mode)
+            # create and set default arg based on mode
+            arg.set('mu0', 1e4)
+            arg.set('iter_max', 30)
+            arg.set('tol_stat', 1e-4)
+            arg.set('tol_eq', 1e-5)
+            arg.set('tol_ineq', 1e-5)
+            arg.set('tol_comp', 1e-5)
+            arg.set('reg_prim', 1e-12)
+            solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
+            solver.solve(qp, qp_sol)
+            res = qp_sol.get('v')
+            
         elif self.method == "CustomOSQP" :
             Aeq = sparse.csr_matrix(A)
             Aineq = sparse.csr_matrix(C)

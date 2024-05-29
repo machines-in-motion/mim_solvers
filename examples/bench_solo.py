@@ -218,15 +218,18 @@ print(" TEST OSQP ".center(LINE_WIDTH, "-"))
 ddp1 = mim_solvers.SolverCSQP(problem)
 ddp2 = CSQP(problem, "OSQP")
 ddp3 = CSQP(problem, "ProxQP")
+ddp4 = CSQP(problem, "HPIPM")
 
 ddp1.with_callbacks = False
 ddp2.with_callbacks = False
 ddp3.with_callbacks = False
+ddp4.with_callbacks = False
 
 max_qp_iters = 25
 ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp3.max_qp_iters = max_qp_iters
+ddp4.max_qp_iters = max_qp_iters
 
 eps_abs = 1e-20
 eps_rel = 0.
@@ -236,10 +239,14 @@ ddp2.eps_abs = eps_abs
 ddp2.eps_rel = eps_rel
 ddp3.eps_abs = eps_abs
 ddp3.eps_rel = eps_rel
+ddp4.eps_abs = eps_abs
+ddp4.eps_rel = eps_rel
+
 
 ddp1.equality_qp_initial_guess = False
 ddp2.equality_qp_initial_guess = False
 ddp3.equality_qp_initial_guess = False
+ddp4.equality_qp_initial_guess = False
 
 ddp1.update_rho_with_heuristic = True
 
@@ -269,10 +276,11 @@ print("Stagewise computeDirection : ", time.time() - t1)
 
 converged = ddp2.solve(xs_init, us_init, 1)
 # converged = ddp3.solve(xs_init, us_init, 1)
+converged = ddp4.solve(xs_init, us_init, 1)
 
 
 
 
-print("Stgewise iter = ", ddp1.qp_iters)
+print("Stagewise iter = ", ddp1.qp_iters)
 print("OSQP iter = ", ddp2.qp_iters)
 # print("Proxqp iter = ", ddp3.qp_iters)
