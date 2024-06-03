@@ -32,6 +32,7 @@ ddp3 = CSQP(problem, "CustomOSQP")
 ddp4 = CSQP(problem, "StagewiseQPKKT")
 ddp5 = CSQP(problem, "OSQP")
 ddp6 = CSQP(problem, "ProxQP")
+ddp7 = CSQP(problem, "HPIPM")
 
 ddp1.with_callbacks = True
 ddp2.with_callbacks = True
@@ -39,6 +40,7 @@ ddp3.with_callbacks = True
 ddp4.with_callbacks = True
 ddp5.with_callbacks = True
 ddp6.with_callbacks = True
+ddp7.with_callbacks = True
 
 termination_tolerance = 1e-4
 ddp1.termination_tolerance = termination_tolerance
@@ -47,6 +49,7 @@ ddp3.termination_tolerance = termination_tolerance
 ddp4.termination_tolerance = termination_tolerance
 ddp5.termination_tolerance = termination_tolerance
 ddp6.termination_tolerance = termination_tolerance
+ddp7.termination_tolerance = termination_tolerance
 
 max_qp_iters = 10000
 ddp1.max_qp_iters = max_qp_iters
@@ -55,6 +58,7 @@ ddp3.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
 ddp5.max_qp_iters = max_qp_iters
 ddp6.max_qp_iters = max_qp_iters
+ddp7.max_qp_iters = max_qp_iters
 
 eps_abs = 1e-5
 eps_rel = 0.
@@ -70,7 +74,7 @@ ddp3.eps_rel = eps_rel
 ddp4.eps_rel = eps_rel
 ddp5.eps_rel = eps_rel
 ddp6.eps_rel = eps_rel
-
+# Equivalent for hpipm?
 
 
 converged = ddp1.solve(xs_init, us_init, 2)
@@ -79,6 +83,7 @@ converged = ddp3.solve(xs_init, us_init, 2)
 converged = ddp4.solve(xs_init, us_init, 2)
 converged = ddp5.solve(xs_init, us_init, 2)
 converged = ddp6.solve(xs_init, us_init, 2)
+converged = ddp7.solve(xs_init, us_init, 2)
 
 ################################## TEST CONVERGENCE #####################################
 set_tol = 1e-4
@@ -94,6 +99,7 @@ assert ddp3.iter == 0
 assert ddp4.iter == 0
 assert ddp5.iter == 0
 assert ddp6.iter == 0
+assert ddp7.iter == 0
 
 
 assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp3.xs)) < set_tol, "Test failed"
@@ -105,4 +111,9 @@ assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp4.us)) < set_tol, "Test fa
 assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp5.xs)) < set_tol, "Test failed"
 assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp5.us)) < set_tol, "Test failed"
 
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp6.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp6.us)) < set_tol, "Test failed"
+
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp7.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp7.us)) < set_tol, "Test failed"
 

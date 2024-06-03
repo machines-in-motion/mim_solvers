@@ -11,6 +11,7 @@ from . py_osqp import CustomOSQP
 from . stagewise_qp_kkt import StagewiseQPKKT
 from crocoddyl import SolverAbstract
 import hpipm_python
+import time 
 
 class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
@@ -162,7 +163,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             qp.init(P, q, A, B, C, l, u)      
 
             print("start PROXQP")
-            import time 
             t1 = time.time()
             qp.solve()
             print("PROXQP time : ", time.time() - t1)
@@ -203,8 +203,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
             P = sparse.csr_matrix(P)
 
-            print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
-            print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
+            # print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
+            # print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
 
             # print(P)
             prob = osqp.OSQP()
@@ -213,8 +213,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             # import pdb; pdb.set_trace()
             prob.eps_abs = self.eps_abs
             prob.eps_rel = self.eps_rel
-            print("start osqp")
-            import time 
+            print("start OSQP")
             t1 = time.time()
             tmp = prob.solve()
             print("OSQP time : ", time.time() - t1)
@@ -224,53 +223,75 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             # print(res)
         
         elif self.method == "HPIPM":
-            import pdb
-            # QP dimensions
+            # Dimensions
+            nv = self.problem.T*(self.ndx + self.nu)         # number of variables
+            ne = self.n_eq if self.n_eq is not None else 0   # number of box constraints
+            ng = self.n_in if self.n_in is not None else 0   # number of equality constraints
+            nb = 0                                           # number of general (inequality) constraints
             dim = hpipm_python.hpipm_dense_qp_dim()
-            dim.set('nv', self.problem.T*(self.ndx + self.nu))  # number of variables
-            dim.set('nb', 0)                                    # number of box constraints
-            dim.set('ne', self.n_eq)                            # number of equality constraints
-            # dim.set('ng', self.n_in)                            # number of general (inequality) constraints
-            dim.set('ng', 0)                            # number of general (inequality) constraints
-            # Create QP
+            dim.set("nv", nv)
+            dim.set("nb", nb)
+            dim.set("ne", ne)
+            dim.set("ng", ng)
+            # QP setup
             qp = hpipm_python.hpipm_dense_qp(dim)
-            qp.set('H', P)
-            qp.set('g', q)
-            qp.set('A', A)
-            qp.set('b', B)
-            qp.set('C', C)
-            # qp.set('ug', u)
-            # qp.set('lg', l)  # arbitrary
-            # qp.set("lg_mask", np.zeros_like(l, dtype=bool))
+            qp.set("H", P)
+            qp.set("g", q)
+            if ne > 0:
+                qp.set("A", A)
+                qp.set("b", B)
+            if ng > 0:
+                qp.set("C", C)
+                # need to mask out lb or ub if the box constraints are only one-sided
+                # we also mask out infinities (and set the now-irrelevant value to
+                # zero), since HPIPM doesn't like infinities
+                if l is not None: 
+                    lg_mask = np.isinf(l)
+                    l[lg_mask] = 0.0
+                    qp.set("lg", l)
+                    qp.set("lg_mask", ~lg_mask)
+                else:
+                    qp.set("lg_mask", np.zeros(ng, dtype=bool))
 
+                if u is not None:  
+                    ug_mask = np.isinf(u)
+                    u[ug_mask] = 0.0
+                    qp.set("ug", u)
+                    qp.set("ug_mask", ~ug_mask)
+                else:
+                    qp.set("ug_mask", np.zeros(ng, dtype=bool))
             qp_sol = hpipm_python.hpipm_dense_qp_sol(dim)
             # set up solver arg
-            #mode = 'speed_abs'
-            # mode = 'speed'
+            # mode = 'speed_abs'
+            mode = 'balance'
             # mode = 'balance'
             # mode = 'robust'
             # create and set default arg based on mode
-            arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, 'balance')
+            arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, mode)
             # create and set default arg based on mode
             # arg.set('mu0', 1e4)
-            # arg.set('iter_max', self.max_qp_iters)
-            # arg.set('tol_stat', self.eps_abs)
-            # arg.set('tol_eq', self.eps_abs)
-            # arg.set('tol_ineq', self.eps_abs)
-            # arg.set('tol_comp', self.eps_abs)
+            arg.set('iter_max', self.max_qp_iters)
+            arg.set('tol_stat', self.eps_abs)
+            arg.set('tol_eq', self.eps_abs)
+            arg.set('tol_ineq', self.eps_abs)
+            arg.set('tol_comp', self.eps_abs)
             # arg.set('reg_prim', 1e-12)
             solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
             # pdb.set_trace()
-            import time
+            # import time
+            print("start HPIPM")
             t1 = time.time()
             solver.solve(qp, qp_sol)
             print("HPIPM time : ", time.time() - t1)
-            # status = solver.get("status")
-            # SOLVED = status == 0
-            # if not SOLVED:
-            #     print("HPIPM exited with status '{status}'")
+            # pdb.set_trace()
             res = qp_sol.get('v').flatten()
-            print(res)
+            self.y_k = np.zeros(self.n_in + self.n_eq)
+            self.y_k[:self.n_eq] = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
+            self.y_k[self.n_eq:self.n_eq + self.n_in] = qp_sol.get("lam_ug").flatten() if ng > 0 else np.empty((0,))
+            self.qp_iters = solver.get("iter")
+
+
+            # print(res)
 
         elif self.method == "CustomOSQP" :
             Aeq = sparse.csr_matrix(A)
@@ -322,7 +343,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 self.y[t] = self.y_k[nin_count:nin_count + model.ng]
                 nin_count += model.ng
 
-        if self.method == "CustomOSQP" or self.method == "OSQP":
+        if self.method == "CustomOSQP" or self.method == "OSQP" or self.method == 'HPIPM':
             nin_count = self.n_eq
             self.lag_mul[0] = np.zeros(self.problem.runningModels[0].state.ndx)
             for t in range(self.problem.T+1):

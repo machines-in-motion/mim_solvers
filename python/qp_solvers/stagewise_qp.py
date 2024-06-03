@@ -52,6 +52,7 @@ class StagewiseADMM(SolverAbstract):
 
         self.sigma_sparse = 1e-6
         self.rho_sparse_base = 1e-1
+        self.rho_sparse = self.rho_sparse_base
         self.rho_min = 1e-6
         self.rho_max = 1e3
 

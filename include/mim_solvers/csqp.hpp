@@ -269,7 +269,7 @@ class SolverCSQP : public SolverDDP {
   double adaptive_rho_tolerance_ = 5; 
   double eps_abs_ = 1e-4;                                     //!< absolute termination criteria
   double eps_rel_ = 1e-4;                                     //!< relative termination criteria
-  double equality_qp_initial_guess_ = true;
+  double equality_qp_initial_guess_ = true;                   //!< warm-start the QP with unconstrained solution
   std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();      //!< KKT conditions residual
 
