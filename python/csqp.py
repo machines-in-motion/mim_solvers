@@ -8,6 +8,7 @@ from qp_solvers.stagewise_qp import StagewiseADMM
 from qp_solvers.qpsolvers import QPSolvers
 import collections
 pp = lambda s : np.format_float_scientific(s, exp_digits=2, precision =4)
+from qpsolvers import Problem, Solution
 
 def rev_enumerate(l):
     return reversed(list(enumerate(l)))
@@ -217,6 +218,8 @@ class CSQP(StagewiseADMM, QPSolvers):
                 self.computeDirectionFullQP()
             else:
                 self.computeDirection()
+            if(self.BENCHMARK):
+                self.check_qp_convergence()
             self.KKT_check()
             if(self.with_callbacks):
                 print("{:>4} {:.4e} {:.4e} {:.4e} {:.4e} {:.4e} {:>4} {:.4e} {:>4}".format("END", float(self.merit), self.cost,  self.gap_norm, self.constraint_norm, self.x_grad_norm + self.u_grad_norm, " ---- ", self.KKT,  " ---- "))
@@ -225,3 +228,109 @@ class CSQP(StagewiseADMM, QPSolvers):
 
 
         return False 
+    
+    def check_qp_convergence(self):
+        '''
+        Checks the QP convergence based on the approach employed in the qpsolvers pkg
+        '''
+        # If we are benchmarking, setup the problem using QPSolvers (S. Caron)
+        # in order to get the unified convergence metrics (prim_res, dual_res, dual_gap)
+        # We follow the convention of QPSolvers package, i.e.
+        # min_x (1/2) x^T P x + q^T x
+        #   s.t. Ax  = b
+        #        Gx <= h
+        # see here https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/problem.py
+        P, q, A, B, C, u, l = self.create_full_qp()
+        P_qp = P ; q_qp = q
+        A_qp = A ; b_qp = B
+        G_qp = np.vstack([C, -C])
+        h_qp = np.hstack([u, -l]) 
+        prob_qp = Problem(P_qp, q_qp, G_qp, h_qp, A_qp, b_qp) # no box constraints
+        sol_qp = Solution(prob_qp)
+
+        if(self.using_qp):
+            if(self.method == 'OSQP'):
+                # sol_qp.found = self.osqp_sol_found
+                # Solution
+                sol_qp.x = self.osqp_results.x
+                m = C.shape[0] if G_qp is not None else 0 ; meq = A_qp.shape[0] if A_qp is not None else 0
+                # Lagrange multipliers for equality constraint Ax = b
+                sol_qp.y = self.osqp_results.y[:meq] if A_qp is not None else np.empty((0,))
+                # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
+                z = self.osqp_results.y[meq:meq+m] if G_qp is not None else np.empty((0,))
+                zp = np.maximum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                zm = np.minimum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                sol_qp.z = np.hstack([zp, zm])
+                # No box constraints in the present formulation
+                sol_qp.z_box = np.empty((0,))
+            if(self.method == 'HPIPM'):
+                pass
+        else:
+            sol_qp.x
+        # Print convergence metrics
+        self.is_optimal      = sol_qp.is_optimal(self.eps_abs)
+        self.primal_residual = sol_qp.primal_residual()
+        self.dual_residual   = sol_qp.dual_residual()
+        self.duality_gap     = sol_qp.duality_gap()
+        print(f"- Solution is{'' if sol_qp.is_optimal(1e-3) else ' NOT'} optimal")
+        print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
+        print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
+        print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
+            # else:
+                    # self.is_optimal      = False
+                    # self.primal_residual = np.inf
+                    # self.dual_residual   = np.inf
+                    # self.duality_gap     = np.inf
+
+
+    def create_full_qp(self):
+        '''
+        Creates the full QP (needed for benchmarks)
+        '''
+        self.n_vars  = self.problem.T*(self.ndx + self.nu)
+        P = np.zeros((self.problem.T*(self.ndx + self.nu), self.problem.T*(self.ndx + self.nu)))
+        q = np.zeros(self.problem.T*(self.ndx + self.nu))
+        Asize = self.problem.T*(self.ndx + self.nu)
+        A = np.zeros((self.problem.T*self.ndx, Asize))
+        B = np.zeros(self.problem.T*self.ndx)
+        for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
+            index_u = self.problem.T*self.ndx + t * self.nu
+            if t>=1:
+                index_x = (t-1) * self.ndx
+                P[index_x:index_x+self.ndx, index_x:index_x+self.ndx] = data.Lxx.copy()
+                P[index_x:index_x+self.ndx, index_u:index_u+self.nu] = data.Lxu.copy()
+                P[index_u:index_u+self.nu, index_x:index_x+self.ndx] = data.Lxu.T.copy()
+                q[index_x:index_x+self.ndx] = data.Lx.copy()
+            P[index_u:index_u+self.nu, index_u:index_u+self.nu] = data.Luu.copy()
+            q[index_u:index_u+self.nu] = data.Lu.copy()
+            A[t * self.ndx: (t+1) * self.ndx, index_u:index_u+self.nu] = - data.Fu.copy() 
+            A[t * self.ndx: (t+1) * self.ndx, t * self.ndx: (t+1) * self.ndx] = np.eye(self.ndx)
+            if t >=1:
+                A[t * self.ndx: (t+1) * self.ndx, (t-1) * self.ndx: t * self.ndx] = - data.Fx.copy()
+            B[t * self.ndx: (t+1) * self.ndx] = self.gap[t].copy()
+        P[(self.problem.T-1)*self.ndx:self.problem.T*self.ndx, self.problem.T*self.ndx-self.ndx:self.problem.T*self.ndx] = self.problem.terminalData.Lxx.copy()
+        q[(self.problem.T-1)*self.ndx:self.problem.T*self.ndx] = self.problem.terminalData.Lx.copy()
+        self.n_eq = self.problem.T*self.ndx
+        self.n_in = sum([len(self.y[i]) for i in range(len(self.y))])
+        C = np.zeros((self.n_in, self.problem.T*(self.ndx + self.nu)))
+        l = np.zeros(self.n_in)
+        u = np.zeros(self.n_in)
+        nin_count = 0
+        index_x = self.problem.T*self.ndx
+        for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
+            if model.ng == 0:
+                continue
+            l[nin_count: nin_count + model.ng] = model.g_lb - data.g
+            u[nin_count: nin_count + model.ng] = model.g_ub - data.g
+            if t > 0:
+                C[nin_count: nin_count + model.ng, (t-1)*self.ndx: t*self.ndx] = data.Gx
+            C[nin_count: nin_count + model.ng, index_x+t*self.nu: index_x+(t+1)*self.nu] = data.Gu
+            nin_count += model.ng
+        model = self.problem.terminalModel
+        data = self.problem.terminalData
+        if model.ng != 0:
+            l[nin_count: nin_count + model.ng] = model.g_lb - data.g
+            u[nin_count: nin_count + model.ng] = model.g_ub - data.g
+            C[nin_count: nin_count + model.ng, (self.problem.T-1)*self.ndx: self.problem.T*self.ndx] = data.Gx
+            nin_count += model.ng
+        return P, q, A, B, C, u, l
