@@ -225,7 +225,7 @@ ddp0.with_callbacks = False
 ddp1.with_callbacks = False
 ddp2.with_callbacks = False
 ddp3.with_callbacks = False
-ddp4.with_callbacks = True
+ddp4.with_callbacks = False
 
 max_qp_iters = 25
 ddp0.max_qp_iters = max_qp_iters
@@ -256,11 +256,14 @@ ddp4.equality_qp_initial_guess = False
 
 ddp0.update_rho_with_heuristic = True
 
-# converged0 = ddp0.solve(xs_init, us_init, 1)
-# converged1 = ddp1.solve(xs_init, us_init, 1)
-# converged2 = ddp2.solve(xs_init, us_init, 1)
-# converged3 = ddp3.solve(xs_init, us_init, 1)
-# converged4 = ddp4.solve(xs_init, us_init, 1)
+
+# #  Check that the solvers all converge to same solution
+# maxiter = 100
+# converged0 = ddp0.solve(xs_init, us_init, maxiter)
+# # converged1 = ddp1.solve(xs_init, us_init, maxiter)
+# # converged2 = ddp2.solve(xs_init, us_init, maxiter)
+# converged4 = ddp4.solve(xs_init, us_init, maxiter)
+# zepofhezif
 
 import time 
 
@@ -298,14 +301,14 @@ print("------------------------ \n")
 # ProxQP
 # converged = ddp3.solve(xs_init, us_init, 1)
 
-# HPIPM
-print("\n ------ HPIPM ------ ")
-converged = ddp4.solve(xs_init, us_init, 1)
-print("------------------------ \n")
+# # HPIPM
+# print("\n ------ HPIPM ------ ")
+# converged = ddp4.solve(xs_init, us_init, 1)
+# print("------------------------ \n")
 
 
 # iterations
-print("Stagewise iter = ", int(ddp1.qp_iters))
-print("OSQP iter      = ", ddp2.qp_iters)
-# print("Proxqp iter    = ", ddp3.qp_iters)
-print("HPIPM iter     = ", ddp4.qp_iters)
+# print("Stagewise iter = ", int(ddp1.qp_iters))
+# print("OSQP iter      = ", ddp2.qp_iters)
+# # print("Proxqp iter    = ", ddp3.qp_iters)
+# print("HPIPM iter     = ", ddp4.qp_iters)

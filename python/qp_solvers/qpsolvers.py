@@ -12,6 +12,7 @@ from . stagewise_qp_kkt import StagewiseQPKKT
 from crocoddyl import SolverAbstract
 import hpipm_python
 import time 
+from qpsolvers import solve_problem, Problem, Solution
 
 class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
@@ -33,6 +34,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         self.verboseQP = verboseQP
         self.eps_abs = 1e-4
         self.eps_rel = 0.
+
+        self.BENCHMARK = True
 
         if self.verboseQP:
             print("USING " + str(method))
@@ -152,7 +155,20 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             nin_count += model.ng
 
 
-        
+        # If we are benchmarking, setup the problem using QPSolvers (S. Caron)
+        # in order to get the unified convergence metrics (prim_res, dual_res, dual_gap)
+        if(self.BENCHMARK):
+            # We follow the convention of QPSolvers package, i.e.
+            # min_x (1/2) x^T P x + q^T x
+            #   s.t. Ax  = b
+            #        Gx <= h
+            # see here https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/problem.py
+            P_qp = P ; q_qp = q
+            A_qp = A ; b_qp = B
+            G_qp = np.vstack([C, -C])
+            h_qp = np.hstack([u, -l]) 
+            prob_qp = Problem(P_qp, q_qp, G_qp, h_qp, A_qp, b_qp) # no box constraints
+            sol_qp = Solution(prob_qp)
 
         if self.method == "ProxQP":
             qp = proxsuite.proxqp.sparse.QP(n, self.n_eq, self.n_in)
@@ -188,40 +204,51 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 if model.ng == 0:
                     continue
                 self.y[t] = qp.results.z[nin_count:nin_count + model.ng]
-                nin_count += model.ng
+                nin_count += model.ng          
             
-            
-
         elif self.method == "OSQP":
-
             Aeq = sparse.csr_matrix(A)
             Aineq = sparse.csr_matrix(C)
             Aosqp = sparse.vstack([Aeq, Aineq])
-
+            print(l.shape)
             losqp = np.hstack([B, l])
             uosqp = np.hstack([B, u])
-
             P = sparse.csr_matrix(P)
-
             # print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
             # print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
-
-            # print(P)
             prob = osqp.OSQP()
             prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
                             adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
-            # import pdb; pdb.set_trace()
-            prob.eps_abs = self.eps_abs
-            prob.eps_rel = self.eps_rel
-            print("start OSQP")
-            t1 = time.time()
+            # print("start OSQP")
+            # t1 = time.time()
             tmp = prob.solve()
-            print("OSQP time : ", time.time() - t1)
+            # print("OSQP time : ", time.time() - t1)
             res = tmp.x
             self.y_k = tmp.y
             self.qp_iters = tmp.info.iter
-            # print(res)
-        
+            # If we are benchmarking, compute the metrics using qpsolvers package
+            # see here how the Solution class is populated with OSQP : https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/solvers/osqp_.py
+            if(self.BENCHMARK):
+                sol_qp.found = tmp.info.status_val == osqp.constant("OSQP_SOLVED")
+                sol_qp.x = tmp.x
+                m = C.shape[0] if G_qp is not None else 0 ; meq = A_qp.shape[0] if A_qp is not None else 0
+                # Lagrange multipliers for equality constraint Ax = b
+                sol_qp.y = tmp.y[:meq] if A_qp is not None else np.empty((0,))
+                # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
+                z = tmp.y[meq:meq+m] if G_qp is not None else np.empty((0,))
+                zp = np.maximum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                zm = np.minimum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                sol_qp.z = np.hstack([zp, zm])
+                # No box constraints in the present formulation
+                sol_qp.z_box = np.empty((0,))
+                # Print convergence metrics
+                print(f"- Solution is{'' if sol_qp.is_optimal(1e-3) else ' NOT'} optimal")
+                print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
+                # import pdb
+                # pdb.set_trace()
+                print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
+                print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
+
         elif self.method == "HPIPM":
             # Dimensions
             nv = self.problem.T*(self.ndx + self.nu)         # number of variables
@@ -262,34 +289,24 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                     qp.set("ug", ug)
                     qp.set("ug_mask", ~ug_mask)
                 else:
-                    qp.set("ug_mask", np.zeros(ng, dtype=bool))
-                
+                    qp.set("ug_mask", np.zeros(ng, dtype=bool)) 
             qp_sol = hpipm_python.hpipm_dense_qp_sol(dim)
             # set up solver arg
-            # mode = 'speed_abs'
-            mode = 'speed'
-            # mode = 'balance'
-            # mode = 'robust'
+            mode = 'speed_abs'
             # create and set default arg based on mode
             arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, mode)
             # create and set default arg based on mode
-            # arg.set('mu0', 1e5)
             arg.set('iter_max', self.max_qp_iters)
-            arg.set('tol_stat', self.eps_abs)
+            arg.set('tol_comp', self.eps_abs)
             arg.set('tol_eq', self.eps_abs)
             arg.set('tol_ineq', self.eps_abs)
-            # arg.set('tol_comp', self.eps_abs)
-            arg.set('reg_prim', 1e-12)
+            arg.set('tol_stat', self. eps_abs)
             solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
-            # pdb.set_trace()
-            # import time
-            print("start HPIPM")
-            t1 = time.time()
+            # print("start HPIPM")
+            # t1 = time.time()
             solver.solve(qp, qp_sol)
-            print("HPIPM time : ", time.time() - t1)
-            # pdb.set_trace()
-
-            VERBOSE = True
+            # print("HPIPM time : ", time.time() - t1)
+            VERBOSE = False
             if(VERBOSE):
                 v = qp_sol.get('v')
                 pi = qp_sol.get('pi')
@@ -303,7 +320,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 print('lam_ub = {}'.format(lam_ub.flatten()))
                 print('lam_lg = {}'.format(lam_lg.flatten()))
                 print('lam_ug = {}'.format(lam_ug.flatten()))
-
                 # get solver statistics
                 status = solver.get('status')
                 res_stat = solver.get('max_res_stat')
@@ -324,7 +340,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 for ii in range(iters+1):
                     print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
                 print('')
-                
             res = qp_sol.get('v').flatten()
             self.y_k = np.zeros(self.n_in + self.n_eq)
             self.y_k[:self.n_eq] = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))

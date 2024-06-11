@@ -34,7 +34,7 @@ class CSQP(StagewiseADMM, QPSolvers):
         self.mu2 = 1e1
         self.termination_tolerance = 1e-6
 
-
+        self.iter = 0
         self.use_filter_line_search = use_filter_line_search
         self.filter_size = 1
         self.with_callbacks = with_callbacks
@@ -161,7 +161,7 @@ class CSQP(StagewiseADMM, QPSolvers):
             
             print("{:>3} {:>7} {:>8} {:>8} {:>8} {:>11} {:>11} {:>8} {:>8}".format(*headings))
         for iter in range(maxiter):
-
+            self.iter = iter
             self.calc(True)
             if self.using_qp:
                 self.computeDirectionFullQP()

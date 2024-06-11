@@ -75,7 +75,8 @@ ddp4.eps_rel = eps_rel
 ddp5.eps_rel = eps_rel
 ddp6.eps_rel = eps_rel
 # Equivalent for hpipm?
-
+# ddp7.eps_abs = 1e-2
+# ddp7.eps_rel = 1e-2
 
 converged = ddp1.solve(xs_init, us_init, 2)
 converged = ddp2.solve(xs_init, us_init, 2)

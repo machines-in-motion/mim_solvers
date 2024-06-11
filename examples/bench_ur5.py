@@ -175,6 +175,6 @@ print("------------------------ \n")
 
 
 # iterations
-print("Stagewise iter = ", int(ddp1.qp_iters))
-print("OSQP iter      = ", ddp2.qp_iters)
-print("HPIPM iter     = ", ddp4.qp_iters)
+# print("Stagewise iter = ", int(ddp1.qp_iters))
+# print("OSQP iter      = ", ddp2.qp_iters)
+# print("HPIPM iter     = ", ddp4.qp_iters)
