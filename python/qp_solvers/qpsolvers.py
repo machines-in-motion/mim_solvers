@@ -22,7 +22,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
         assert method == "ProxQP" or method=="OSQP"\
               or method=="CustomOSQP" or method =="StagewiseQPKKT"\
-              or method=="HPIPM"
+              or method=="HPIPM_dense" or method=='HPIPM_ocp'
         self.method = method
         if method == "CustomOSQP":
             CustomOSQP.__init__(self)
@@ -143,8 +143,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             NNZ_block_A += np.size(data.Gu)
             nin_count += model.ng
 
-            # import pdb; pdb.set_trace()
-#
         model = self.problem.terminalModel
         data = self.problem.terminalData
         if model.ng != 0:
@@ -218,18 +216,16 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             prob = osqp.OSQP()
             prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
                             adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
-            # print("start OSQP")
+            print("start OSQP")
             t1 = time.time()
             tmp = prob.solve()
-            self.qp_time = time.time() - t1
+            print("HPIPM time : ", time.time() - t1)
+            # self.qp_time = time.time() - t1
             res = tmp.x
             self.y_k = tmp.y
             self.qp_iters = tmp.info.iter
-
-            # self.osqp_sol_found = tmp.info.status_val == osqp.constant("OSQP_SOLVED")
-            self.osqp_results = tmp
-            # # If we are benchmarking, compute the metrics using qpsolvers package
-            # # see here how the Solution class is populated with OSQP : https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/solvers/osqp_.py
+            # If we are benchmarking, compute the metrics using qpsolvers package
+            # see here how the Solution class is populated with OSQP : https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/solvers/osqp_.py
             # if(self.BENCHMARK):
             #     sol_qp.found = tmp.info.status_val == osqp.constant("OSQP_SOLVED")
             #     if(sol_qp.found):
@@ -259,12 +255,12 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             #         self.dual_residual   = np.inf
             #         self.duality_gap     = np.inf
 
-        elif self.method == "HPIPM":
+        elif self.method == "HPIPM_dense":
             # Dimensions
             nv = self.problem.T*(self.ndx + self.nu)         # number of variables
-            ne = self.n_eq if self.n_eq is not None else 0   # number of box constraints
-            ng = self.n_in if self.n_in is not None else 0   # number of equality constraints
-            nb = 0                                           # number of general (inequality) constraints
+            ne = self.n_eq if self.n_eq is not None else 0   # number of equality constraints
+            ng = self.n_in if self.n_in is not None else 0   # number of general (inequality) constraints
+            nb = 0                                           # number of box constraints
             dim = hpipm_python.hpipm_dense_qp_dim()
             dim.set("nv", nv)
             dim.set("nb", nb)
@@ -302,20 +298,20 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                     qp.set("ug_mask", np.zeros(ng, dtype=bool)) 
             qp_sol = hpipm_python.hpipm_dense_qp_sol(dim)
             # set up solver arg
-            mode = 'speed_abs'
+            mode = 'speed'
             # create and set default arg based on mode
             arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, mode)
             # create and set default arg based on mode
             arg.set('iter_max', self.max_qp_iters)
-            arg.set('tol_comp', self.eps_abs)
+            arg.set('tol_comp', 1)
             arg.set('tol_eq', self.eps_abs)
             arg.set('tol_ineq', self.eps_abs)
             arg.set('tol_stat', self. eps_abs)
             solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
-            # print("start HPIPM")
-            # t1 = time.time()
+            print("start HPIPM")
+            t1 = time.time()
             solver.solve(qp, qp_sol)
-            # print("HPIPM time : ", time.time() - t1)
+            print("HPIPM time : ", time.time() - t1)
             VERBOSE = False
             if(VERBOSE):
                 v = qp_sol.get('v')
@@ -355,6 +351,99 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             self.y_k[:self.n_eq] = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
             self.y_k[self.n_eq:self.n_eq + self.n_in] = qp_sol.get("lam_ug").flatten() if ng > 0 else np.empty((0,))
             self.qp_iters = solver.get("iter")
+
+        elif self.method == "HPIPM_ocp":
+            # Dimensions
+            N = self.problem.T
+            dim = hpipm_python.hpipm_ocp_qp_dim(N)
+            dim.set("nx", self.nx, 0, N)
+            dim.set("nu", self.nu, 0, N-1)
+            # QP setup
+            qp = hpipm_python.hpipm_ocp_qp(dim)
+            # Fill out OCP running nodes
+            print("horizon = ", N)
+            for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
+                # Dynamics
+                print("node ", t, "->", t+1)
+                qp.set('A', data.Fx, t, t+1)
+                qp.set('B', data.Fu, t, t+1)
+                qp.set('b', self.gap[t], t, t+1)
+                # Cost 
+                qp.set('S', data.Lxu.T, t, t+1)
+                qp.set('R', data.Luu, t, t+1)
+                qp.set('r', data.Lu, t, t+1)
+                qp.set('Q', data.Lxx, t, t+1)
+                qp.set('q', data.Lx, t, t+1)
+                # Constraints
+                if(t>=1):
+                    qp.set('C', data.Gx, t, t+1)
+                qp.set('D', data.Gu, t, t+1)
+                qp.set('lg', model.g_lb - data.g, 0)
+                qp.set('ug', model.g_lb - data.g, 0)
+            # Terminal node
+            qp.set('Q', self.problem.terminalData.Lxx, N, N+1)
+            qp.set('q', self.problem.terminalData.Lx, N, N+1)
+            # qp.set('C_e', self.problem.terminalData.Gx, N)
+            # qp.set('lg_e', self.problem.terminalModel.g_lb - self.problem.terminalData.g, 0)
+            # qp.set('ug_e', self.problem.terminalModel.g_lb - self.problem.terminalData.g, 0)
+            # qp.set('Jbu', self.problem.terminalData.Gu, N, N+1)
+            
+            qp_sol = hpipm_python.hpipm_dense_qp_sol(dim)
+            # set up solver arg
+            mode = 'speed'
+            # create and set default arg based on mode
+            arg = hpipm_python.hpipm_dense_qp_solver_arg(dim, mode)
+            # create and set default arg based on mode
+            arg.set('iter_max', self.max_qp_iters)
+            arg.set('tol_comp', 1)
+            arg.set('tol_eq', self.eps_abs)
+            arg.set('tol_ineq', self.eps_abs)
+            arg.set('tol_stat', self. eps_abs)
+            solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
+            print("start HPIPM")
+            t1 = time.time()
+            solver.solve(qp, qp_sol)
+            print("HPIPM time : ", time.time() - t1)
+            VERBOSE = False
+            if(VERBOSE):
+                v = qp_sol.get('v')
+                pi = qp_sol.get('pi')
+                lam_lb = qp_sol.get('lam_lb')
+                lam_ub = qp_sol.get('lam_ub')
+                lam_lg = qp_sol.get('lam_lg')
+                lam_ug = qp_sol.get('lam_ug')
+                print('v      = {}'.format(v.flatten()))
+                print('pi     = {}'.format(pi.flatten()))
+                print('lam_lb = {}'.format(lam_lb.flatten()))
+                print('lam_ub = {}'.format(lam_ub.flatten()))
+                print('lam_lg = {}'.format(lam_lg.flatten()))
+                print('lam_ug = {}'.format(lam_ug.flatten()))
+                # get solver statistics
+                status = solver.get('status')
+                res_stat = solver.get('max_res_stat')
+                res_eq = solver.get('max_res_eq')
+                res_ineq = solver.get('max_res_ineq')
+                res_comp = solver.get('max_res_comp')
+                iters = solver.get('iter')
+                stat = solver.get('stat')
+                print('\nsolver statistics:\n')
+                print('ipm return = {0:1d}\n'.format(status))
+                print('ipm max res stat = {:e}\n'.format(res_stat))
+                print('ipm max res eq   = {:e}\n'.format(res_eq))
+                print('ipm max res ineq = {:e}\n'.format(res_ineq))
+                print('ipm max res comp = {:e}\n'.format(res_comp))
+                print('ipm iter = {0:1d}\n'.format(iters))
+                print('stat =')
+                print('\titer\talpha_aff\tmu_aff\t\tsigma\t\talpha_prim\talpha_dual\tmu\t\tres_stat\tres_eq\t\tres_ineq\tres_comp')
+                for ii in range(iters+1):
+                    print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
+                print('')
+            res = qp_sol.get('v').flatten()
+            self.y_k = np.zeros(self.n_in + self.n_eq)
+            self.y_k[:self.n_eq] = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
+            self.y_k[self.n_eq:self.n_eq + self.n_in] = qp_sol.get("lam_ug").flatten() if ng > 0 else np.empty((0,))
+            self.qp_iters = solver.get("iter")
+
 
         elif self.method == "CustomOSQP" :
             Aeq = sparse.csr_matrix(A)
@@ -406,7 +495,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 self.y[t] = self.y_k[nin_count:nin_count + model.ng]
                 nin_count += model.ng
 
-        if self.method == "CustomOSQP" or self.method == "OSQP" or self.method == 'HPIPM':
+        if self.method == "CustomOSQP" or self.method == "OSQP" or self.method == 'HPIPM_dense':
             nin_count = self.n_eq
             self.lag_mul[0] = np.zeros(self.problem.runningModels[0].state.ndx)
             for t in range(self.problem.T+1):

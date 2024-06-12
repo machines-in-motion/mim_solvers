@@ -109,7 +109,7 @@ us_init = [np.zeros(nu)] * N_ocp
 ddp0 = mim_solvers.SolverCSQP(problem)
 ddp1 = CSQP(problem, "StagewiseQP")
 ddp2 = CSQP(problem, "OSQP")
-ddp4 = CSQP(problem, "HPIPM")
+ddp4 = CSQP(problem, "HPIPM_ocp")
 
 ddp0.with_callbacks = False
 ddp1.with_callbacks = False
