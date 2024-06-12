@@ -109,18 +109,21 @@ us_init = [np.zeros(nu)] * N_ocp
 ddp0 = mim_solvers.SolverCSQP(problem)
 ddp1 = CSQP(problem, "StagewiseQP")
 ddp2 = CSQP(problem, "OSQP")
-ddp4 = CSQP(problem, "HPIPM_ocp")
+ddp4 = CSQP(problem, "HPIPM_DENSE")
+ddp5 = CSQP(problem, "HPIPM_OCP")
 
 ddp0.with_callbacks = False
 ddp1.with_callbacks = False
 ddp2.with_callbacks = False
 ddp4.with_callbacks = False
+ddp5.with_callbacks = False
 
 max_qp_iters = 25
 ddp0.max_qp_iters = max_qp_iters
 ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
+ddp5.max_qp_iters = max_qp_iters
 
 eps_abs = 1e-20
 eps_rel = 0.
@@ -132,6 +135,7 @@ ddp2.eps_abs = eps_abs
 ddp2.eps_rel = eps_rel
 ddp4.eps_abs = eps_abs
 ddp4.eps_rel = eps_rel
+ddp5.eps_rel = eps_rel
 
 
 
@@ -139,6 +143,7 @@ ddp0.equality_qp_initial_guess = False
 ddp1.equality_qp_initial_guess = False
 ddp2.equality_qp_initial_guess = False
 ddp4.equality_qp_initial_guess = False
+ddp5.equality_qp_initial_guess = False
 
 ddp0.update_rho_with_heuristic = True
 
@@ -169,12 +174,18 @@ converged = ddp2.solve(xs_init, us_init, 1)
 print("------------------------ \n")
 
 # HPIPM
-print("\n ------ HPIPM ------ ")
+print("\n ------ HPIPM DENSE ------ ")
 converged = ddp4.solve(xs_init, us_init, 1)
 print("------------------------ \n")
 
+# HPIPM
+print("\n ------ HPIPM OCP ------ ")
+converged = ddp5.solve(xs_init, us_init, 1)
+print("------------------------ \n")
 
-# iterations
-# print("Stagewise iter = ", int(ddp1.qp_iters))
-# print("OSQP iter      = ", ddp2.qp_iters)
-# print("HPIPM iter     = ", ddp4.qp_iters)
+
+#  iterations
+print("Stagewise iter = ", int(ddp1.qp_iters))
+print("OSQP iter      = ", ddp2.qp_iters)
+print("HPIPM DENSE iter     = ", ddp4.qp_iters)
+print("HPIPM OCP iter     = ", ddp5.qp_iters)
