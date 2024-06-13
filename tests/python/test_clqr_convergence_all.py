@@ -32,7 +32,7 @@ ddp3 = CSQP(problem, "CustomOSQP")
 ddp4 = CSQP(problem, "StagewiseQPKKT")
 ddp5 = CSQP(problem, "OSQP")
 ddp6 = CSQP(problem, "ProxQP")
-ddp7 = CSQP(problem, "HPIPM_dense")
+ddp7 = CSQP(problem, "HPIPM_DENSE")
 
 ddp1.with_callbacks = True
 ddp2.with_callbacks = True
@@ -60,7 +60,7 @@ ddp5.max_qp_iters = max_qp_iters
 ddp6.max_qp_iters = max_qp_iters
 ddp7.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-5
+eps_abs = 1e-15
 eps_rel = 0.
 ddp1.eps_abs = eps_abs
 ddp2.eps_abs = eps_abs
