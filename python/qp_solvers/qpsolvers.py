@@ -235,6 +235,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 sol_qp.y = tmp.y[:meq] if A_qp is not None else np.empty((0,))
                 # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
                 z = tmp.y[meq:meq+m] if G_qp is not None else np.empty((0,))
+                if(not self.found_qp_sol):
+                    z = np.zeros_like(tmp.y[meq:meq+m])
                 zp = np.maximum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
                 zm = np.minimum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
                 sol_qp.z = np.hstack([zp, zm])
