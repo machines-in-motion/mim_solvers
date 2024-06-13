@@ -107,20 +107,20 @@ us_init = [np.zeros(nu)] * N_ocp
 # Define solver
 
 ddp0 = mim_solvers.SolverCSQP(problem)
-ddp1 = CSQP(problem, "StagewiseQP")
+# ddp1 = CSQP(problem, "StagewiseQP")
 ddp2 = CSQP(problem, "OSQP")
 ddp4 = CSQP(problem, "HPIPM_DENSE")
 ddp5 = CSQP(problem, "HPIPM_OCP")
 
 ddp0.with_callbacks = False
-ddp1.with_callbacks = False
+# ddp1.with_callbacks = False
 ddp2.with_callbacks = True
 ddp4.with_callbacks = True
 ddp5.with_callbacks = False
 
 max_qp_iters = 1000
 ddp0.max_qp_iters = max_qp_iters
-ddp1.max_qp_iters = max_qp_iters
+# ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
 ddp5.max_qp_iters = max_qp_iters
@@ -129,8 +129,8 @@ eps_abs = 1e-5
 eps_rel = 0.
 ddp0.eps_abs = eps_abs
 ddp0.eps_rel = eps_rel
-ddp1.eps_abs = eps_abs
-ddp1.eps_rel = eps_rel
+# ddp1.eps_abs = eps_abs
+# ddp1.eps_rel = eps_rel
 ddp2.eps_abs = eps_abs
 ddp2.eps_rel = eps_rel
 ddp4.eps_abs = eps_abs
@@ -140,7 +140,7 @@ ddp5.eps_rel = eps_rel
 
 
 ddp0.equality_qp_initial_guess = False
-ddp1.equality_qp_initial_guess = False
+# ddp1.equality_qp_initial_guess = False
 ddp2.equality_qp_initial_guess = False
 ddp4.equality_qp_initial_guess = False
 ddp5.equality_qp_initial_guess = False
@@ -162,10 +162,10 @@ t0 = time.time()
 ddp0.computeDirection(True)
 print("\n ------ STAGEWISE ------ ")
 print("Stagewise computeDirection [C++] : ", time.time() - t0)
-converged = ddp1.solve(xs_init, us_init, 0)
-t1 = time.time()
-ddp1.computeDirection()
-print("Stagewise computeDirection [Python] : ", time.time() - t1)
+# converged = ddp1.solve(xs_init, us_init, 0)
+# t1 = time.time()
+# ddp1.computeDirection()
+# print("Stagewise computeDirection [Python] : ", time.time() - t1)
 print("------------------------ \n")
 
 # OSQP
@@ -178,16 +178,13 @@ print("\n ------ HPIPM DENSE ------ ")
 converged = ddp4.solve(xs_init, us_init, 1)
 print("------------------------ \n")
 
-# # HPIPM
-# print("\n ------ HPIPM OCP ------ ")
-# converged = ddp5.solve(xs_init, us_init, 1)
-# print("------------------------ \n")
-
-# Check that QP solution is the same 
-# assert np.linalg.norm(np.array(ddp2.dx) - np.array(ddp4.dx)) < 1e-4, "Test failed"
+# HPIPM
+print("\n ------ HPIPM OCP ------ ")
+converged = ddp5.solve(xs_init, us_init, 1)
+print("------------------------ \n")
 
 #  iterations
-print("Stagewise iter = ", int(ddp1.qp_iters))
+print("Stagewise iter = ", int(ddp0.qp_iters))
 print("OSQP iter      = ", ddp2.qp_iters)
 print("HPIPM DENSE iter     = ", ddp4.qp_iters)
 print("HPIPM OCP iter     = ", ddp5.qp_iters)
