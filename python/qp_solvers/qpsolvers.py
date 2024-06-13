@@ -246,6 +246,9 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
                 print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
                 # print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
+                if(not self.found_qp_sol):
+                    self.y_k = np.zeros_like(tmp.y)
+                    res = np.zeros(self.problem.T*(self.ndx + self.nu))
 
         elif self.method == "HPIPM_DENSE":
             # Dimensions
@@ -430,15 +433,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             solver.solve(qp, qp_sol)
             self.qp_time = time.time() - t1
             # print("HPIPM_OCP time : ", time.time() - t1)
-            # Stack full QP solution
-            res = np.zeros(self.problem.T*(self.ndx + self.nu))
-            sol_u = qp_sol.get('u', 0, N)
-            sol_x = qp_sol.get('x', 0, N+1)
-            self.dx[0] = np.zeros(self.ndx)
-            for t in range(self.problem.T):
-                res[t * self.ndx: (t+1) * self.ndx] = sol_x[t+1].flatten()
-                index_u = self.problem.T*self.ndx + t * self.nu
-                res[index_u:index_u+self.nu] = sol_u[t].flatten()
             if(self.BENCHMARK):
                 self.found_qp_sol = solver.get("status") == 0
                 self.norm_primal = max(solver.get('max_res_eq'), solver.get('max_res_ineq'))
@@ -467,6 +461,15 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 for ii in range(iters+1):
                     print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
                 print('')
+            # Stack full QP solution (only useful for SQP application)
+            res = np.zeros(self.problem.T*(self.ndx + self.nu))
+            sol_u = qp_sol.get('u', 0, N)
+            sol_x = qp_sol.get('x', 0, N+1)
+            self.dx[0] = np.zeros(self.ndx)
+            for t in range(self.problem.T):
+                res[t * self.ndx: (t+1) * self.ndx] = sol_x[t+1].flatten()
+                index_u = self.problem.T*self.ndx + t * self.nu
+                res[index_u:index_u+self.nu] = sol_u[t].flatten()
             # Lagrange multipliers associated with dynamics constraint #TODO : only to do SQP
             # self.lag_mul = -np.array([qp_sol.get("pi", t) for t in range(N)]).flatten() if ne > 0 else np.empty((0,))
             lam_lg = np.array([qp_sol.get("lam_lg", t) for t in range(1, N+1)]).flatten()
