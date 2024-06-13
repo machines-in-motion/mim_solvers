@@ -409,10 +409,10 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                     qp.set('C', data.Gx, t)
                 qp.set('D', data.Gu, t)
                 qp.set('lg', model.g_lb - data.g, t)
-                qp.set('ug', data.g - model.g_ub, t)
+                qp.set('ug', model.g_ub - data.g, t)
             #  Terminal node
             qp.set('lg', self.problem.terminalModel.g_lb - self.problem.terminalData.g, N)
-            qp.set('ug', self.problem.terminalData.g - self.problem.terminalModel.g_ub, N)
+            qp.set('ug', self.problem.terminalModel.g_ub - self.problem.terminalData.g, N)
             qp.set('C', self.problem.terminalData.Gx, N)
             qp.set('Q', self.problem.terminalData.Lxx, N)
             qp.set('q', self.problem.terminalData.Lx, N)
@@ -439,7 +439,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 self.norm_dual = solver.get('max_res_stat')
                 print(f"- Primal residual: {max(solver.get('max_res_eq'), solver.get('max_res_ineq')):.1e}")
                 print(f"- Dual residual: {solver.get('max_res_stat'):.1e}")
-            VERBOSE = True
+            VERBOSE = False
             if(VERBOSE):
                 # get solver statistics
                 status = solver.get('status')
