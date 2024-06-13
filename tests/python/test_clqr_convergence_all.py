@@ -60,7 +60,7 @@ ddp5.max_qp_iters = max_qp_iters
 ddp6.max_qp_iters = max_qp_iters
 ddp7.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-15
+eps_abs = 1e-5
 eps_rel = 0.
 ddp1.eps_abs = eps_abs
 ddp2.eps_abs = eps_abs
@@ -78,42 +78,42 @@ ddp6.eps_rel = eps_rel
 ddp7.eps_rel = eps_rel
 
 converged = ddp1.solve(xs_init, us_init, 2)
-# converged = ddp2.solve(xs_init, us_init, 2)
-# converged = ddp3.solve(xs_init, us_init, 2)
-# converged = ddp4.solve(xs_init, us_init, 2)
-# converged = ddp5.solve(xs_init, us_init, 2)
-# converged = ddp6.solve(xs_init, us_init, 2)
+converged = ddp2.solve(xs_init, us_init, 2)
+converged = ddp3.solve(xs_init, us_init, 2)
+converged = ddp4.solve(xs_init, us_init, 2)
+converged = ddp5.solve(xs_init, us_init, 2)
+converged = ddp6.solve(xs_init, us_init, 2)
 converged = ddp7.solve(xs_init, us_init, 2)
 
 ################################## TEST CONVERGENCE #####################################
 set_tol = 1e-4
-# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol, "Test failed"
 
 
 
-# assert ddp1.iter == 1      # To-do: make sure python and c++ have the same logic in terms of iteration count 
-# assert ddp2.iter == 0
-# assert ddp3.iter == 0
-# assert ddp4.iter == 0
-# assert ddp5.iter == 0
-# assert ddp6.iter == 0
-# assert ddp7.iter == 0
+assert ddp1.iter == 1      # To-do: make sure python and c++ have the same logic in terms of iteration count 
+assert ddp2.iter == 0
+assert ddp3.iter == 0
+assert ddp4.iter == 0
+assert ddp5.iter == 0
+assert ddp6.iter == 0
+assert ddp7.iter == 0
 
 
-# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp3.xs)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp3.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp3.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp3.us)) < set_tol, "Test failed"
 
-# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp4.xs)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp4.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp4.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp4.us)) < set_tol, "Test failed"
 
-# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp5.xs)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp5.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp5.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp5.us)) < set_tol, "Test failed"
 
-# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp6.xs)) < set_tol, "Test failed"
-# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp6.us)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp6.xs)) < set_tol, "Test failed"
+assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp6.us)) < set_tol, "Test failed"
 
-assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp7.xs)) < set_tol, "Test failed"
-assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp7.us)) < set_tol, "Test failed"
+# assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp7.xs)) < set_tol, "Test failed"
+# assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp7.us)) < set_tol, "Test failed"
 

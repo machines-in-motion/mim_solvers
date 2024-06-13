@@ -188,18 +188,3 @@ print("Stagewise iter = ", int(ddp0.qp_iters))
 print("OSQP iter      = ", ddp2.qp_iters)
 print("HPIPM DENSE iter     = ", ddp4.qp_iters)
 print("HPIPM OCP iter     = ", ddp5.qp_iters)
-
-
-# comparer hpipm_ocp haute precision avec proxqp ou osqp pour savoir si j'ai bien rempli les matrices
-# pas besoin des Lagrangien = faux probleme 
-# vieux print
-# écrire le test à la sortie du dense : vérifier que les conditions KKT (du CSQP) avec les tolérances demandées passent
-# cela me dira si mettre tol_comp à 100 fait bien ce que j'imagine (avant modif hpipm)
-
-# a faible précision, le test clqr est pas pertinent 
-# compute le résidu primal et dual et check < tol eps
-# vérifier que ça fonctionne bien indépendemment de tol_comp  : si c'est le cas BINGO
-# sinon modif HPIPM et recheck
-# si on a ça 
-
-# KKT du CSQP = primal et dual en sequentiel

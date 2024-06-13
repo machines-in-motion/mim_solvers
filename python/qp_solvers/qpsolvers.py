@@ -216,34 +216,36 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             prob = osqp.OSQP()
             prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
                             adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
-            print("start OSQP")
+            # print("start OSQP")
             t1 = time.time()
             tmp = prob.solve()
-            print("HPIPM time : ", time.time() - t1)
-            # self.qp_time = time.time() - t1
+            # print("OSQP time : ", time.time() - t1)
+            self.qp_time = time.time() - t1
             res = tmp.x
             self.y_k = tmp.y
             self.qp_iters = tmp.info.iter
             # If we are benchmarking, compute the metrics using qpsolvers package
             # see here how the Solution class is populated with OSQP : https://github.com/qpsolvers/qpsolvers/blob/main/qpsolvers/solvers/osqp_.py
             if(self.BENCHMARK):
-                sol_qp.found = tmp.info.status_val == osqp.constant("OSQP_SOLVED")
-                if(sol_qp.found):
-                    sol_qp.x = tmp.x
-                    m = C.shape[0] if G_qp is not None else 0 ; meq = A_qp.shape[0] if A_qp is not None else 0
-                    # Lagrange multipliers for equality constraint Ax = b
-                    sol_qp.y = tmp.y[:meq] if A_qp is not None else np.empty((0,))
-                    # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
-                    z = tmp.y[meq:meq+m] if G_qp is not None else np.empty((0,))
-                    zp = np.maximum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
-                    zm = np.minimum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
-                    sol_qp.z = np.hstack([zp, zm])
-                    # No box constraints in the present formulation
-                    sol_qp.z_box = np.empty((0,))
-                    # Print convergence metrics
-                    print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
-                    print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
-                    print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
+                self.found_qp_sol = tmp.info.status_val == osqp.constant("OSQP_SOLVED")
+                sol_qp.found = self.found_qp_sol
+                sol_qp.x = tmp.x
+                m = C.shape[0] if G_qp is not None else 0 ; meq = A_qp.shape[0] if A_qp is not None else 0
+                # Lagrange multipliers for equality constraint Ax = b
+                sol_qp.y = tmp.y[:meq] if A_qp is not None else np.empty((0,))
+                # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
+                z = tmp.y[meq:meq+m] if G_qp is not None else np.empty((0,))
+                zp = np.maximum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                zm = np.minimum(z, np.zeros_like(z)) # see OSQP paper Eq. (9)
+                sol_qp.z = np.hstack([zp, zm])
+                # No box constraints in the present formulation
+                sol_qp.z_box = np.empty((0,))
+                # Print convergence metrics
+                self.norm_primal = sol_qp.primal_residual()
+                self.norm_dual = sol_qp.dual_residual()
+                print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
+                print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
+                # print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
 
         elif self.method == "HPIPM_DENSE":
             # Dimensions
@@ -299,26 +301,29 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             arg.set('tol_ineq', self.eps_abs)
             arg.set('tol_stat', self. eps_abs)
             solver = hpipm_python.hpipm_dense_qp_solver(dim, arg)
-            print("start HPIPM")
+            # print("start HPIPM")
             t1 = time.time()
             solver.solve(qp, qp_sol)
-            print("HPIPM time : ", time.time() - t1)
+            self.qp_time = time.time() - t1
+            # print("HPIPM time : ", time.time() - t1)
             # Check residuals by hand
             if(self.BENCHMARK):
-                sol_qp.found = solver.get("status") == 0
-                if(sol_qp.found):
-                    sol_qp.x = qp_sol.get("v").flatten()
-                    # Lagrange multipliers for equality constraint Ax = b (opposite in HPIPM)
-                    sol_qp.y = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
-                    # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
-                    z_ug = qp_sol.get("lam_ug").flatten() if G_qp is not None else np.empty((0,))
-                    z_lg = qp_sol.get("lam_lg").flatten() if G_qp is not None else np.empty((0,))
-                    sol_qp.z = np.hstack([z_ug, z_lg])
-                    sol_qp.z_box = np.empty((0,))
-                    # Print convergence metrics
-                    print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
-                    print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
-                    print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
+                self.found_qp_sol = solver.get("status") == 0
+                sol_qp.found = self.found_qp_sol
+                sol_qp.x = qp_sol.get("v").flatten()
+                # Lagrange multipliers for equality constraint Ax = b (opposite in HPIPM)
+                sol_qp.y = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
+                # Lagrange multipliers for inequality constraint Gx <= h ( a.k.a. "Cx <= ub" and "-Cx <= -lb" )
+                z_ug = qp_sol.get("lam_ug").flatten() if G_qp is not None else np.empty((0,))
+                z_lg = qp_sol.get("lam_lg").flatten() if G_qp is not None else np.empty((0,))
+                sol_qp.z = np.hstack([z_ug, z_lg])
+                sol_qp.z_box = np.empty((0,))
+                # Print convergence metrics
+                self.norm_primal = sol_qp.primal_residual()
+                self.norm_dual = sol_qp.dual_residual()
+                print(f"- Primal residual: {sol_qp.primal_residual():.1e}")
+                print(f"- Dual residual: {sol_qp.dual_residual():.1e}")
+                # print(f"- Duality gap: {sol_qp.duality_gap():.1e}")
             VERBOSE = False
             if(VERBOSE):
                 # get solver statistics
@@ -344,7 +349,27 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             res = qp_sol.get('v').flatten()
             self.y_k = np.zeros(self.n_in + self.n_eq)
             self.y_k[:self.n_eq] = -qp_sol.get("pi").flatten() if ne > 0 else np.empty((0,))
-            self.y_k[self.n_eq:self.n_eq + self.n_in] = qp_sol.get("lam_ug").flatten() if ng > 0 else np.empty((0,))
+            # Determine the Lagrange multiplier associated with the box constraint based on complementarity slackness conditions
+            # TODO: only for SQP applications
+            lam_lg = qp_sol.get("lam_lg").flatten()
+            lam_ug = qp_sol.get("lam_ug").flatten()
+            # lam_box = np.zeros(self.n_in) 
+            # TOL = 1e-20
+            # for t in range(self.problem.T):
+            #     if( ((C @ sol_qp.x)[t] - lg[t]) < TOL and lam_ug[t] < TOL):
+            #         # print('Lower active')
+            #         lam_box[t] = lam_lg[t]
+            #     elif(((C @ sol_qp.x)[t] - ug[t]) < TOL and lam_lg[t] < TOL):
+            #         # print('Lower active')
+            #         lam_box[t] = -lam_ug[t]
+            #     elif((C @ sol_qp.x)[t] > lg[t] and (C @ sol_qp.x)[t] < ug[t]):
+            #         # print('Inactive')
+            #         lam_box[t] = 0
+            #     else:
+            #         print("ERROR")
+            # print(np.linalg.norm(lam_box - (lam_ug - lam_lg)))
+            # import pdb ; pdb.set_trace()
+            self.y_k[self.n_eq:self.n_eq + self.n_in] = lam_ug if ng > 0 else np.empty((0,))
             self.qp_iters = solver.get("iter")
 
         elif self.method == "HPIPM_OCP":
@@ -400,10 +425,11 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             arg.set('tol_ineq', self.eps_abs)
             arg.set('tol_stat', self. eps_abs)
             solver = hpipm_python.hpipm_ocp_qp_solver(dim, arg)
-            print("start HPIPM")
+            # print("start HPIPM")
             t1 = time.time()
             solver.solve(qp, qp_sol)
-            print("HPIPM_OCP time : ", time.time() - t1)
+            self.qp_time = time.time() - t1
+            # print("HPIPM_OCP time : ", time.time() - t1)
             # Stack full QP solution
             res = np.zeros(self.problem.T*(self.ndx + self.nu))
             sol_u = qp_sol.get('u', 0, N)
@@ -413,6 +439,12 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 res[t * self.ndx: (t+1) * self.ndx] = sol_x[t+1].flatten()
                 index_u = self.problem.T*self.ndx + t * self.nu
                 res[index_u:index_u+self.nu] = sol_u[t].flatten()
+            if(self.BENCHMARK):
+                self.found_qp_sol = solver.get("status") == 0
+                self.norm_primal = max(solver.get('max_res_eq'), solver.get('max_res_ineq'))
+                self.norm_dual = solver.get('max_res_stat')
+                print(f"- Primal residual: {max(solver.get('max_res_eq'), solver.get('max_res_ineq')):.1e}")
+                print(f"- Dual residual: {solver.get('max_res_stat'):.1e}")
             VERBOSE = True
             if(VERBOSE):
                 # get solver statistics
@@ -435,9 +467,13 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 for ii in range(iters+1):
                     print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
                 print('')
+            # Lagrange multipliers associated with dynamics constraint #TODO : only to do SQP
+            # self.lag_mul = -np.array([qp_sol.get("pi", t) for t in range(N)]).flatten() if ne > 0 else np.empty((0,))
+            lam_lg = np.array([qp_sol.get("lam_lg", t) for t in range(1, N+1)]).flatten()
+            lam_ug = np.array([qp_sol.get("lam_ug", t) for t in range(1, N+1)]).flatten()
             self.y_k = np.zeros(self.n_in + self.n_eq)
-            # self.y_k[:self.n_eq] = -qp_sol.get("pi", 0, N+1).flatten() if ne > 0 else np.empty((0,))
-            # self.y_k[self.n_eq:self.n_eq + self.n_in] = qp_sol.get("lam", 0, N+1).flatten() if ng > 0 else np.empty((0,))
+            # self.y_k[:self.n_eq] = -np.array([qp_sol.get("pi", t) for t in range(N)]).flatten() if ne > 0 else np.empty((0,))
+            # self.y_k[self.n_eq:self.n_eq + self.n_in] = lam_ug if ng > 0 else np.empty((0,))
             self.qp_iters = solver.get("iter")
 
 
@@ -491,7 +527,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 self.y[t] = self.y_k[nin_count:nin_count + model.ng]
                 nin_count += model.ng
 
-        if self.method == "CustomOSQP" or self.method == "OSQP" or self.method == 'HPIPM_DENSE':
+        if self.method == "CustomOSQP" or self.method == "OSQP" or self.method == 'HPIPM_DENSE' or self.method == 'HPIPM_OCP':
             nin_count = self.n_eq
             self.lag_mul[0] = np.zeros(self.problem.runningModels[0].state.ndx)
             for t in range(self.problem.T+1):
