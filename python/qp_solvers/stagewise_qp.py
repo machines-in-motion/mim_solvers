@@ -42,7 +42,7 @@ class StagewiseADMM(SolverAbstract):
 
         self.equality_qp_initial_guess = True 
 
-        self.verboseQP = verboseQP
+        self.verboseQP = True #verboseQP
 
         self.OSQP_update = True
 

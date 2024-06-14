@@ -125,7 +125,7 @@ contactModel2Feet.addContact(leftFoot + "_contact", supportContactModelLeft)
 contactModel2Feet.addContact(rightFoot + "_contact", supportContactModelRight)
 
 # Cost for self-collision
-maxfloat = sys.float_info.max
+maxfloat = np.inf #sys.float_info.max !!! needs to be inf otherwise HPIPM would crash
 xlb = np.concatenate(
     [
         -maxfloat * np.ones(6),  # dimension of the SE(3) manifold
@@ -200,7 +200,7 @@ runningCostModel3 = crocoddyl.CostModelSum(state, actuation.nu)
 terminalCostModel = crocoddyl.CostModelSum(state, actuation.nu)
 
 # Then let's added the running and terminal cost functions
-JOINT_CONSTRAINT = False
+JOINT_CONSTRAINT = True
 
 runningCostModel1.addCost("gripperPose", handTrackingCost, 1e2)
 runningCostModel1.addCost("stateReg", xRegCost, 1e-3)
@@ -281,7 +281,7 @@ LINE_WIDTH = 100
 
 # Define solver
 
-ddp0 = mim_solvers.SolverCSQP(problem)
+ddp0 = CSQP(problem, "StagewiseQP") #mim_solvers.SolverCSQP(problem)
 ddp1 = CSQP(problem, "ProxQP")
 ddp2 = CSQP(problem, "OSQP")
 ddp4 = CSQP(problem, "HPIPM_DENSE")
@@ -300,7 +300,7 @@ ddp2.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
 ddp5.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-5
+eps_abs = 1e-3  
 eps_rel = 0.
 ddp0.eps_abs = eps_abs
 ddp0.eps_rel = eps_rel
@@ -314,7 +314,7 @@ ddp5.eps_rel = eps_rel
 
 
 
-ddp0.equality_qp_initial_guess = False
+ddp0.equality_qp_initial_guess = True
 ddp1.equality_qp_initial_guess = False
 ddp2.equality_qp_initial_guess = False
 ddp4.equality_qp_initial_guess = False
@@ -325,13 +325,13 @@ ddp0.update_rho_with_heuristic = True
 
 import time 
 
-# Stagewise QP
-print("\n ------ STAGEWISE (computeDirection)------ ")
-converged = ddp0.solve(xs_init, us_init, 1)
-# t0 = time.time()
-# ddp0.computeDirection(True)
-# print("Stagewise : ", time.time() - t0)
-print("------------------------ \n")
+# # Stagewise QP
+# print("\n ------ STAGEWISE (computeDirection)------ ")
+# converged = ddp0.solve(xs_init, us_init, 1)
+# # t0 = time.time()
+# # ddp0.computeDirection()
+# # print("Stagewise : ", time.time() - t0)
+# print("------------------------ \n")
 
 # ProxQP
 print("\n ------ ProxQP ------ ")

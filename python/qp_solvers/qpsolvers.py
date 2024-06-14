@@ -131,7 +131,9 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
         nin_count = 0
         index_x = self.problem.T*self.ndx
-        
+        # for k in range(self.problem.T):
+            # print("Stage ", k, " lb = ", model.g_lb)
+            # print("Stage ", k, " ub = ", model.g_ub)
         for t, (model, data) in enumerate(zip(self.problem.runningModels, self.problem.runningDatas)):
             if model.ng == 0:
                 continue
@@ -219,8 +221,9 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             losqp = np.hstack([B, l])
             uosqp = np.hstack([B, u])
             P = sparse.csr_matrix(P)
-            # print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
-            # print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
+            if(self.DEBUG):
+                print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
+                print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
             prob = osqp.OSQP()
             prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
                             adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
@@ -271,6 +274,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 # we also mask out infinities (and set the now-irrelevant value to
                 # zero), since HPIPM doesn't like infinities
                 lg = l
+                # import pdb ; pdb.set_trace()
                 if lg is not None: 
                     # Detect infs and replace them by 0s
                     lg_mask = np.isinf(lg)
@@ -379,8 +383,27 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 if(t != 0):
                     qp.set('C', data.Gx, t)
                 qp.set('D', data.Gu, t)
-                qp.set('lg', model.g_lb - data.g, t)
-                qp.set('ug', model.g_ub - data.g, t)
+                # need to mask out lb or ub if the box constraints are only one-sided
+                # we also mask out infinities (and set the now-irrelevant value to
+                # zero), since HPIPM doesn't like infinities
+                lg = model.g_lb.copy()
+                if lg is not None: 
+                    # Detect infs and replace them by 0s
+                    lg_mask = np.isinf(lg)
+                    lg[lg_mask] = 0.0
+                    qp.set("lg", lg - data.g, t)
+                    # De-activate those constraints
+                    qp.set("lg_mask", ~lg_mask, t)
+                else:
+                    qp.set("lg_mask", np.zeros(ng, dtype=bool))
+                ug = model.g_ub.copy()
+                if ug is not None: 
+                    ug_mask = np.isinf(ug)
+                    ug[ug_mask] = 0.0
+                    qp.set("ug", ug - data.g, t)
+                    qp.set("ug_mask", ~ug_mask, t)
+                else:
+                    qp.set("ug_mask", np.zeros(ng, dtype=bool)) 
             #  Terminal node
             qp.set('lg', self.problem.terminalModel.g_lb - self.problem.terminalData.g, N)
             qp.set('ug', self.problem.terminalModel.g_ub - self.problem.terminalData.g, N)
@@ -388,6 +411,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
             qp.set('Q', self.problem.terminalData.Lxx, N)
             qp.set('q', self.problem.terminalData.Lx, N)
             qp_sol = hpipm_python.hpipm_ocp_qp_sol(dim)
+            # import pdb ; pdb.set_trace()
             # set up solver arg
             mode = 'speed'
             # create and set default arg based on mode
@@ -449,7 +473,6 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                     print('\t{:d}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}\t{:e}'.format(ii, stat[ii][0], stat[ii][1], stat[ii][2], stat[ii][3], stat[ii][4], stat[ii][5], stat[ii][6], stat[ii][7], stat[ii][8], stat[ii][9]))
                 print('')
             
-
         elif self.method == "CustomOSQP" :
             Aeq = sparse.csr_matrix(A)
             Aineq = sparse.csr_matrix(C)
