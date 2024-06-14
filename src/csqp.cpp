@@ -228,6 +228,13 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     }
   }
 
+  // Otherwise benchmarks blowup
+  // TODO: find cleaner way
+  if(maxiter == 0){
+    calc(true);
+    reset_rho_vec();
+  }
+
   // Main SQP loop
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
 
