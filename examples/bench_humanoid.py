@@ -200,7 +200,7 @@ runningCostModel3 = crocoddyl.CostModelSum(state, actuation.nu)
 terminalCostModel = crocoddyl.CostModelSum(state, actuation.nu)
 
 # Then let's added the running and terminal cost functions
-JOINT_CONSTRAINT = True
+JOINT_CONSTRAINT = False
 
 runningCostModel1.addCost("gripperPose", handTrackingCost, 1e2)
 runningCostModel1.addCost("stateReg", xRegCost, 1e-3)
@@ -231,7 +231,7 @@ if not JOINT_CONSTRAINT:
 constraintModelManager = crocoddyl.ConstraintModelManager(state, actuation.nu)
 
 FORCE_COST       = True
-FORCE_CONSTRAINT = True
+FORCE_CONSTRAINT = False
 fref = pinocchio.Force.Zero()
 ForceResidual = crocoddyl.ResidualModelContactForce(state, rightFootId, fref, 6, actuation.nu)
 if FORCE_COST:
@@ -279,42 +279,46 @@ us_init = [np.zeros( actuation.nu)] * N_ocp
 
 LINE_WIDTH = 100
 
-
 # Define solver
 
 ddp0 = mim_solvers.SolverCSQP(problem)
-ddp1 = CSQP(problem, "StagewiseQP")
+# ddp1 = CSQP(problem, "StagewiseQP")
 ddp2 = CSQP(problem, "OSQP")
-ddp4 = CSQP(problem, "HPIPM")
+ddp4 = CSQP(problem, "HPIPM_DENSE")
+ddp5 = CSQP(problem, "HPIPM_OCP")
 
-ddp0.with_callbacks = False
-ddp1.with_callbacks = False
-ddp2.with_callbacks = False
-ddp4.with_callbacks = False
+ddp0.with_callbacks = True
+# ddp1.with_callbacks = False
+ddp2.with_callbacks = True
+ddp4.with_callbacks = True
+ddp5.with_callbacks = True
 
-max_qp_iters = 25
+max_qp_iters = 1000
 ddp0.max_qp_iters = max_qp_iters
-ddp1.max_qp_iters = max_qp_iters
+# ddp1.max_qp_iters = max_qp_iters
 ddp2.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
+ddp5.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-20
+eps_abs = 1e-5
 eps_rel = 0.
 ddp0.eps_abs = eps_abs
 ddp0.eps_rel = eps_rel
-ddp1.eps_abs = eps_abs
-ddp1.eps_rel = eps_rel
+# ddp1.eps_abs = eps_abs
+# ddp1.eps_rel = eps_rel
 ddp2.eps_abs = eps_abs
 ddp2.eps_rel = eps_rel
 ddp4.eps_abs = eps_abs
 ddp4.eps_rel = eps_rel
+ddp5.eps_rel = eps_rel
 
 
 
 ddp0.equality_qp_initial_guess = False
-ddp1.equality_qp_initial_guess = False
+# ddp1.equality_qp_initial_guess = False
 ddp2.equality_qp_initial_guess = False
 ddp4.equality_qp_initial_guess = False
+ddp5.equality_qp_initial_guess = False
 
 ddp0.update_rho_with_heuristic = True
 
@@ -333,10 +337,10 @@ t0 = time.time()
 ddp0.computeDirection(True)
 print("\n ------ STAGEWISE ------ ")
 print("Stagewise computeDirection [C++] : ", time.time() - t0)
-converged = ddp1.solve(xs_init, us_init, 0)
-t1 = time.time()
-ddp1.computeDirection()
-print("Stagewise computeDirection [Python] : ", time.time() - t1)
+# converged = ddp1.solve(xs_init, us_init, 0)
+# t1 = time.time()
+# ddp1.computeDirection()
+# print("Stagewise computeDirection [Python] : ", time.time() - t1)
 print("------------------------ \n")
 
 # OSQP
@@ -345,78 +349,17 @@ converged = ddp2.solve(xs_init, us_init, 1)
 print("------------------------ \n")
 
 # HPIPM
-print("\n ------ HPIPM ------ ")
+print("\n ------ HPIPM DENSE ------ ")
 converged = ddp4.solve(xs_init, us_init, 1)
 print("------------------------ \n")
 
+# HPIPM
+print("\n ------ HPIPM OCP ------ ")
+converged = ddp5.solve(xs_init, us_init, 1)
+print("------------------------ \n")
 
-# iterations
-print("Stagewise iter = ", int(ddp1.qp_iters))
+#  iterations
+print("Stagewise iter = ", int(ddp0.qp_iters))
 print("OSQP iter      = ", ddp2.qp_iters)
-print("HPIPM iter     = ", ddp4.qp_iters)
-
-
-# print(" TEST OSQP ".center(LINE_WIDTH, "-"))
-
-
-# ddp1 = mim_solvers.SolverCSQP(problem)
-# ddp2 = CSQP(problem, "OSQP")
-# ddp3 = CSQP(problem, "ProxQP")
-
-# ddp1.with_callbacks = False
-# ddp2.with_callbacks = False
-# ddp3.with_callbacks = False
-
-# max_qp_iters = 25
-# ddp1.max_qp_iters = max_qp_iters
-# ddp2.max_qp_iters = max_qp_iters
-# ddp3.max_qp_iters = max_qp_iters
-
-# eps_abs = 1e-20
-# eps_rel = 0.
-# ddp1.eps_abs = eps_abs
-# ddp1.eps_rel = eps_rel
-# ddp2.eps_abs = eps_abs
-# ddp2.eps_rel = eps_rel
-# ddp3.eps_abs = eps_abs
-# ddp3.eps_rel = eps_rel
-
-# ddp1.equality_qp_initial_guess = False
-# ddp2.equality_qp_initial_guess = False
-# ddp3.equality_qp_initial_guess = False
-
-# ddp1.update_rho_with_heuristic = True
-
-# # converged = ddp1.solve(xs_init, us_init, 1)
-# import time 
-
-
-
-# # t0 = time.time()
-# # ddp1.calc(True)
-# # tcalc =  time.time() - t0
-# # print("time tcalc = ", tcalc)
-
-
-# # t1 = time.time()
-# # converged = ddp1.solve(xs_init, us_init, 1)
-# # print("Stagewise time : ", time.time() - t1)
-# # print("Stagewise time minus cals : ", time.time() - t1 - tcalc)
-
-
-# converged = ddp1.solve(xs_init, us_init, 0)
-
-
-# t1 = time.time()
-# ddp1.computeDirection(True)
-# print("Stagewise computeDirection : ", time.time() - t1)
-
-# converged = ddp2.solve(xs_init, us_init, 1)
-# # converged = ddp3.solve(xs_init, us_init, 1)
-
-
-
-
-# print("Stgewise iter = ", ddp1.qp_iters)
-# print("OSQP iter = ", ddp2.qp_iters)
-# # print("Proxqp iter = ", ddp3.qp_iters)
+print("HPIPM DENSE iter     = ", ddp4.qp_iters)
+print("HPIPM OCP iter     = ", ddp5.qp_iters)

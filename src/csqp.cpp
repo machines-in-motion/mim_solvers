@@ -441,7 +441,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     update_rho_vec(iter);
     
     // Because (eps_rel=0) x inf = NaN
-    // if (iter % 25 == 0){
+    if (iter % 25 == 0){
       if(eps_rel_ == 0){
         norm_primal_tolerance_ = eps_abs_;
         norm_dual_tolerance_   = eps_abs_;
@@ -458,7 +458,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
       if(with_qp_callbacks_){
         printQPCallbacks(iter);
       }
-    // }
+    }
   }
 
   if (!converged_){
@@ -941,7 +941,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
       dx_[t] = dxtilde_[t];
       du_[t] = dutilde_[t];
 
-    // if (iter % 25 == 0){
+    if (iter % 25 == 0){
       if (update_rho_with_heuristic_){
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_[t].lpNorm<Eigen::Infinity>());
@@ -966,7 +966,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
         norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
       }
     }
-    // }
+    }
 
   dx_.back() = dxtilde_.back();
   const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
@@ -988,7 +988,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
     y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
     
 
-    // if (iter % 25 == 0){
+    if (iter % 25 == 0){
       if (update_rho_with_heuristic_){
         tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
         norm_dual_ = std::max(norm_dual_, tmp_dual_cwise_.back().lpNorm<Eigen::Infinity>());
@@ -1009,7 +1009,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
         tmp_vec_x_.noalias() = d_T->Gx.transpose() * y_.back();
         norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
       }
-    // }
+    }
   }
 }
 
