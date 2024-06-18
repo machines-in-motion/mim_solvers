@@ -102,11 +102,13 @@ problem = crocoddyl.ShootingProblem(x0, runningModels[:-1], runningModels[-1])
 # Define warm start
 N_ocp = T
 xs_init = [x0] * (N_ocp + 1)
-us_init = [np.zeros(nu)] * N_ocp
+us_init = problem.quasiStatic([problem.x0] * problem.T) # [np.zeros( actuation.nu)] * N_ocp
+
+LINE_WIDTH = 100
 
 # Define solver
 
-ddp0 = mim_solvers.SolverCSQP(problem)
+ddp0 = mim_solvers.SolverCSQP(problem) #CSQP(problem, "StagewiseQP") 
 ddp1 = CSQP(problem, "ProxQP")
 ddp2 = CSQP(problem, "OSQP")
 ddp4 = CSQP(problem, "HPIPM_DENSE")
@@ -125,7 +127,7 @@ ddp2.max_qp_iters = max_qp_iters
 ddp4.max_qp_iters = max_qp_iters
 ddp5.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-5
+eps_abs = 1e-5  
 eps_rel = 0.
 ddp0.eps_abs = eps_abs
 ddp0.eps_rel = eps_rel
@@ -135,6 +137,7 @@ ddp2.eps_abs = eps_abs
 ddp2.eps_rel = eps_rel
 ddp4.eps_abs = eps_abs
 ddp4.eps_rel = eps_rel
+ddp5.eps_abs = eps_abs
 ddp5.eps_rel = eps_rel
 
 
@@ -149,13 +152,12 @@ ddp0.update_rho_with_heuristic = True
 
 
 import time 
-
 # Stagewise QP
 print("\n ------ STAGEWISE (computeDirection)------ ")
-converged = ddp0.solve(xs_init, us_init, 1)
-# t0 = time.time()
-# ddp0.computeDirection(True)
-# print("Stagewise : ", time.time() - t0)
+converged = ddp0.solve(xs_init, us_init, 0)
+t0 = time.time()
+ddp0.computeDirection(True)
+print("Stagewise : ", time.time() - t0)
 print("------------------------ \n")
 
 # ProxQP

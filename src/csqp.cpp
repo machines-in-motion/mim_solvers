@@ -449,6 +449,9 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
     
     // Because (eps_rel=0) x inf = NaN
     if (iter % 25 == 0){
+      if(with_qp_callbacks_){
+        printQPCallbacks(iter);
+      }
       if(eps_rel_ == 0){
         norm_primal_tolerance_ = eps_abs_;
         norm_dual_tolerance_   = eps_abs_;
@@ -461,9 +464,6 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
           qp_iters_ = iter;
           converged_ = true;
           break;
-      }
-      if(with_qp_callbacks_){
-        printQPCallbacks(iter);
       }
     }
   }
