@@ -114,10 +114,15 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
 
     // KKT termination criteria
     checkKKTConditions();
+
+    // Perform callbacks
+    const std::size_t n_callbacks = callbacks_.size();
+    for (std::size_t c = 0; c < n_callbacks; ++c) {
+      CallbackAbstract& callback = *callbacks_[c];
+      callback(*this);
+    }
+    
     if (KKT_  <= termination_tol_) {
-      if(with_callbacks_){
-        printCallbacks();
-      }
       STOP_PROFILER("SolverSQP::solve");
       return true;
     }
@@ -170,9 +175,6 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
       }
     }
 
-    if(with_callbacks_){
-      printCallbacks();
-    }
   }
 
 
@@ -197,10 +199,15 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
 
     // KKT termination criteria
     checkKKTConditions();
+    
+    // Perform callbacks
+    const std::size_t n_callbacks = callbacks_.size();
+    for (std::size_t c = 0; c < n_callbacks; ++c) {
+      CallbackAbstract& callback = *callbacks_[c];
+      callback(*this);
+    }
+
     if (KKT_  <= termination_tol_) {
-      if(with_callbacks_){
-        printCallbacks();
-      }
       STOP_PROFILER("SolverSQP::solve");
       return true;
     }
@@ -356,37 +363,6 @@ double SolverSQP::tryStep(const double steplength) {
     return merit_try_;
 }
 
-void SolverSQP::printCallbacks(){
-  if (this->get_iter() % 10 == 0) {
-    std::cout << "iter     merit         cost         grad      step    ||gaps||        KKT";
-    std::cout << std::endl;
-  }
-  if(KKT_ < termination_tol_){
-    std::cout << std::setw(4) << "END" << "  ";
-  } else {
-    std::cout << std::setw(4) << this->get_iter()+1 << "  ";
-  }
-  std::cout << std::scientific << std::setprecision(5) << this->get_merit() << "  ";
-  std::cout << std::scientific << std::setprecision(5) << this->get_cost() << "  ";
-  std::cout << this->get_xgrad_norm() + this->get_ugrad_norm() << "  ";
-  if(KKT_ < termination_tol_){
-    std::cout << std::fixed << std::setprecision(4) << " ---- " << "  ";
-  } else {
-    std::cout << std::fixed << std::setprecision(4) << this->get_steplength() << "  ";
-  }
-  std::cout << std::scientific << std::setprecision(5) << this->get_gap_norm() << "  ";
-  std::cout << std::scientific << std::setprecision(5) << KKT_;
-  std::cout << std::endl;
-  std::cout << std::flush;
-}
-
-void SolverSQP::setCallbacks(bool inCallbacks){
-  with_callbacks_ = inCallbacks;
-}
-
-bool SolverSQP::getCallbacks(){
-  return with_callbacks_;
-}
 // double SolverSQP::get_th_acceptnegstep() const { return th_acceptnegstep_; }
 
 // void SolverSQP::set_th_acceptnegstep(const double th_acceptnegstep) {

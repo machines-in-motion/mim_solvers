@@ -21,6 +21,7 @@
 #endif
 
 namespace mim_solvers{
+    void exposeCallbacks();
     void exposeSolverDDP();
     void exposeSolverFDDP();
     void exposeSolverSQP();
