@@ -12,7 +12,7 @@
 #include <crocoddyl/core/utils/exception.hpp>
 #include <boost/pointer_cast.hpp>
 
-
+#define BOOST_BIND_NO_PLACEHOLDERS
 
 namespace mim_solvers {
 
