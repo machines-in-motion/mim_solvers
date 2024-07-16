@@ -43,9 +43,9 @@ void test_sqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 1);
 
   // Test setters
-  const double mu = 10;
-  solver_cast->set_mu(mu);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
+  const double mu_dynamic = 10;
+  solver_cast->set_mu_dynamic(mu_dynamic);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu_dynamic(), 10);
   const double termination_tolerance = 1e-4;
   solver_cast->set_termination_tolerance(termination_tolerance);
   BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
@@ -87,8 +87,8 @@ void test_csqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
   BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
   BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu_dynamic(), 1e1);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu_constraint(), 1e1);
   BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-6);
   BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 1000);
   BOOST_CHECK_EQUAL(solver_cast->get_cost(), 0.);
@@ -110,12 +110,12 @@ void test_csqp_core(){
   BOOST_CHECK_EQUAL(solver_cast->get_rho_max(), 1e3);
 
   // Test setters
-  const double mu = 10;
-  solver_cast->set_mu(mu);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
-  const double mu2 = 10;
-  solver_cast->set_mu2(mu2);
-  BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 10);
+  const double mu_dynamic = 100;
+  solver_cast->set_mu_dynamic(mu_dynamic);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu_dynamic(), 100);
+  const double mu2 = 100;
+  solver_cast->set_mu_constraint(mu2);
+  BOOST_CHECK_EQUAL(solver_cast->get_mu_constraint(), 100);
   const double alpha = 2.;
   solver_cast->set_alpha(alpha);
   BOOST_CHECK_EQUAL(solver_cast->get_alpha(), 2.);
@@ -181,8 +181,8 @@ void test_csqp_core(){
     BOOST_CHECK_EQUAL(solver_cast->get_ugrad_norm(), 0);
     BOOST_CHECK_EQUAL(solver_cast->get_merit(), 0);
     BOOST_CHECK_EQUAL(solver_cast->get_use_filter_line_search(), true);
-    BOOST_CHECK_EQUAL(solver_cast->get_mu(), 1e1);
-    BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 1e1);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu_dynamic(), 1e1);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu_constraint(), 1e1);
     BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-8);
     BOOST_CHECK_EQUAL(solver_cast->get_max_qp_iters(), 1000);
     BOOST_CHECK_EQUAL(solver_cast->get_cost(), 0.);
@@ -194,12 +194,12 @@ void test_csqp_core(){
     BOOST_CHECK_EQUAL(solver_cast->getCallbacks(), false);
 
     // Test setters
-    const double mu = 10;
-    solver_cast->set_mu(mu);
-    BOOST_CHECK_EQUAL(solver_cast->get_mu(), 10);
-    const double mu2 = 10;
-    solver_cast->set_mu2(mu2);
-    BOOST_CHECK_EQUAL(solver_cast->get_mu2(), 10);
+    const double mu_dynamic = 100;
+    solver_cast->set_mu_dynamic(mu_dynamic);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu_dynamic(), 100);
+    const double mu_constraint = 100;
+    solver_cast->set_mu_constraint(mu_constraint);
+    BOOST_CHECK_EQUAL(solver_cast->get_mu_constraint(), 100);
     const double termination_tolerance = 1e-4;
     solver_cast->set_termination_tolerance(termination_tolerance);
     BOOST_CHECK_EQUAL(solver_cast->get_termination_tolerance(), 1e-4);
