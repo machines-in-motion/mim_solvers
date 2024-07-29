@@ -10,9 +10,13 @@ from scipy import sparse
 from . py_osqp import CustomOSQP
 from . stagewise_qp_kkt import StagewiseQPKKT
 from crocoddyl import SolverAbstract
-import hpipm_python
+
+import importlib.util
+HPIPM_PYTHON_FOUND = importlib.util.find_spec("hpipm_python")
+if(HPIPM_PYTHON_FOUND):
+    import hpipm_python
+
 import time 
-from qpsolvers import solve_problem, Problem, Solution
 
 class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
 
@@ -34,7 +38,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         self.verboseQP = verboseQP
         self.eps_abs = 1e-4
         self.eps_rel = 0.
-
+        
         self.BENCHMARK = True
         self.DEBUG = False
 
