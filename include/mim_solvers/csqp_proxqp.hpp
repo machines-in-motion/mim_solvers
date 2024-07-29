@@ -128,8 +128,8 @@ class SolverPROXQP : public SolverDDP {
   double get_ugrad_norm() const { return u_grad_norm_; };
   double get_merit() const { return merit_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
-  double get_mu() const { return mu_; };
-  double get_mu2() const { return mu2_; };
+  double get_mu_dynamic() const { return mu_dynamic_; };
+  double get_mu_constraint() const { return mu_constraint_; };
   double get_termination_tolerance() const { return termination_tol_; };
   int get_max_qp_iters(){ return max_qp_iters_; };
   double get_cost(){ return cost_;};
@@ -144,8 +144,8 @@ class SolverPROXQP : public SolverDDP {
   void setCallbacks(bool inCallbacks);
   bool getCallbacks();
 
-  void set_mu(double mu) { mu_ = mu; };
-  void set_mu2(double mu2) { mu2_ = mu2; };
+  void set_mu_dynamic(double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
+  void set_mu_constraint(double mu_constraint) { mu_constraint_ = mu_constraint; };
   
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
@@ -196,8 +196,8 @@ class SolverPROXQP : public SolverDDP {
   double constraint_norm_try_ = 0;                             //!< 1 norm of constraint violation try
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
   double cost_ = 0.0;                                          //!< cost function
-  double mu_ = 1e1;                                            //!< penalty no constraint violation
-  double mu2_ = 1e1;                                           //!< penalty no constraint violation
+  double mu_dynamic_ = 1e1;                                    //!< penalty no constraint violation
+  double mu_constraint_ = 1e1;                                 //!< penalty no constraint violation
   double termination_tol_ = 1e-8;                              //!< Termination tolerance
   bool with_callbacks_ = false;                                //!< With callbacks
   int max_qp_iters_ = 1000;                                    //!< maximum number of QP iterations

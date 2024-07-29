@@ -137,8 +137,8 @@ class SolverCSQP : public SolverDDP {
   double get_merit() const { return merit_; };
   bool get_extra_iteration_for_last_kkt() const { return extra_iteration_for_last_kkt_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
-  double get_mu() const { return mu_; };
-  double get_mu2() const { return mu2_; };
+  double get_mu_dynamic() const { return mu_dynamic_; };
+  double get_mu_constraint() const { return mu_constraint_; };
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_max_qp_iters(){ return max_qp_iters_; };
   bool get_equality_qp_initial_guess() { return equality_qp_initial_guess_; };
@@ -175,8 +175,8 @@ class SolverCSQP : public SolverDDP {
   void set_rho_update_interval(std::size_t interval) { rho_update_interval_ = interval; };
   void set_adaptive_rho_tolerance(std::size_t tolerance) { adaptive_rho_tolerance_ = tolerance; };
 
-  void set_mu(double mu) { mu_ = mu; };
-  void set_mu2(double mu2) { mu2_ = mu2; };
+  void set_mu_dynamic(double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
+  void set_mu_constraint(double mu_constraint) { mu_constraint_ = mu_constraint; };
   void set_alpha(double alpha) { alpha_ = alpha; };
   void set_sigma(double sigma) { sigma_ = sigma; };
 
@@ -247,8 +247,8 @@ class SolverCSQP : public SolverDDP {
   double constraint_norm_ = 0;                                 //!< 1 norm of constraint violation
   double constraint_norm_try_ = 0;                             //!< 1 norm of constraint violation try
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double mu_ = 1e1;                                            //!< penalty no constraint violation
-  double mu2_ = 1e1;                                           //!< penalty no constraint violation
+  double mu_dynamic_ = 1e1;                                    //!< penalty weight for dymanic violation in the merit function
+  double mu_constraint_ = 1e1;                                 //!< penalty weight for constraint violation in the merit function
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   // bool with_callbacks_ = false;                                //!< With callbacks
   bool with_qp_callbacks_ = false;                         //!< With QP callbacks
