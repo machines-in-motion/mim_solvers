@@ -64,7 +64,7 @@ ddp6.max_qp_iters = max_qp_iters
 ddp7.max_qp_iters = max_qp_iters
 ddp8.max_qp_iters = max_qp_iters
 
-eps_abs = 1e-5
+eps_abs = 1e-8
 eps_rel = 0.
 ddp1.eps_abs = eps_abs
 ddp2.eps_abs = eps_abs
