@@ -288,3 +288,39 @@ class SolverCSQP : public SolverDDP {
 }  // namespace mim_solvers
 
 #endif  // MIM_SOLVERS_CSQP_HPP_
+
+
+
+// To-do: move definitions to a dedicated file 
+
+// Same logic as in Proxsuite and Pinocchio to check eigen malloc
+#ifdef MIM_SOLVERS_EIGEN_CHECK_MALLOC
+#ifndef EIGEN_RUNTIME_NO_MALLOC
+#define EIGEN_RUNTIME_NO_MALLOC_WAS_NOT_DEFINED
+#define EIGEN_RUNTIME_NO_MALLOC
+#endif
+#endif
+
+// #include <Eigen/Core>
+// #include <cassert>
+
+#ifdef MIM_SOLVERS_EIGEN_CHECK_MALLOC
+#ifdef EIGEN_RUNTIME_NO_MALLOC_WAS_NOT_DEFINED
+#undef EIGEN_RUNTIME_NO_MALLOC
+#undef EIGEN_RUNTIME_NO_MALLOC_WAS_NOT_DEFINED
+#endif
+#endif
+
+// Check memory allocation for Eigen
+#ifdef MIM_SOLVERS_EIGEN_CHECK_MALLOC
+#define MIM_SOLVERS_EIGEN_MALLOC(allowed)                                       \
+  ::Eigen::internal::set_is_malloc_allowed(allowed)
+#define MIM_SOLVERS_EIGEN_MALLOC_ALLOWED() MIM_SOLVERS_EIGEN_MALLOC(true)
+#define MIM_SOLVERS_EIGEN_MALLOC_NOT_ALLOWED() MIM_SOLVERS_EIGEN_MALLOC(false)
+#else
+#define MIM_SOLVERS_EIGEN_MALLOC(allowed)
+#define MIM_SOLVERS_EIGEN_MALLOC_ALLOWED()
+#define MIM_SOLVERS_EIGEN_MALLOC_NOT_ALLOWED()
+#endif
+
+
