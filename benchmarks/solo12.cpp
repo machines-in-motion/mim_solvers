@@ -196,7 +196,7 @@ int main(){
     // DEFINE SOLVER
     mim_solvers::SolverSQP solver_SQP = mim_solvers::SolverSQP(problem);
     solver_SQP.set_termination_tolerance(0);
-    solver_SQP.setCallbacks(false);
+    // solver_SQP.setCallbacks(false);
     const int max_iter_SQP = 1;
 
     // SETTING UP STATISTICS
@@ -221,7 +221,7 @@ int main(){
     // DEFINE SOLVER
     mim_solvers::SolverCSQP solver_CSQP = mim_solvers::SolverCSQP(problem);
     solver_CSQP.set_termination_tolerance(1e-4);
-    solver_CSQP.setCallbacks(false);
+    // solver_CSQP.setCallbacks(false);
     solver_CSQP.set_eps_abs(0.0);
     solver_CSQP.set_eps_rel(0.0);
     solver_CSQP.set_max_qp_iters(1);

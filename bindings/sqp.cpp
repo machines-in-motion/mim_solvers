@@ -56,8 +56,9 @@ void exposeSolverSQP() {
       .add_property("KKT", bp::make_function(&SolverSQP::get_KKT),
                     "KKT residual norm")
 
-      .add_property("with_callbacks", bp::make_function(&SolverSQP::getCallbacks), bp::make_function(&SolverSQP::setCallbacks),
-                    "Activates the callbacks when true (default: False)")
+      // .add_property("with_callbacks", bp::make_function(&SolverSQP::getCallbacks), bp::make_function(&SolverSQP::setCallbacks),
+                    // "Activates the callbacks when true (default: False)")
+                    
       .add_property("extra_iteration_for_last_kkt", bp::make_function(&SolverSQP::get_extra_iteration_for_last_kkt), bp::make_function(&SolverSQP::set_extra_iteration_for_last_kkt),
                     "Additional iteration if SQP max. iter reached (default: False)")
       .add_property("mu", bp::make_function(&SolverSQP::get_mu), bp::make_function(&SolverSQP::set_mu),
