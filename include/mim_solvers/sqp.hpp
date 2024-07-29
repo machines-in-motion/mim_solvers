@@ -108,12 +108,12 @@ class SolverSQP : public SolverDDP {
   double get_merit() const { return merit_; };
   bool get_extra_iteration_for_last_kkt() const { return extra_iteration_for_last_kkt_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
-  double get_mu() const { return mu_; };
+  double get_mu_dynamic() const { return mu_dynamic_; };
   double get_termination_tolerance() const { return termination_tol_; };
   std::size_t get_filter_size() const { return filter_size_; };
 
 
-  void set_mu(double mu) { mu_ = mu; };
+  void set_mu_dynamic(double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
   void set_termination_tolerance(double tol) { termination_tol_ = tol; };
   void set_extra_iteration_for_last_kkt(bool inBool) { extra_iteration_for_last_kkt_ = inBool; };
   void set_use_filter_line_search(bool inBool) { use_filter_line_search_ = inBool; };
@@ -141,7 +141,7 @@ class SolverSQP : public SolverDDP {
   double u_grad_norm_ = 0;                                     //!< 1 norm of the delta u
   double gap_norm_ = 0;                                        //!< 1 norm of the gaps
   double gap_norm_try_ = 0;                                    //!< 1 norm of the gaps
-  double mu_ = 1e0;                                            //!< penalty no constraint violation
+  double mu_dynamic_ = 1e0;                                    //!< penalty weight for dymanic violation in the merit function
   double termination_tol_ = 1e-6;                              //!< Termination tolerance
   // bool with_callbacks_ = false;                                //!< With callbacks
   bool extra_iteration_for_last_kkt_ = false;                  //!< Additional iteration if SQP max. iter reached

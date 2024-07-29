@@ -323,7 +323,7 @@ void SolverPROXQP::calc(const bool recalc){
   constraint_norm_ += (lb - d_T->g).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
   constraint_norm_ += (d_T->g - ub).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
-  merit_ = cost_ + mu_*gap_norm_ + mu2_*constraint_norm_;
+  merit_ = cost_ + mu_dynamic_*gap_norm_ + mu_constraint_*constraint_norm_;
 
   Asp_ = A_.sparseView();
   Csp_ = C_.sparseView();
@@ -477,7 +477,7 @@ double SolverPROXQP::tryStep(const double steplength) {
     constraint_norm_try_ += (lb - d_ter->g).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
     constraint_norm_try_ += (d_ter->g - ub).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
-    merit_try_ = cost_try_ + mu_*gap_norm_try_ + mu2_*constraint_norm_try_;
+    merit_try_ = cost_try_ + mu_dynamic_*gap_norm_try_ + mu_constraint_*constraint_norm_try_;
 
     if (raiseIfNaN(cost_try_)) {
         STOP_PROFILER("SolverPROXQP::tryStep");
