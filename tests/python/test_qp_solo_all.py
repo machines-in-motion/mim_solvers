@@ -27,7 +27,6 @@ HPIPM_PYTHON_FOUND = importlib.util.find_spec("hpipm_python")
 import pinocchio
 import example_robot_data 
 import pinocchio as pin
-import matplotlib.pyplot as plt
 
 
 class ResidualFrictionCone(crocoddyl.ResidualModelAbstract):
