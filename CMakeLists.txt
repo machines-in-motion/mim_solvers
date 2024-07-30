@@ -109,6 +109,7 @@ set(${PROJECT_NAME}_SOURCES
   )
 
 
+
 if(BUILD_WITH_PROXSUITE)
   list(APPEND ${PROJECT_NAME}_HEADERS include/${PROJECT_NAME}/csqp_proxqp.hpp)
   list(APPEND ${PROJECT_NAME}_SOURCES src/csqp_proxqp.cpp)

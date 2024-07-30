@@ -193,7 +193,7 @@ class SolverCSQP : public SolverDDP {
 
 
 
-  void update_lagrangian_parameters();
+  void update_lagrangian_parameters(int iter);
   void set_rho_sparse(double rho_sparse) {rho_sparse_ = rho_sparse;};
   void update_rho_vec(int iter);
   void apply_rho_update(double rho_sparse_);
@@ -267,7 +267,7 @@ class SolverCSQP : public SolverDDP {
   double adaptive_rho_tolerance_ = 5; 
   double eps_abs_ = 1e-4;                                     //!< absolute termination criteria
   double eps_rel_ = 1e-4;                                     //!< relative termination criteria
-  double equality_qp_initial_guess_ = true;
+  double equality_qp_initial_guess_ = true;                   //!< warm-start the QP with unconstrained solution
   std::size_t filter_size_ = 1;                               //!< Filter size for line-search (do not change the default value !)
   double KKT_ = std::numeric_limits<double>::infinity();      //!< KKT conditions residual
 

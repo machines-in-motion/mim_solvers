@@ -11,7 +11,6 @@ set(${PY_NAME}_SOURCES
   utils/callbacks.cpp
   )
 
-
 if(BUILD_WITH_PROXSUITE)
   list(APPEND ${PY_NAME}_SOURCES csqp_proxqp.cpp)
 endif(BUILD_WITH_PROXSUITE)
