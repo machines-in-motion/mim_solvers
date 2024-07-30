@@ -20,6 +20,7 @@ option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
 option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
+option(CHECK_RUNTIME_MALLOC "Check eigen mallocs" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -88,6 +89,14 @@ if(BUILD_PYTHON_INTERFACE)
   set(PY_NAME ${PROJECT_NAME}_pywrap)
   set(${PY_NAME}_INSTALL_DIR ${PYTHON_SITELIB}/${PY_NAME})
 endif()
+
+
+if(CHECK_RUNTIME_MALLOC)
+  message(STATUS "Check if some memory allocations are performed at runtime.")
+  add_definitions(-DMIM_SOLVERS_EIGEN_CHECK_MALLOC)
+  add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
+endif(CHECK_RUNTIME_MALLOC)
+
 
 # Main Library
 set(${PROJECT_NAME}_HEADERS
