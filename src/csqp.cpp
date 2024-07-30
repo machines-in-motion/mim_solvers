@@ -677,9 +677,14 @@ void SolverCSQP::backwardPass() {
     START_PROFILER("SolverCSQP::Qx");
     Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
+    if (nc != 0){
+      if (t > 0 || nu != 0){
+      tmp_dual_cwise_[t] = y_[t]; 
+      tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+      }
+    }
     if (t > 0 && nc != 0){ 
-      tmp_dual_cwise_[t] = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
-      Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+      Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
     Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
     STOP_PROFILER("SolverCSQP::Qx");
@@ -700,8 +705,7 @@ void SolverCSQP::backwardPass() {
       FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0){ 
-        tmp_dual_cwise_[t] = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
-        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
+        Qu_[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
       Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
       STOP_PROFILER("SolverCSQP::Qu");
@@ -864,9 +868,14 @@ void SolverCSQP::backwardPass_without_rho_update() {
     Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
 
-    if (t > 0 && nc != 0){ 
+    if (nc != 0){
+      if (t > 0 || nu != 0){
       tmp_dual_cwise_[t] = y_[t]; 
       tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+      }
+    }
+
+    if (t > 0 && nc != 0){ 
       Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
 
@@ -878,8 +887,6 @@ void SolverCSQP::backwardPass_without_rho_update() {
       Qu_[t] = d->Lu;
       Qu_[t].noalias() -= sigma_ * du_[t];
       if (nc != 0){ 
-        tmp_dual_cwise_[t] = y_[t]; 
-        tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
         Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
 
