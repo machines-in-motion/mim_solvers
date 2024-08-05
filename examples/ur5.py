@@ -98,9 +98,9 @@ xs = [x0] * (T + 1)
 us = [np.zeros(nu)] * T
 
 # Define solver
-solver = mim_solvers.SolverCSQP(problem)
+solver = mim_solvers.SolverSQP(problem)
 solver.termination_tolerance = 1e-4
-solver.with_callbacks = True 
+solver.setCallbacks([mim_solvers.CallbackVerbose()])
 
 # Solve
 max_iter = 100

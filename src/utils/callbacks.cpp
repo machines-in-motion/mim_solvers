@@ -86,16 +86,6 @@ void CallbackVerbose::update_header() {
 void CallbackVerbose::operator()(SolverAbstract& solver) {
   if (solver.get_iter() % 10 == 0) {
     std::cout << header_ << std::endl;
-  }
-  auto space_sign = [this](const double value) {
-    std::stringstream stream;
-    if (value >= 0.) {
-      stream << " ";
-    } else {
-      stream << "-";
-    }
-    stream << std::scientific << std::setprecision(precision_) << abs(value);
-    return stream.str();
   };
 
   std::cout << std::setw(4) << solver.get_iter() << separator_;                                     // iter
@@ -111,12 +101,12 @@ void CallbackVerbose::operator()(SolverAbstract& solver) {
         std::cout << std::scientific << std::setprecision(precision_)
                     << solver_cast.get_constraint_norm() << separator_;                                  // ||Constraint||
         std::cout << std::scientific << std::setprecision(precision_) 
-                    << "       ---- "  << separator_;                                                   // No ||(dx,du)||
-        std::cout << std::scientific << std::setprecision(precision_)
+                    << "       ---- "  << separator_ ;                                                   // No ||(dx,du)||
+        std::cout << std::fixed << std::setprecision(precision_)
                     << "     ---- "  << separator_ << separator_;                                                  // No step
         std::cout << std::scientific << std::setprecision(precision_)
-                    << solver_cast.get_KKT() << separator_ << separator_;                                              // KKT criteria
-        std::cout << std::scientific << std::setprecision(precision_)
+                    << solver_cast.get_KKT() << separator_ << separator_short_;                                              // KKT criteria
+        std::cout << std::fixed << std::setprecision(0)
                     << "    -----" << separator_;                                                       // No QP iters     
         }else{
         std::cout << std::scientific << std::setprecision(precision_)
@@ -128,12 +118,12 @@ void CallbackVerbose::operator()(SolverAbstract& solver) {
         std::cout << std::scientific << std::setprecision(precision_)
                     << solver_cast.get_constraint_norm() << separator_ << separator_ << separator_;                                  // ||Constraint||
         std::cout << std::scientific << std::setprecision(precision_) 
-                    << (solver_cast.get_xgrad_norm() + solver_cast.get_ugrad_norm()) / 2  << separator_ << separator_;      // ||(dx,du)||
-        std::cout << std::scientific << std::setprecision(precision_)
-                    << solver_cast.get_steplength() << separator_ ;                                       // step
+                    << (solver_cast.get_xgrad_norm() + solver_cast.get_ugrad_norm()) / 2  << separator_ << separator_<< separator_;      // ||(dx,du)||
+        std::cout << std::fixed << std::setprecision(precision_)
+                    << solver_cast.get_steplength() << separator_  << separator_;                                       // step
         std::cout << std::scientific << std::setprecision(precision_)
                     << solver_cast.get_KKT() << separator_ << separator_ << separator_short_;                                              // KKT criteria
-        std::cout << std::scientific << std::setprecision(precision_)
+        std::cout << std::fixed << std::setprecision(0) << separator_short_
                     << solver_cast.get_qp_iters() << separator_;                                         // QP iters                            
       
         }

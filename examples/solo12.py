@@ -147,7 +147,7 @@ ocp = crocoddyl.ShootingProblem(x0, running_models[:-1], running_models[-1])
 solver = mim_solvers.SolverCSQP(ocp)
 solver.max_qp_iters = 1000
 max_iter = 500
-solver.with_callbacks = True
+solver.setCallbacks([mim_solvers.CallbackVerbose()])
 solver.use_filter_line_search = False
 solver.termination_tolerance = 1e-4
 solver.eps_abs = 1e-6
