@@ -748,8 +748,10 @@ void SolverCSQP::backwardPass() {
     Vx_[t] = Qx_[t];
     Vxx_[t] = Qxx_[t];
     if (nu != 0) {
-      Quuk_[t].noalias() = Quu_[t] * k_[t];
+      // Quuk_[t].noalias() = Quu_[t] * k_[t];
+      START_PROFILER("SolverCSQP::backwardPass::Vx");
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+      STOP_PROFILER("SolverCSQP::backwardPass::Vx");
       START_PROFILER("SolverCSQP::backwardPass::Vxx");
       Vxx_[t].noalias() -= Qxu_[t] * K_[t];
       STOP_PROFILER("SolverCSQP::backwardPass::Vxx");
@@ -828,7 +830,7 @@ void SolverCSQP::backwardPass_without_constraints() {
     Vx_[t] = Qx_[t];
     Vxx_[t] = Qxx_[t];
     if (nu != 0) {
-      Quuk_[t].noalias() = Quu_[t] * k_[t];
+      // Quuk_[t].noalias() = Quu_[t] * k_[t];
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
       START_PROFILER("SolverCSQP::backwardPass_without_constraints::Vxx");
       Vxx_[t].noalias() -= Qxu_[t] * K_[t];
