@@ -79,7 +79,7 @@ int main(){
     std::vector<int> supportFeetIds = {lfFootId, rfFootId, lhFootId, rhFootId};
 
     // OCP Parameters
-    const int N_ocp = 250;
+    const int N_ocp = 50;
     const double dt = 0.02;
     const double radius = 0.065;
 
@@ -155,6 +155,18 @@ int main(){
         
         boost::shared_ptr<crocoddyl::ConstraintModelManager> constraints = boost::make_shared<crocoddyl::ConstraintModelManager>(state, nu);    
         
+        boost::shared_ptr<crocoddyl::ResidualModelState> stateResidualc = boost::make_shared<crocoddyl::ResidualModelState>(state, x0, nu);
+
+
+        Eigen::VectorXd x_lim; 
+        x_lim.resize(nq + nv); 
+        x_lim.head(nq + nv) << 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.;
+
+        boost::shared_ptr<crocoddyl::ConstraintModelResidual> state_constraint = boost::make_shared<crocoddyl::ConstraintModelResidual>(state, stateResidualc, x0-x_lim, x0+x_lim);
+        constraints->addConstraint("State constraint", state_constraint);
+
+
+
         boost::shared_ptr<crocoddyl::DifferentialActionModelContactFwdDynamics> running_DAM = boost::make_shared<crocoddyl::DifferentialActionModelContactFwdDynamics>(
                                                                                                         state, 
                                                                                                         actuation,
@@ -192,76 +204,32 @@ int main(){
     std::vector<Eigen::VectorXd> us = problem->quasiStatic_xs(xs);
     xs.push_back(x0);
     
-    // Unonstrained case
-    // DEFINE SOLVER
-    mim_solvers::SolverSQP solver_SQP = mim_solvers::SolverSQP(problem);
-    solver_SQP.set_termination_tolerance(0);
-    // solver_SQP.setCallbacks(false);
-    const int max_iter_SQP = 1;
-
-    // SETTING UP STATISTICS
-    const int nb_SQP = 100;
-    Eigen::VectorXd duration_SQP(nb_SQP);
-    for (unsigned i = 0; i < nb_SQP; ++i){
-        timer.start();
-        solver_SQP.solve(xs, us, max_iter_SQP);
-        timer.stop();
-        duration_SQP[i] = timer.elapsed().user;
-    }
-    double const std_dev_SQP = std::sqrt((duration_SQP.array() - duration_SQP.mean()).square().sum() / (nb_SQP - 1));
-
-    std::cout << "  " << std::left << std::setw(42) << "SOLO SQP" << std::left
-              << std::setw(15) << duration_SQP.mean() << std::left << std::setw(15)
-              << std_dev_SQP << std::left << std::setw(15)
-              << duration_SQP.maxCoeff() << std::left << std::setw(15)
-              << duration_SQP.minCoeff() << std::endl;
-
-
-    // Constrained case 1
     // DEFINE SOLVER
     mim_solvers::SolverCSQP solver_CSQP = mim_solvers::SolverCSQP(problem);
     solver_CSQP.set_termination_tolerance(1e-4);
     // solver_CSQP.setCallbacks(false);
     solver_CSQP.set_eps_abs(0.0);
     solver_CSQP.set_eps_rel(0.0);
-    solver_CSQP.set_max_qp_iters(1);
-    const int max_iter_CSQP = 1;
+    solver_CSQP.set_max_qp_iters(50);
+    solver_CSQP.set_equality_qp_initial_guess(false);
 
     // SETTING UP STATISTICS
-    const int nb_CSQP = 100;
+    const int nb_CSQP = 1000;
     Eigen::VectorXd duration_CSQP(nb_CSQP);
+    solver_CSQP.solve(xs, us, 0);
     for (unsigned i = 0; i < nb_CSQP; ++i){
         timer.start();
-        solver_CSQP.solve(xs, us, max_iter_CSQP);
+        solver_CSQP.computeDirection(true);
         timer.stop();
         duration_CSQP[i] = timer.elapsed().user;
     }
     double const std_dev_CSQP = std::sqrt((duration_CSQP.array() -  duration_CSQP.mean()).square().sum() / (nb_CSQP - 1));
 
-    std::cout << "  " << std::left << std::setw(42) << "SOLO CSQP (1 QP iter)" << std::left
+    std::cout << "  " << std::left << std::setw(42) << "SOLO CSQP (50 QP iter)" << std::left
               << std::setw(15) <<  duration_CSQP.mean() << std::left << std::setw(15)
               << std_dev_CSQP << std::left << std::setw(15)
               << duration_CSQP.maxCoeff() << std::left << std::setw(15)
               << duration_CSQP.minCoeff() << std::endl;
-
-    // Constrained case 200
-    // solver_CSQP.set_max_qp_iters(200);
-
-    // // SETTING UP STATISTICS
-    // for (unsigned i = 0; i < nb_CSQP; ++i){
-    //     timer.start();
-    //     solver_CSQP.solve(xs, us, max_iter_CSQP);
-    //     timer.stop();
-    //     duration_CSQP[i] = timer.elapsed().user;
-    // }
-    // double const std_dev_CSQP1000 = std::sqrt((duration_CSQP.array() -  duration_CSQP.mean()).square().sum() / (nb_CSQP - 1));
-
-    // std::cout << "  " << std::left << std::setw(42) << "SOLO CSQP (200 QP iters)" << std::left
-    //           << std::setw(15) <<  duration_CSQP.mean() << std::left << std::setw(15)
-    //           << std_dev_CSQP1000 << std::left << std::setw(15)
-    //           << duration_CSQP.maxCoeff() << std::left << std::setw(15)
-    //           << duration_CSQP.minCoeff() << std::endl;
-
 
     return 0;
 
