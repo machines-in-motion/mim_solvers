@@ -564,6 +564,8 @@ void SolverCSQP::apply_rho_update(double rho_sparse_tmp_){
 void SolverCSQP::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
+  x_grad_norm_ = 0; 
+  u_grad_norm_ = 0;
 
   for (std::size_t t = 0; t < T; ++t) {
     lag_mul_[t].noalias() = Vx_[t];
@@ -586,8 +588,11 @@ void SolverCSQP::checkKKTConditions(){
     tmp_vec_u_[t].noalias() += d->Fu.transpose() * lag_mul_[t+1];
     tmp_vec_u_[t].noalias() += d->Gu.transpose() * y_[t];
     KKT_ = std::max(KKT_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
-    fs_flat_.segment(t*ndx, ndx) = fs_[t];
+    fs_flat_.segment(t*ndx, ndx) = fs_[t];      
+    x_grad_norm_ += dxtilde_[t].lpNorm<1>(); 
+    u_grad_norm_ += dutilde_[t].lpNorm<1>();
   }
+
   fs_flat_.tail(ndx) = fs_.back();
   const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
   tmp_vec_x_ = d_ter->Lx;
@@ -596,6 +601,9 @@ void SolverCSQP::checkKKTConditions(){
   KKT_ = std::max(KKT_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, constraint_norm_);
+  x_grad_norm_ += dxtilde_.back().lpNorm<1>(); 
+  x_grad_norm_ = x_grad_norm_/(T+1);
+  u_grad_norm_ = u_grad_norm_/T; 
 }
 
 
@@ -604,8 +612,6 @@ void SolverCSQP::forwardPass(const double stepLength){
     (void)stepLength;
 
     START_PROFILER("SolverCSQP::forwardPass");
-    // x_grad_norm_ = 0; 
-    // u_grad_norm_ = 0;
 
     const std::size_t T = problem_->get_T();
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
@@ -617,14 +623,7 @@ void SolverCSQP::forwardPass(const double stepLength){
       dxtilde_[t+1].noalias() = d->Fx * dxtilde_[t];
       dxtilde_[t+1].noalias() += d->Fu * dutilde_[t];
       dxtilde_[t+1].noalias() += fs_[t+1];
-
-      // x_grad_norm_ += dxtilde_[t].lpNorm<1>(); 
-      // u_grad_norm_ += dutilde_[t].lpNorm<1>();
     }
-
-    // x_grad_norm_ += dxtilde_.back().lpNorm<1>(); 
-    // x_grad_norm_ = x_grad_norm_/(T+1);
-    // u_grad_norm_ = u_grad_norm_/T; 
     STOP_PROFILER("SolverCSQP::forwardPass");
 
 }
@@ -761,13 +760,6 @@ void SolverCSQP::backwardPass() {
     if (!std::isnan(preg_)) {
       Vxx_[t].diagonal().array() += preg_;
     }
-
-    // if (raiseIfNaN(Vx_[t].lpNorm<Eigen::Infinity>())) {
-    //   throw_pretty("backward_error");
-    // }
-    // if (raiseIfNaN(Vxx_[t].lpNorm<Eigen::Infinity>())) {
-    //   throw_pretty("backward_error");
-    // }
   }
   STOP_PROFILER("SolverCSQP::backwardPass");
 }
@@ -842,13 +834,6 @@ void SolverCSQP::backwardPass_without_constraints() {
     if (!std::isnan(preg_)) {
       Vxx_[t].diagonal().array() += preg_;
     }
-
-    if (raiseIfNaN(Vx_[t].lpNorm<Eigen::Infinity>())) {
-      throw_pretty("backward_error");
-    }
-    if (raiseIfNaN(Vxx_[t].lpNorm<Eigen::Infinity>())) {
-      throw_pretty("backward_error");
-    }
   }
   STOP_PROFILER("SolverCSQP::backwardPass_without_constraints");
 }
@@ -918,13 +903,6 @@ void SolverCSQP::backwardPass_without_rho_update() {
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
     }
     STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::Vx");
-
-    // if (raiseIfNaN(Vx_[t].lpNorm<Eigen::Infinity>())) {
-    //   throw_pretty("backward_error");
-    // }
-    // if (raiseIfNaN(Vxx_[t].lpNorm<Eigen::Infinity>())) {
-    //   throw_pretty("backward_error");
-    // }
   }
   STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update");
 }
@@ -952,9 +930,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
       const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-      std::size_t nc = m->get_ng();
-
-      if (nc == 0){
+      if (m->get_ng() == 0){
         dx_[t] = dxtilde_[t];
         du_[t] = dutilde_[t];
         continue;
