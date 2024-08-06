@@ -100,7 +100,7 @@ us = [np.zeros(nu)] * T
 # Define solver
 solver = mim_solvers.SolverSQP(problem)
 solver.termination_tolerance = 1e-4
-solver.setCallbacks([mim_solvers.CallbackVerbose()])
+solver.setCallbacks([mim_solvers.CallbackVerbose("SQP")])
 
 # Solve
 max_iter = 100
