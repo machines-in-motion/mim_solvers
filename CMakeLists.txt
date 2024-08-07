@@ -21,10 +21,16 @@ option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
 option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 option(CHECK_RUNTIME_MALLOC "Check eigen mallocs" OFF)
+option(ENABLE_VECTORIZATION
+       "Enable vectorization and further processor-related optimizations" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 set(CUSTOM_HEADER_DIR ${PROJECT_NAME})
+
+if(ENABLE_VECTORIZATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 
 # Check if the submodule cmake have been initialized
 set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
