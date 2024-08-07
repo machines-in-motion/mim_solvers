@@ -12,7 +12,6 @@
 
 #include <iostream>
 #include <iomanip>
-
 #include <crocoddyl/core/utils/exception.hpp>
 #include "mim_solvers/sqp.hpp"
 
@@ -118,8 +117,8 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     // Perform callbacks
     const std::size_t n_callbacks = callbacks_.size();
     for (std::size_t c = 0; c < n_callbacks; ++c) {
-      CallbackAbstract& callback = *callbacks_[c];
-      callback(*this);
+      mim_solvers::CallbackAbstract& callback = *callbacks_[c];
+      callback(*this, "SQP");
     }
     
     if (KKT_  <= termination_tol_) {
@@ -203,8 +202,8 @@ bool SolverSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::ve
     // Perform callbacks
     const std::size_t n_callbacks = callbacks_.size();
     for (std::size_t c = 0; c < n_callbacks; ++c) {
-      CallbackAbstract& callback = *callbacks_[c];
-      callback(*this);
+      mim_solvers::CallbackAbstract& callback = *callbacks_[c];
+      callback(*this, "SQP");
     }
 
     if (KKT_  <= termination_tol_) {
