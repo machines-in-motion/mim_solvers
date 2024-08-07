@@ -16,9 +16,8 @@
 
 namespace mim_solvers {
 
-CallbackVerbose::CallbackVerbose(std::string solver_type, int precision)
-    : CallbackAbstract(),
-      solver_type_(solver_type),
+CallbackVerbose::CallbackVerbose(int precision)
+    : mim_solvers::CallbackAbstract(),
       separator_("  "),
       separator_short_(" ") {
   set_precision(precision);
@@ -26,22 +25,15 @@ CallbackVerbose::CallbackVerbose(std::string solver_type, int precision)
 
 CallbackVerbose::~CallbackVerbose() {}
 
-std::string CallbackVerbose::get_solver_type() const { return solver_type_; }
-
-void CallbackVerbose::set_solver_type(std::string& solver_type) {
-    solver_type_ = solver_type;
-    update_header();
-}
 
 int CallbackVerbose::get_precision() const { return precision_; }
 
 void CallbackVerbose::set_precision(int precision) {
   if (precision < 0) throw_pretty("The precision needs to be at least 0.");
   precision_ = precision;
-  update_header();
 }
 
-void CallbackVerbose::update_header() {
+void CallbackVerbose::update_header(const std::string solver_type) {
   auto center_string = [](const std::string& str, int width,
                           bool right_padding = true) {
     const int padding_size = width - static_cast<int>(str.length());
@@ -62,7 +54,7 @@ void CallbackVerbose::update_header() {
   // Scientific mode requires a column width of 6 + precision
   const int columnwidth = 6 + precision_;
   header_ += "iter" + separator_;
-  if (solver_type_ == "CSQP") {
+  if (solver_type == "CSQP") {
     header_ += center_string("merit", columnwidth) + separator_;
     header_ += center_string("cost", columnwidth) + separator_;
     header_ += center_string("||gaps||", columnwidth) + separator_;
@@ -71,7 +63,7 @@ void CallbackVerbose::update_header() {
     header_ += center_string("step", columnwidth) + separator_;
     header_ += center_string("KKT criteria", columnwidth) + separator_;
     header_ += center_string("QP iters", columnwidth);
-  } else if (solver_type_ == "SQP"){
+  } else if (solver_type == "SQP"){
     header_ += center_string("merit", columnwidth) + separator_;
     header_ += center_string("cost", columnwidth) + separator_;
     header_ += center_string("||gaps||", columnwidth) + separator_;
@@ -83,8 +75,11 @@ void CallbackVerbose::update_header() {
   }
 }
 
-void CallbackVerbose::operator()(SolverAbstract& solver) {
+void CallbackVerbose::operator()(crocoddyl::SolverAbstract& solver) {}
+
+void CallbackVerbose::operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) {
   if (solver.get_iter() % 10 == 0) {
+    update_header(solver_type);
     std::cout << header_ << std::endl;
   }
   auto space_sign = [this](const double value) {
@@ -99,7 +94,7 @@ void CallbackVerbose::operator()(SolverAbstract& solver) {
   };
 
   std::cout << std::setw(4) << solver.get_iter() << separator_;                                     // iter
-    if (solver_type_ == "CSQP"){
+    if (solver_type == "CSQP"){
       SolverCSQP& solver_cast = static_cast<SolverCSQP&>(solver);
       if(solver_cast.get_KKT() < solver_cast.get_termination_tolerance()){
         std::cout << std::scientific << std::setprecision(precision_)
@@ -137,7 +132,7 @@ void CallbackVerbose::operator()(SolverAbstract& solver) {
                     << solver_cast.get_qp_iters() << separator_;                                         // QP iters                            
       
         }
-    } else if (solver_type_ == "SQP"){
+    } else if (solver_type == "SQP"){
       SolverSQP& solver_cast = static_cast<SolverSQP&>(solver);
       if(solver_cast.get_KKT() < solver_cast.get_termination_tolerance()){
         std::cout << std::scientific << std::setprecision(precision_)
