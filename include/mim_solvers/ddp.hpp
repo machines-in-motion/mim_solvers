@@ -18,6 +18,7 @@
 #include <Eigen/Cholesky>
 #include <crocoddyl/core/solver-base.hpp>
 #include <crocoddyl/core/mathbase.hpp>
+#include "mim_solvers/utils/callbacks.hpp"
 
 namespace mim_solvers {
 
@@ -296,6 +297,22 @@ class SolverDDP : public crocoddyl::SolverAbstract {
    * @brief Modify the tolerance of the expected gradient used for testing the step
    */
   void set_th_grad(const double th_grad);
+  /**
+   * @brief Set a list of callback functions using for the solver diagnostic
+   *
+   * Each iteration, the solver calls these set of functions in order to allowed
+   * user the diagnostic of its performance.
+   *
+   * @param  callbacks  set of callback functions
+   */
+  void setCallbacks(
+      const std::vector<boost::shared_ptr<CallbackAbstract> >& callbacks);
+
+  /**
+   * @brief Return the list of callback functions using for diagnostic
+   */
+  const std::vector<boost::shared_ptr<CallbackAbstract> >& getCallbacks() const;
+
 
   /**
    * @brief Compute the KKT conditions residual
@@ -343,6 +360,7 @@ class SolverDDP : public crocoddyl::SolverAbstract {
   double th_stepdec_;                                      //!< Step-length threshold used to decrease regularization
   double th_stepinc_;                                      //!< Step-length threshold used to increase regularization
   double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
+  std::vector<boost::shared_ptr<CallbackAbstract> > callbacks_;                 //!< Callback function
 
  public:
   std::vector<Eigen::VectorXd> lag_mul_;                   //!< the Lagrange multiplier of the dynamics constraint
