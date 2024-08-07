@@ -160,7 +160,7 @@ int main(){
 
         Eigen::VectorXd x_lim; 
         x_lim.resize(nq + nv); 
-        x_lim.head(nq + nv) << 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1., 1.;
+        x_lim.head(nq + nv) << Eigen::VectorXd::Ones(nq+nv);
 
         boost::shared_ptr<crocoddyl::ConstraintModelResidual> state_constraint = boost::make_shared<crocoddyl::ConstraintModelResidual>(state, stateResidualc, x0-x_lim, x0+x_lim);
         constraints->addConstraint("State constraint", state_constraint);
