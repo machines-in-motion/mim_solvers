@@ -93,9 +93,10 @@ void exposeSolverCSQP() {
                     "Additional iteration if SQP max. iter reached (default: False)")
       .add_property("xs", make_function(&SolverCSQP::get_xs, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverCSQP::set_xs), "xs")
       .add_property("us", make_function(&SolverCSQP::get_us, bp::return_value_policy<bp::copy_const_reference>()), bp::make_function(&SolverCSQP::set_us), "us")
-      .add_property("dx_tilde", make_function(&SolverCSQP::get_xs_tilde, bp::return_value_policy<bp::copy_const_reference>()), "dx_tilde")
-      .add_property("du_tilde", make_function(&SolverCSQP::get_us_tilde, bp::return_value_policy<bp::copy_const_reference>()), "du_tilde")
-      
+      .add_property("dx_tilde", make_function(&SolverCSQP::get_dx_tilde, bp::return_value_policy<bp::copy_const_reference>()), "dx_tilde")
+      .add_property("du_tilde", make_function(&SolverCSQP::get_du_tilde, bp::return_value_policy<bp::copy_const_reference>()), "du_tilde")
+      .add_property("dx", make_function(&SolverCSQP::get_dx, bp::return_value_policy<bp::copy_const_reference>()), "dx")
+      .add_property("du", make_function(&SolverCSQP::get_du, bp::return_value_policy<bp::copy_const_reference>()), "du")
 
 
       .add_property("constraint_norm", bp::make_function(&SolverCSQP::get_constraint_norm),
