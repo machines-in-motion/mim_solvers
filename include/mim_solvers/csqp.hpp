@@ -118,8 +118,11 @@ class SolverCSQP : public SolverDDP {
   const std::vector<Eigen::VectorXd>& get_xs() const { return xs_; };
   const std::vector<Eigen::VectorXd>& get_us() const { return us_; };
   
-  const std::vector<Eigen::VectorXd>& get_xs_tilde() const { return dxtilde_; };
-  const std::vector<Eigen::VectorXd>& get_us_tilde() const { return dutilde_; };
+  const std::vector<Eigen::VectorXd>& get_dx_tilde() const { return dxtilde_; };
+  const std::vector<Eigen::VectorXd>& get_du_tilde() const { return dutilde_; };
+
+  const std::vector<Eigen::VectorXd>& get_dx() const { return dx_; };
+  const std::vector<Eigen::VectorXd>& get_du() const { return du_; };
 
   const std::vector<Eigen::VectorXd>& get_y() const { return y_; };
   const std::vector<Eigen::VectorXd>& get_z() const { return z_; };

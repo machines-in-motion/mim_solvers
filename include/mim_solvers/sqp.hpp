@@ -101,6 +101,9 @@ class SolverSQP : public SolverDDP {
   const std::vector<Eigen::VectorXd>& get_xs_try() const { return xs_try_; };
   const std::vector<Eigen::VectorXd>& get_us_try() const { return us_try_; };
 
+  const std::vector<Eigen::VectorXd>& get_dx() const { return dx_; };
+  const std::vector<Eigen::VectorXd>& get_du() const { return du_; };
+  
   double get_KKT() const { return KKT_; };
   double get_gap_norm() const { return gap_norm_; };
   double get_xgrad_norm() const { return x_grad_norm_; };

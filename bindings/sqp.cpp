@@ -53,6 +53,9 @@ void exposeSolverSQP() {
       .def_readwrite("fs_try", &SolverSQP::fs_try_, "fs_try")
       .def_readwrite("lag_mul", &SolverSQP::lag_mul_, "lagrange multipliers")
 
+      .add_property("dx", make_function(&SolverSQP::get_dx, bp::return_value_policy<bp::copy_const_reference>()), "dx")
+      .add_property("du", make_function(&SolverSQP::get_du, bp::return_value_policy<bp::copy_const_reference>()), "du")
+
       .add_property("KKT", bp::make_function(&SolverSQP::get_KKT),
                     "KKT residual norm")
 
