@@ -75,7 +75,10 @@ void CallbackVerbose::update_header(const std::string solver_type) {
   }
 }
 
-void CallbackVerbose::operator()(crocoddyl::SolverAbstract& solver) {}
+void CallbackVerbose::operator()(crocoddyl::SolverAbstract& solver) {
+  (void) solver;
+  throw_pretty("Please provide the solver type to the callback."); 
+}
 
 void CallbackVerbose::operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) {
   if (solver.get_iter() % 10 == 0) {
