@@ -20,10 +20,17 @@ option(BUILD_PYTHON_INTERFACE "Build the python binding" ON)
 option(SUFFIX_SO_VERSION "Suffix library name with its version" ON)
 option(BUILD_WITH_PROXSUITE "Build the ProxQP-based SQP solver" OFF)
 option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
+option(CHECK_RUNTIME_MALLOC "Check eigen mallocs" OFF)
+option(ENABLE_VECTORIZATION
+       "Enable vectorization and further processor-related optimizations" OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
 set(CUSTOM_HEADER_DIR ${PROJECT_NAME})
+
+if(ENABLE_VECTORIZATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+endif()
 
 # Check if the submodule cmake have been initialized
 set(JRL_CMAKE_MODULES "${CMAKE_CURRENT_LIST_DIR}/cmake")
@@ -89,6 +96,14 @@ if(BUILD_PYTHON_INTERFACE)
   set(${PY_NAME}_INSTALL_DIR ${PYTHON_SITELIB}/${PY_NAME})
 endif()
 
+
+if(CHECK_RUNTIME_MALLOC)
+  message(STATUS "Check if some memory allocations are performed at runtime.")
+  add_definitions(-DMIM_SOLVERS_EIGEN_CHECK_MALLOC)
+  add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
+endif(CHECK_RUNTIME_MALLOC)
+
+
 # Main Library
 set(${PROJECT_NAME}_HEADERS
   include/${PROJECT_NAME}/kkt.hpp
@@ -107,6 +122,7 @@ set(${PROJECT_NAME}_SOURCES
   src/csqp.cpp
   src/utils/callbacks.cpp
   )
+
 
 
 if(BUILD_WITH_PROXSUITE)

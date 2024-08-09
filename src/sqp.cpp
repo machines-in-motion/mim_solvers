@@ -230,7 +230,7 @@ void SolverSQP::computeDirection(const bool recalcDiff){
   }
   gap_norm_ += fs_.back().lpNorm<1>();   
 
-  merit_ = cost_ + mu_*gap_norm_;
+  merit_ = cost_ + mu_dynamic_*gap_norm_;
 
   backwardPass();
   forwardPass();
@@ -350,7 +350,7 @@ double SolverSQP::tryStep(const double steplength) {
     m->get_state()->diff(xs_try_.back(), d->xnext, fs_try_[T-1]);
     gap_norm_try_ += fs_try_[T-1].lpNorm<1>(); 
 
-    merit_try_ = cost_try_ + mu_*gap_norm_try_;
+    merit_try_ = cost_try_ + mu_dynamic_*gap_norm_try_;
 
     if (raiseIfNaN(cost_try_)) {
         STOP_PROFILER("SolverSQP::tryStep");

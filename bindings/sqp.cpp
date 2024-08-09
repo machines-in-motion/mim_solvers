@@ -53,6 +53,9 @@ void exposeSolverSQP() {
       .def_readwrite("fs_try", &SolverSQP::fs_try_, "fs_try")
       .def_readwrite("lag_mul", &SolverSQP::lag_mul_, "lagrange multipliers")
 
+      .add_property("dx", make_function(&SolverSQP::get_dx, bp::return_value_policy<bp::copy_const_reference>()), "dx")
+      .add_property("du", make_function(&SolverSQP::get_du, bp::return_value_policy<bp::copy_const_reference>()), "du")
+
       .add_property("KKT", bp::make_function(&SolverSQP::get_KKT),
                     "KKT residual norm")
 
@@ -61,8 +64,8 @@ void exposeSolverSQP() {
                     
       .add_property("extra_iteration_for_last_kkt", bp::make_function(&SolverSQP::get_extra_iteration_for_last_kkt), bp::make_function(&SolverSQP::set_extra_iteration_for_last_kkt),
                     "Additional iteration if SQP max. iter reached (default: False)")
-      .add_property("mu", bp::make_function(&SolverSQP::get_mu), bp::make_function(&SolverSQP::set_mu),
-                    "Penalty term for dynamic violation in the merit function (default: 1.)")
+      .add_property("mu_dynamic", bp::make_function(&SolverSQP::get_mu_dynamic), bp::make_function(&SolverSQP::set_mu_dynamic),
+                    "Penalty weight for dynamic violation in the merit function (default: 1.)")
       .add_property("use_filter_line_search", bp::make_function(&SolverSQP::get_use_filter_line_search), bp::make_function(&SolverSQP::set_use_filter_line_search),
                     "Use the filter line search criteria (default: True)")
       .add_property("termination_tolerance", bp::make_function(&SolverSQP::get_termination_tolerance), bp::make_function(&SolverSQP::set_termination_tolerance),

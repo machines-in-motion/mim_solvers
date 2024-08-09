@@ -100,8 +100,8 @@ us = [np.zeros(nu)] * T
 # Define solver
 solver = mim_solvers.SolverCSQP(problem)
 solver.termination_tolerance = 1e-4
-# solver.with_callbacks = True 
 solver.setCallbacks([mim_solvers.CallbackVerbose(), mim_solvers.CallbackLogger()])
+
 
 # Solve
 max_iter = 100

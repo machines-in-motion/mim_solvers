@@ -93,7 +93,7 @@ class CustomOSQP():
     def optimize_osqp(self, maxiters = 1000):
 
         self.set_rho_osqp()
-        converged = False
+        self.converged = False
         for iter in range(1, maxiters+1):
             self.solve_linear_system_osqp()
             self.update_lagrangian_params()
@@ -112,10 +112,10 @@ class CustomOSQP():
                         print("Iters", iter, "res-primal", pp(self.r_prim), "res-dual", pp(self.r_dual)\
                     , "optimal rho estimate", pp(self.rho_estimate_osqp), "rho", pp(self.rho_osqp)) 
                         print("terminated ... \n")
-                    converged = True               
+                    self.converged = True               
                     break
         self.qp_iters = iter
-        if not converged and self.verboseQP:
+        if not self.converged and self.verboseQP:
             print("Iters", iter, "res-primal", pp(self.r_prim), "res-dual", pp(self.r_dual)\
                 , "optimal rho estimate", pp(self.rho_estimate_osqp), "rho", pp(self.rho_osqp))
         return self.x_k
