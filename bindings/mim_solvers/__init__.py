@@ -9,7 +9,6 @@ All rights reserved.
 from .mim_solvers_pywrap import * #noqa
 import copy
 import numpy as np
-import matplotlib.pyplot as plt
 
 class CallbackLogger(CallbackAbstract):
     def __init__(self, verbose=False):
@@ -53,6 +52,8 @@ class CallbackLogger(CallbackAbstract):
 
 
 def plotConvergence(data):
+import matplotlib.pyplot as plt
+
     axis = 0
     for i, (key, values) in enumerate(data.items()):
         if len(np.asarray(values, dtype="object").shape) == 1:
