@@ -449,7 +449,7 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
   
   for (std::size_t iter = 1; iter < max_qp_iters_+1; ++iter){
     
-    if (iter % rho_update_interval_ == 1 || iter == 1){
+    if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1){
       backwardPass();
     }
     else{
@@ -497,7 +497,7 @@ void SolverCSQP::update_rho_vec(int iter){
 
    
 
-  if (iter % rho_update_interval_ == 0 && iter > 1){
+  if (iter % rho_update_interval_ == 0){ // && iter > 1){
     if(rho_estimate_sparse_ > rho_sparse_ * adaptive_rho_tolerance_ || 
             rho_estimate_sparse_ < rho_sparse_ / adaptive_rho_tolerance_){
       rho_sparse_ = rho_estimate_sparse_;
