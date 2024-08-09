@@ -156,10 +156,16 @@ solver.eps_rel = 1e-6
 
 xs = [x0]*(solver.problem.T + 1)
 us = solver.problem.quasiStatic([x0]*solver.problem.T) 
+
+solver.setCallbacks([mim_solvers.CallbackVerbose(), mim_solvers.CallbackLogger()])
+
 solver.solve(xs, us, max_iter)   
 solution = utils_solo12.get_solution_trajectories(solver, rmodel, rdata, supportFeetIds)
 
-        
+log = solver.getCallbacks()[-1]
+crocoddyl.plotOCSolution(solver.xs, solver.us)
+mim_solvers.plotConvergence(log.convergence_data)
+      
         
 # Plot solution of the constrained OCP
 if(PLOT_OCP_SOL):
