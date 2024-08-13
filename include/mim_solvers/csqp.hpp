@@ -12,7 +12,7 @@
 #include <Eigen/Cholesky>
 #include <vector>
 #include <boost/circular_buffer.hpp>
-
+#include "mim_solvers/utils/callbacks.hpp"
 #include "mim_solvers/ddp.hpp"
 
 

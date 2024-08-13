@@ -13,32 +13,58 @@
 #include <iostream>
 #include <crocoddyl/core/solver-base.hpp>
 
-using namespace crocoddyl;
 namespace mim_solvers {
+
+/**
+ * @brief Abstract class for solver callbacks
+ *
+ * A callback is used to diagnostic the behaviour of our solver in each
+ * iteration of it. For instance, it can be used to print values, record data or
+ * display motions.
+ */
+class CallbackAbstract {
+ public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  /**
+   * @brief Initialize the callback function
+   */
+  CallbackAbstract() {}
+  virtual ~CallbackAbstract() {}
+
+  /**
+   * @brief Run the callback function given a solver
+   *
+   * @param[in]  solver solver to be diagnostic
+   */
+  virtual void operator()(crocoddyl::SolverAbstract& solver) = 0;
+  virtual void operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) = 0;
+
+};
 
 class CallbackVerbose : public CallbackAbstract {
  public:
-  explicit CallbackVerbose(std::string solver_type = "CSQP", int precision = 3);
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  explicit CallbackVerbose(int precision = 3);
   ~CallbackVerbose() override;
 
-  void operator()(SolverAbstract& solver) override;
+  void operator()(crocoddyl::SolverAbstract& solver) override;
+  void operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) override;
   
-  void set_solver_type(std::string& solver_type);
-
-  std::string get_solver_type() const;
-
   int get_precision() const;
   void set_precision(int precision);
 
  private:
-  std::string solver_type_;
   int precision_;
   std::string header_;
   std::string separator_;
   std::string separator_short_;
 
-  void update_header();
+  void update_header(const std::string solver_type);
 };
+
+
 
 }  // namespace mim_solvers
 

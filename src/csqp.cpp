@@ -276,8 +276,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     // Perform callbacks
     const std::size_t n_callbacks = callbacks_.size();
     for (std::size_t c = 0; c < n_callbacks; ++c) {
-      CallbackAbstract& callback = *callbacks_[c];
-      callback(*this);
+      mim_solvers::CallbackAbstract& callback = *callbacks_[c];
+      callback(*this, "CSQP");
     }
 
     if (KKT_  <= termination_tol_) {  
@@ -371,7 +371,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     const std::size_t n_callbacks = callbacks_.size();
     for (std::size_t c = 0; c < n_callbacks; ++c) {
       CallbackAbstract& callback = *callbacks_[c];
-      callback(*this);
+      callback(*this, "CSQP");
     }
 
     if (KKT_  <= termination_tol_) {

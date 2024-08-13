@@ -56,8 +56,8 @@ void test_sqp_core(){
   solver_cast->set_filter_size(filter_size);
   BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
 
-  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("SQP", 3);
-  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
+  std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
   callbacks.push_back(callback_verbose);
   solver_cast->setCallbacks(callbacks);
 }
@@ -152,8 +152,8 @@ void test_csqp_core(){
   const double eps_rel = 10;
   solver_cast->set_eps_rel(eps_rel);
   BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 10);
-  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("CSQP", 3);
-  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
+  std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
   callbacks.push_back(callback_verbose);
   solver_cast->setCallbacks(callbacks);
 }
@@ -252,8 +252,8 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
     solver_cast->set_termination_tolerance(SQP_TOL);
 
-    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("SQP", 3);
-    std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
+    std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
     callbacks.push_back(callback_verbose);
     solver_cast->setCallbacks(callbacks);
 
@@ -271,8 +271,8 @@ void test_solver_convergence(SolverTypes::Type solver_type,
     solver_cast->set_eps_abs(EPS_ABS);
     solver_cast->set_max_qp_iters(QP_MAXITER);
 
-    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>("CSQP", 3);
-    std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> callbacks;
+    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
+    std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
     callbacks.push_back(callback_verbose);
     solver_cast->setCallbacks(callbacks);
 

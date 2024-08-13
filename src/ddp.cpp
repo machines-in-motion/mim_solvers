@@ -612,5 +612,13 @@ void SolverDDP::set_th_grad(const double th_grad) {
   }
   th_grad_ = th_grad;
 }
+void SolverDDP::setCallbacks(
+    const std::vector<boost::shared_ptr<CallbackAbstract> >& callbacks) {
+  callbacks_ = callbacks;
+}
 
+const std::vector<boost::shared_ptr<CallbackAbstract> >&
+SolverDDP::getCallbacks() const {
+  return callbacks_;
+}
 }  // namespace mim_solvers

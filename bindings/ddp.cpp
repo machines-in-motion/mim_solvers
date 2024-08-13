@@ -98,6 +98,18 @@ void exposeSolverDDP() {
            "It rollouts the action model given the computed policy (feedforward terns and feedback\n"
            "gains) by the backwardPass. We can define different step lengths\n"
            ":param stepLength: applied step length (<= 1. and >= 0.)")
+      .def("setCallbacks", &SolverDDP::setCallbacks,
+           bp::args("self", "callbacks"),
+           "Set a list of callback functions using for diagnostic.\n\n"
+           "Each iteration, the solver calls these set of functions in order "
+           "to\n"
+           "allowed user the diagnostic of the its performance.\n"
+           ":param callbacks: set of callback functions.")
+      .def("getCallbacks", &SolverDDP::getCallbacks,
+           bp::return_value_policy<bp::copy_const_reference>(),
+           bp::args("self"),
+           "Return the list of callback functions using for diagnostic.\n\n"
+           ":return set of callback functions.")
       .add_property("Vxx", make_function(&SolverDDP::get_Vxx, bp::return_value_policy<bp::copy_const_reference>()),
                     "Vxx")
       .add_property("Vx", make_function(&SolverDDP::get_Vx, bp::return_value_policy<bp::copy_const_reference>()), "Vx")
