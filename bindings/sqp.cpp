@@ -58,6 +58,8 @@ void exposeSolverSQP() {
 
       .add_property("KKT", bp::make_function(&SolverSQP::get_KKT),
                     "KKT residual norm")
+      .add_property("merit", bp::make_function(&SolverSQP::get_merit),
+                    "Merit function value")
 
       // .add_property("with_callbacks", bp::make_function(&SolverSQP::getCallbacks), bp::make_function(&SolverSQP::setCallbacks),
                     // "Activates the callbacks when true (default: False)")

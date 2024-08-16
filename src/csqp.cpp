@@ -423,7 +423,6 @@ void SolverCSQP::calc(const bool recalc){
   constraint_norm_ += (d_T->g - problem_->get_terminalModel()->get_g_ub()).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
   merit_ = cost_ + mu_dynamic_*gap_norm_ + mu_constraint_*constraint_norm_;
-
 }
 
 

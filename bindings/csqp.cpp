@@ -107,7 +107,9 @@ void exposeSolverCSQP() {
                     "Number of QP iterations")
       .add_property("KKT", bp::make_function(&SolverCSQP::get_KKT),
                     "KKT residual norm")
-                    
+      .add_property("merit", bp::make_function(&SolverCSQP::get_merit),
+                    "Merit function value")
+                          
       .add_property("mu_dynamic", bp::make_function(&SolverCSQP::get_mu_dynamic), bp::make_function(&SolverCSQP::set_mu_dynamic),
                     "Penalty weight for dynamic violation in the merit function (default: 10.)")
       .add_property("mu_constraint", bp::make_function(&SolverCSQP::get_mu_constraint), bp::make_function(&SolverCSQP::set_mu_constraint),
