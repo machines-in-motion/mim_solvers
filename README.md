@@ -28,7 +28,7 @@ Examples on how to use the solvers can be found in the `examples` directory.
 
 `make [-j6] && make install`
 
-You can also run unittests using `ctest -v` and benchmarks using `./benchmarks/ur5` or `./benchmarks/solo12` from the build directory.
+You can also run unittests using `ctest` and benchmarks using `./benchmarks/ur5` or `./benchmarks/solo12` from the build directory.
 
 
 # Contributors
@@ -42,3 +42,4 @@ You can also run unittests using `ctest -v` and benchmarks using `./benchmarks/u
 -   [Yann de Mont-Marin](https://github.com/ymontmarin) (INRIA): Conda integration and support
 -   [Louis Montaut](https://github.com/lmontaut) (INRIA): CMake support
 -   [Guilhem Saurel](https://github.com/nim65s) (LAAS-CNRS): CMake & pip packaging support
+-   [Jianghan ZHang](https://github.com/JianghanZHang) (NYU): features extension
