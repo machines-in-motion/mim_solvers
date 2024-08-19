@@ -38,6 +38,7 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
         self.verboseQP = verboseQP
         self.eps_abs = 1e-4
         self.eps_rel = 0.
+        self.OSQP_scaling = False
         
         self.BENCHMARK = True
         self.DEBUG = False
@@ -226,8 +227,8 @@ class QPSolvers(SolverAbstract, CustomOSQP, StagewiseQPKKT):
                 print("nnz(P) = ", P.count_nonzero(), " out of ", NNZ_block_P, " = ", 100* P.count_nonzero() / NNZ_block_P)
                 print("nnz(A) = ", Aosqp.count_nonzero(), " out of ", NNZ_block_A, " = ", 100* Aosqp.count_nonzero() / NNZ_block_A)
             prob = osqp.OSQP()
-            prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=False,  max_iter = self.max_qp_iters, \
-                            adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)     
+            prob.setup(P, q, Aosqp, losqp, uosqp, warm_start=False, scaling=self.OSQP_scaling,  max_iter = self.max_qp_iters, \
+                            adaptive_rho=True, verbose = self.verboseQP, eps_rel=self.eps_rel, eps_abs=self.eps_abs)                                 
             t1 = time.time()
             tmp = prob.solve()
             self.qp_time = time.time() - t1
