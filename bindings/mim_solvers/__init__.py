@@ -22,9 +22,9 @@ class CallbackLogger(CallbackAbstract):
             self.convergence_data[key].append(value)
 
         if solver_type == "CSQP":
-            safe_append('us', solver.us)
-            safe_append('xs', solver.xs)
-            safe_append('fs', solver.fs)
+            safe_append('us', copy.copy((solver.us)))
+            safe_append('xs', copy.copy((solver.xs)))
+            safe_append('fs', copy.copy((solver.fs)))
             safe_append("iter", solver.iter)
             safe_append("cost", solver.cost)
             safe_append("merit", solver.merit)
@@ -36,9 +36,9 @@ class CallbackLogger(CallbackAbstract):
             safe_append("qp_iter", solver.qp_iters)
             safe_append("KKT", solver.KKT)
         elif solver_type == "SQP":
-            safe_append('us', solver.us)
-            safe_append('xs', solver.xs)
-            safe_append('fs', solver.fs)
+            safe_append('us', copy.copy((solver.us)))
+            safe_append('xs', copy.copy((solver.xs)))
+            safe_append('fs', copy.copy((solver.fs)))
             safe_append("iter", solver.iter)
             safe_append("cost", solver.cost)
             safe_append("merit", solver.merit)

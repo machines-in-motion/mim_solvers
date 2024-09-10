@@ -157,11 +157,13 @@ bool SolverFDDP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
     }
     stoppingCriteria();
 
+    // Perform callbacks
     const std::size_t n_callbacks = callbacks_.size();
     for (std::size_t c = 0; c < n_callbacks; ++c) {
-      CallbackAbstract& callback = *callbacks_[c];
-      callback(*this);
+      mim_solvers::CallbackAbstract& callback = *callbacks_[c];
+      callback(*this, "SQP");
     }
+    
     // std::cout << "KKT = " << KKT_ << std::endl;
   }
   STOP_PROFILER("SolverFDDP::solve");
