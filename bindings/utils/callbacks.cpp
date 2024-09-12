@@ -5,7 +5,7 @@
 // Copyright note valid unless otherwise stated in individual files.
 // All rights reserved.
 ///////////////////////////////////////////////////////////////////////////////
-#define BOOST_BIND_NO_PLACEHOLDERS
+
 #include "mim_solvers/utils/callbacks.hpp"
 #include "mim_solvers/python.hpp"
 
