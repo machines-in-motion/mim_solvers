@@ -610,7 +610,8 @@ void SolverCSQP::forwardPass(const double stepLength){
 
     (void)stepLength;
 
-    START_PROFILER("SolverCSQP::forwardPass");
+    auto profiler = crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass");
+    profiler.start();
 
     const std::size_t T = problem_->get_T();
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
@@ -623,13 +624,14 @@ void SolverCSQP::forwardPass(const double stepLength){
       dxtilde_[t+1].noalias() += d->Fu * dutilde_[t];
       dxtilde_[t+1].noalias() += fs_[t+1];
     }
-    STOP_PROFILER("SolverCSQP::forwardPass");
+    profiler.stop();
 
 }
 
 
 void SolverCSQP::forwardPass_without_constraints(){
-    START_PROFILER("SolverCSQP::forwardPass_without_constraints");
+    auto profiler = crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass_without_constraints");
+    profiler.start();
 
     const std::size_t T = problem_->get_T();
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
@@ -643,14 +645,21 @@ void SolverCSQP::forwardPass_without_constraints(){
       dx_[t+1].noalias() += fs_[t+1];
     }
 
-    STOP_PROFILER("SolverCSQP::forwardPass_without_constraints");
-
+    profiler.stop();
 }
 
 
 
 void SolverCSQP::backwardPass() {
-  START_PROFILER("SolverCSQP::backwardPass");
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass");
+  static auto profiler_Qu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Qu");
+  static auto profiler_Quu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Quu");
+  static auto profiler_Qx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Qx");
+  static auto profiler_Qxu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Qxu");
+  static auto profiler_Qxx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Qxx");
+  static auto profiler_Vx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Vx");
+  static auto profiler_Vxx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Vxx");
+  profiler_all.start();
 
   const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
@@ -684,7 +693,7 @@ void SolverCSQP::backwardPass() {
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
-    START_PROFILER("SolverCSQP::backwardPass::Qx");
+    profiler_Qx.start();
     Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
     if (nc != 0){
@@ -697,10 +706,10 @@ void SolverCSQP::backwardPass() {
       Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
     Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
-    STOP_PROFILER("SolverCSQP::backwardPass::Qx");
+    profiler_Qx.stop();
 
 
-    START_PROFILER("SolverCSQP::backwardPass::Qxx");
+    profiler_Qxx.start();
     Qxx_[t] = d->Lxx; 
     Qxx_[t].diagonal().array() += sigma_;
     if (t > 0 && nc != 0){ 
@@ -708,19 +717,19 @@ void SolverCSQP::backwardPass() {
       Qxx_[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
     }
     Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
-    STOP_PROFILER("SolverCSQP::backwardPass::Qxx");
+    profiler_Qxx.stop();
 
     if (nu != 0) {
-      START_PROFILER("SolverCSQP::backwardPass::Qu");
+      profiler_Quu.start();
       FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0){ 
         Qu_[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
       Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
-      STOP_PROFILER("SolverCSQP::backwardPass::Qu");
+      profiler_Qu.stop();
 
-      START_PROFILER("SolverCSQP::backwardPass::Quu");
+      profiler_Quu.start();
       Quu_[t] = d->Luu; 
       Quu_[t].diagonal().array() += sigma_;
       Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
@@ -731,15 +740,15 @@ void SolverCSQP::backwardPass() {
       if (!std::isnan(dreg_)) {
         Quu_[t].diagonal().array() += dreg_;
       }
-      STOP_PROFILER("SolverCSQP::backwardPass::Quu");
+      profiler_Quu.stop();
 
-      START_PROFILER("SolverCSQP::backwardPass::Qxu");
+      profiler_Qxu.start();
       Qxu_[t] = d->Lxu;
       if (t > 0 && nc != 0){ 
         Qxu_[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
       }
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
-      STOP_PROFILER("SolverCSQP::backwardPass::Qxu");
+      profiler_Qxu.stop();
 
     }
     computeGains(t);
@@ -747,12 +756,12 @@ void SolverCSQP::backwardPass() {
     Vxx_[t] = Qxx_[t];
     if (nu != 0) {
       // Quuk_[t].noalias() = Quu_[t] * k_[t];
-      START_PROFILER("SolverCSQP::backwardPass::Vx");
+      profiler_Vx.start();
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
-      STOP_PROFILER("SolverCSQP::backwardPass::Vx");
-      START_PROFILER("SolverCSQP::backwardPass::Vxx");
+      profiler_Vx.stop();
+      profiler_Vxx.start();
       Vxx_[t].noalias() -= Qxu_[t] * K_[t];
-      STOP_PROFILER("SolverCSQP::backwardPass::Vxx");
+      profiler_Vxx.stop();
     }
     Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
     Vxx_[t] = Vxx_tmp_;
@@ -760,11 +769,20 @@ void SolverCSQP::backwardPass() {
       Vxx_[t].diagonal().array() += preg_;
     }
   }
-  STOP_PROFILER("SolverCSQP::backwardPass");
+  profiler_all.stop();
 }
 
 void SolverCSQP::backwardPass_without_constraints() {
-  START_PROFILER("SolverCSQP::backwardPass_without_constraints");
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints");
+  static auto profiler_Qu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Qu");
+  static auto profiler_Quu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Quu");
+  static auto profiler_Qx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Qx");
+  static auto profiler_Qxu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Qxu");
+  static auto profiler_Qxx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Qxx");
+  static auto profiler_Vx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Vx");
+  static auto profiler_Vxx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_constraints::Vxx");
+
+  profiler_all.start();
 
   const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
@@ -785,31 +803,31 @@ void SolverCSQP::backwardPass_without_constraints() {
     tmp_Vx_.noalias() += Vx_[t + 1];
     const std::size_t nu = m->get_nu();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
-    START_PROFILER("SolverCSQP::backwardPass_without_constraints::Qx");
+    profiler_Qx.start();
     Qx_[t] = d->Lx;
 
     Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
-    STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Qx");
-    START_PROFILER("SolverCSQP::backwardPass_without_constraints::Qxx");
+    profiler_Qx.stop();
+    profiler_Qxx.start();
     Qxx_[t] = d->Lxx;
     
     Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
-    STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Qxx");
+    profiler_Qxx.stop();
     if (nu != 0) {
       FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
-      START_PROFILER("SolverCSQP::backwardPass_without_constraints::Qu");
+      profiler_Qu.start();
       Qu_[t] = d->Lu;
       Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
 
-      STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Qu");
-      START_PROFILER("SolverCSQP::backwardPass_without_constraints::Quu");
+      profiler_Qu.stop();
+      profiler_Quu.start();
       Quu_[t] = d->Luu;
       Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
-      STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Quu");
-      START_PROFILER("SolverCSQP::backwardPass_without_constraints::Qxu");
+      profiler_Quu.stop();
+      profiler_Qxu.start();
       Qxu_[t] = d->Lxu; 
       Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
-      STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Qxu");
+      profiler_Qxu.stop();
 
       if (!std::isnan(dreg_)) {
         Quu_[t].diagonal().array() += dreg_;
@@ -823,9 +841,9 @@ void SolverCSQP::backwardPass_without_constraints() {
     if (nu != 0) {
       // Quuk_[t].noalias() = Quu_[t] * k_[t];
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
-      START_PROFILER("SolverCSQP::backwardPass_without_constraints::Vxx");
+      profiler_Vxx.start();
       Vxx_[t].noalias() -= Qxu_[t] * K_[t];
-      STOP_PROFILER("SolverCSQP::backwardPass_without_constraints::Vxx");
+      profiler_Vxx.stop();
     }
     Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
     Vxx_[t] = Vxx_tmp_;
@@ -834,17 +852,23 @@ void SolverCSQP::backwardPass_without_constraints() {
       Vxx_[t].diagonal().array() += preg_;
     }
   }
-  STOP_PROFILER("SolverCSQP::backwardPass_without_constraints");
+  profiler_all.stop();
 }
 
 
 void SolverCSQP::backwardPass_without_rho_update() {
-  START_PROFILER("SolverCSQP::backwardPass_without_rho_update");
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update");
+  static auto profiler_Vx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update::Vx");
+  static auto profiler_Qx = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update::Qx");
+  static auto profiler_Qu = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update::Qu");
+  static auto profiler_k = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update::k");
+
+  profiler_all.start();
 
   const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
   const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
-  START_PROFILER("SolverCSQP::backwardPass_without_rho_update::Vx");
+  profiler_Vx.start();
   Vx_.back() = d_T->Lx;
   Vx_.back().noalias() -= sigma_ * dx_.back();
 
@@ -853,7 +877,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
     tmp_dual_cwise_.back().noalias() -= rho_vec_.back().cwiseProduct(z_.back());
     Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
-  STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::Vx");
+  profiler_Vx.stop();
 
   const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
   const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
@@ -863,7 +887,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
 
-    START_PROFILER("SolverCSQP::backwardPass_without_rho_update::Qx");
+    profiler_Qx.start();
     tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
     Qx_[t] = d->Lx;
     Qx_[t].noalias() -= sigma_ * dx_[t];
@@ -878,39 +902,39 @@ void SolverCSQP::backwardPass_without_rho_update() {
     }
     Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
 
-    STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::Qx");
+    profiler_Qx.stop();
 
     if (nu != 0) {
-      START_PROFILER("SolverCSQP::backwardPass_without_rho_update::Qu");
+      profiler_Qu.start();
       Qu_[t] = d->Lu;
       Qu_[t].noalias() -= sigma_ * du_[t];
       if (nc != 0){ 
         Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
       Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
-      STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::Qu");
+      profiler_Qu.stop();
     }
 
-    START_PROFILER("SolverCSQP::backwardPass_without_rho_update::k");
+    profiler_k.start();
     k_[t] = Qu_[t];
     Quu_llt_[t].solveInPlace(k_[t]);
-    STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::k");
+    profiler_k.stop();
 
-    START_PROFILER("SolverCSQP::backwardPass_without_rho_update::Vx");
+    profiler_Vx.start();
     Vx_[t] = Qx_[t];
     if (nu != 0) {
       Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
     }
-    STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update::Vx");
+    profiler_Vx.stop();
   }
-  STOP_PROFILER("SolverCSQP::backwardPass_without_rho_update");
+  profiler_all.stop();
 }
 
 
 void SolverCSQP::update_lagrangian_parameters(int iter){
-    START_PROFILER("SolverCSQP::update_lagrangian_parameters");
+    static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::update_lagrangian_parameters");
+    profiler_all.start();
 
-    START_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
     norm_primal_ = -1* std::numeric_limits<double>::infinity();
     norm_dual_ = -1* std::numeric_limits<double>::infinity();
     norm_primal_rel_ = -1* std::numeric_limits<double>::infinity();
@@ -920,12 +944,8 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
     const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
 
     const std::size_t T = problem_->get_T();
-    STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
 
     for (std::size_t t = 0; t < T; ++t) {    
-
-      START_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
-
       const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
@@ -957,9 +977,6 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
       du_[t] = dutilde_[t];
 
 
-      STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
-
-      START_PROFILER("SolverCSQP::update_lagrangian_parameters::norms");
       if (iter % rho_update_interval_ == 0){
         if (update_rho_with_heuristic_){
           tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
@@ -985,18 +1002,14 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
           norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
         }
       } 
-      STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::norms");
     }
 
-    START_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
     dx_.back() = dxtilde_.back();
     const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
     const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
     std::size_t nc = m_T->get_ng();
-    STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
 
     if (nc != 0){
-      START_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
       z_prev_.back() = z_.back();
       tmp_Cdx_Cdu_.back().noalias() = d_T->Gx * dxtilde_.back() ;
       z_relaxed_.back().noalias() = alpha_ * tmp_Cdx_Cdu_.back();
@@ -1007,9 +1020,6 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
       z_.back() = z_.back().cwiseMax(m_T->get_g_lb() - d_T->g).cwiseMin(m_T->get_g_ub() - d_T->g);
       y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
       
-      STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
-
-      START_PROFILER("SolverCSQP::update_lagrangian_parameters::norms");
       if (iter % rho_update_interval_ == 0){
         if (update_rho_with_heuristic_){
           tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
@@ -1033,8 +1043,7 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
         }
       }
     }
-    STOP_PROFILER("SolverCSQP::update_lagrangian_parameters::norms");
-    STOP_PROFILER("SolverCSQP::update_lagrangian_parameters");
+    profiler_all.stop();
 }
 
 
@@ -1045,7 +1054,8 @@ double SolverCSQP::tryStep(const double steplength) {
                     << "invalid step length, value is between 0. to 1.");
     }
 
-    START_PROFILER("SolverCSQP::tryStep");
+    static auto profiler_tryStep = crocoddyl::getProfiler().watcher("SolverCSQP::tryStep");
+    profiler_tryStep.start();
     cost_try_ = 0.;
     merit_try_ = 0;
     gap_norm_try_ = 0;
@@ -1085,7 +1095,7 @@ double SolverCSQP::tryStep(const double steplength) {
       constraint_norm_try_ += (d->g - m->get_g_ub()).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
       if (raiseIfNaN(cost_try_)) {
-        STOP_PROFILER("SolverCSQP::tryStep");
+        profiler_tryStep.stop();
         throw_pretty("step_error");
       }   
     }
@@ -1102,11 +1112,11 @@ double SolverCSQP::tryStep(const double steplength) {
     merit_try_ = cost_try_ + mu_dynamic_*gap_norm_try_ + mu_constraint_*constraint_norm_try_;
 
     if (raiseIfNaN(cost_try_)) {
-        STOP_PROFILER("SolverCSQP::tryStep");
+        profiler_tryStep.stop();
         throw_pretty("step_error");
     }
 
-    STOP_PROFILER("SolverCSQP::tryStep");
+    profiler_tryStep.stop();
 
     return merit_try_;
 }
