@@ -303,6 +303,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
 
 
     // We need to recalculate the derivatives when the step length passes
+    bool found = false;
     for (std::vector<double>::const_iterator it = alphas_.begin(); it != alphas_.end(); ++it) {
       steplength_ = *it;
       try {
@@ -320,6 +321,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         }
         if( is_worse_than_memory_ == false ) {
           setCandidate(xs_try_, us_try_, false);
+          found = true;
           break;
         } 
       }
@@ -327,11 +329,13 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       else{
         if (merit_ > merit_try_) {
           setCandidate(xs_try_, us_try_, false);
+          found = true;
           break;
         }
       }
     }
-
+    if (!found)
+      break;
 
     // Regularization logic
     if(remove_reg_ == false){
