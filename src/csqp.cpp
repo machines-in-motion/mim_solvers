@@ -461,10 +461,20 @@ void SolverCSQP::computeDirection(const bool recalcDiff){
   for (std::size_t iter = 1; iter < max_qp_iters_+1; ++iter){
     
     if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1){
-      backwardPass();
+#ifdef CROCODDYL_WITH_MULTITHREADING
+      if (problem_->get_nthreads() > 1)
+        backwardPass_mt();
+      else
+#endif // CROCODDYL_WITH_MULTITHREADING
+        backwardPass();
     }
     else{
-      backwardPass_without_rho_update();
+#ifdef CROCODDYL_WITH_MULTITHREADING
+      if (problem_->get_nthreads() > 1)
+        backwardPass_without_rho_update_mt();
+      else
+#endif // CROCODDYL_WITH_MULTITHREADING
+        backwardPass_without_rho_update();
     }
     forwardPass();
     update_lagrangian_parameters(iter);
@@ -867,6 +877,124 @@ void SolverCSQP::backwardPass_without_constraints() {
   profiler_all.stop();
 }
 
+void SolverCSQP::backwardPass_mt() {
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_mt");
+  static auto profiler_lock = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_mt::lock");
+  profiler_all.start();
+
+  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
+
+  Vxx_.back() = d_T->Lxx; 
+  Vxx_.back().diagonal().array() += sigma_;
+  Vx_.back() = d_T->Lx;
+  Vx_.back().noalias() -= sigma_ * dx_.back();
+
+
+  if (problem_->get_terminalModel()->get_ng()){  
+    tmp_rhoGx_mat_.back().noalias() = rho_vec_.back().asDiagonal() * d_T->Gx;
+    Vxx_.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
+    tmp_dual_cwise_.back() = y_.back() - rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+  }
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
+  }
+
+  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+#pragma omp parallel for num_threads(problem_->get_nthreads())
+  for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
+    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::size_t nu = m->get_nu();
+    std::size_t nc = m->get_ng();
+    
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dx_[t];
+    if (nc != 0){
+      if (t > 0 || nu != 0){
+      tmp_dual_cwise_[t] = y_[t]; 
+      tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
+      }
+    }
+    if (t > 0 && nc != 0){ 
+      Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
+    }
+    
+    Qxx_[t] = d->Lxx; 
+    Qxx_[t].diagonal().array() += sigma_;
+    if (t > 0 && nc != 0){ 
+      tmp_rhoGx_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gx;
+      Qxx_[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
+    }
+
+    if (nu != 0) {
+      Qu_[t] = d->Lu - sigma_ * du_[t];
+      if (nc != 0){ 
+        Qu_[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
+      }
+      
+      Quu_[t] = d->Luu; 
+      Quu_[t].diagonal().array() += sigma_;
+      if (nc != 0){ 
+        tmp_rhoGu_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gu;
+        Quu_[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
+      }
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
+      }
+
+      Qxu_[t] = d->Lxu;
+      if (t > 0 && nc != 0){ 
+        Qxu_[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
+      }
+    }
+  }
+
+  profiler_lock.start();
+  for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
+    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::size_t nu = m->get_nu();
+
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
+    FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
+    Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
+
+    Vxx_fs_[t].noalias() = Vxx_[t+1] * fs_[t+1];
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    if (nu != 0) {
+      FuTVxx_p_[0].noalias() = d->Fu.transpose() * Vxx_p;
+      Quu_[t].noalias() += FuTVxx_p_[0] * d->Fu;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
+    }
+
+
+    computeGains(t);
+    Vx_[t] = Qx_[t];
+    Vxx_[t] = Qxx_[t];
+    if (nu != 0) {
+      // Quuk_[t].noalias() = Quu_[t] * k_[t];
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+      
+      Vxx_[t].noalias() -= Qxu_[t] * K_[t];
+    }
+    // The commented version is theoretically slower.
+    // Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
+    Vxx_tmp_.triangularView<Eigen::Upper>() = (0.5 * (Vxx_[t] + Vxx_[t].transpose())).triangularView<Eigen::Upper>();
+    // Vxx_[t] = Vxx_tmp_;
+    Vxx_[t] = Vxx_tmp_.selfadjointView<Eigen::Upper>();
+
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
+    }
+  }
+  profiler_lock.stop();
+  profiler_all.stop();
+}
+
 
 void SolverCSQP::backwardPass_without_rho_update() {
   static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_without_rho_update");
@@ -942,6 +1070,81 @@ void SolverCSQP::backwardPass_without_rho_update() {
   profiler_all.stop();
 }
 
+void SolverCSQP::backwardPass_without_rho_update_mt() {
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_wo_rho_update_mt");
+  static auto profiler_mt1 = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_wo_rho_update_mt::init_Qx_Qu");
+  static auto profiler_pass = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_wo_rho_update_mt::update_Qx_Qu_Vx");
+  static auto profiler_mt2 = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_wo_rho_update_mt::k");
+
+  profiler_all.start();
+
+  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
+  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
+
+  Vx_.back().noalias() = d_T->Lx - sigma_ * dx_.back();
+
+  if (m_T->get_ng()){ // constraint model
+    tmp_dual_cwise_.back().noalias() = y_.back() - rho_vec_.back().cwiseProduct(z_.back());
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+  }
+
+  profiler_mt1.start();
+#ifdef CROCODDYL_WITH_MULTITHREADING
+#pragma omp parallel for num_threads(problem_->get_nthreads())
+#endif // CROCODDYL_WITH_MULTITHREADING
+  for (int t = 0; t < static_cast<int>(problem_->get_T()); ++t) {
+    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::size_t nu = m->get_nu();
+    const std::size_t nc = m->get_ng();
+
+    Qx_[t].noalias() = d->Lx - sigma_ * dx_[t];
+    if (nc != 0 && (t > 0 || nu != 0)) {
+      tmp_dual_cwise_[t].noalias() = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
+    }
+    if (t > 0 && nc != 0){ 
+      Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+    }
+
+    if (nu != 0) {
+      Qu_[t].noalias() = d->Lu - sigma_ * du_[t];
+      if (nc != 0){ 
+        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
+      }
+    }
+  }
+  profiler_mt1.stop();
+
+  profiler_pass.start();
+  for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
+    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::size_t nu = m->get_nu();
+
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Vx_[t] = Qx_[t];
+
+    if (nu != 0) {
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+    }
+  }
+  profiler_pass.stop();
+
+  profiler_mt2.start();
+#ifdef CROCODDYL_WITH_MULTITHREADING
+#pragma omp parallel for num_threads(problem_->get_nthreads())
+#endif // CROCODDYL_WITH_MULTITHREADING
+  for (int t = 0; t < static_cast<int>(problem_->get_T()); ++t) {
+    k_[t] = Qu_[t];
+    Quu_llt_[t].solveInPlace(k_[t]);
+  }
+  profiler_mt2.stop();
+  profiler_all.stop();
+}
 
 void SolverCSQP::update_lagrangian_parameters(int iter){
     static auto profiler_all = crocoddyl::getProfiler().watcher("SolverCSQP::update_lagrangian_parameters");
@@ -957,6 +1160,9 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
 
     const std::size_t T = problem_->get_T();
 
+#ifdef CROCODDYL_WITH_MULTITHREADING
+#pragma omp parallel for num_threads(problem_->get_nthreads()) reduction(max:norm_primal_, norm_dual_, norm_primal_rel_, norm_dual_rel_)
+#endif // CROCODDYL_WITH_MULTITHREADING
     for (std::size_t t = 0; t < T; ++t) {    
       const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
@@ -1093,6 +1299,9 @@ double SolverCSQP::tryStep(const double steplength) {
 
     m_ter->get_state()->integrate(xs_.back(), steplength * dx_.back(), xs_try_.back()); 
 
+#ifdef CROCODDYL_WITH_MULTITHREADING
+#pragma omp parallel for num_threads(problem_->get_nthreads()) reduction(+:cost_try_, gap_norm_try_, constraint_norm_try_)
+#endif // CROCODDYL_WITH_MULTITHREADING
     for (std::size_t t = 0; t < T; ++t) {
       const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
       const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];

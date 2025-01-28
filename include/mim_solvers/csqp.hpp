@@ -89,6 +89,8 @@ class SolverCSQP : public SolverDDP {
   virtual void backwardPass();
   virtual void backwardPass_without_rho_update();
   virtual void backwardPass_without_constraints();
+  virtual void backwardPass_mt();
+  virtual void backwardPass_without_rho_update_mt();
 
   /**
    * @brief Computes the merit function, gaps at the given xs, us along with delta x and delta u
