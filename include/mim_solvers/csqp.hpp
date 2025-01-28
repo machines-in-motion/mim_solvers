@@ -216,6 +216,7 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::VectorXd> dx_;                            //!< the descent direction for x
   std::vector<Eigen::VectorXd> du_;                            //!< the descent direction for u
   std::vector<Eigen::VectorXd> lag_mul_;                       //!< the Lagrange multiplier of the dynamics constraint
+  double lag_mul_inf_norm_;                                    //!< the infinite norm of Lagrange multiplier
   Eigen::VectorXd fs_flat_;                                    //!< Gaps/defects between shooting nodes (1D array)
   bool use_filter_line_search_ = true;                         //!< Use filter line search
 
