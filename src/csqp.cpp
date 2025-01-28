@@ -588,12 +588,10 @@ void SolverCSQP::checkKKTConditions(){
   x_grad_norm_ = 0; 
   u_grad_norm_ = 0;
 
-  for (std::size_t t = 0; t < T; ++t) {
+  for (std::size_t t = 0; t < T + 1; ++t) {
     lag_mul_[t].noalias() = Vx_[t];
     lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
   }
-  lag_mul_.back().noalias() = Vx_.back();
-  lag_mul_.back().noalias() += Vxx_.back() * dxtilde_.back() ;
   const std::size_t ndx = problem_->get_ndx();
   const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
@@ -1207,17 +1205,14 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
         } 
         else {
           tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
-          tmp_vec_x_.noalias() = d->Gx.transpose() * tmp_dual_cwise_[t];
-          tmp_vec_u_[t].noalias() = d->Gu.transpose() * tmp_dual_cwise_[t];
-          norm_dual_ = std::max(norm_dual_, std::max(tmp_vec_x_.lpNorm<Eigen::Infinity>(), tmp_vec_u_[t].lpNorm<Eigen::Infinity>()));
+          norm_dual_ = std::max(norm_dual_, (d->Gx.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
+          norm_dual_ = std::max(norm_dual_, (d->Gu.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
           norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_[t] - z_[t]).lpNorm<Eigen::Infinity>());
           
           norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_[t].lpNorm<Eigen::Infinity>());
           norm_primal_rel_= std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
-          tmp_vec_x_.noalias() = d->Gx.transpose() * y_[t];
-          tmp_vec_u_[t].noalias() = d->Gu.transpose() * y_[t];
-          norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
-          norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
+          norm_dual_rel_ = std::max(norm_dual_rel_, (d->Gx.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+          norm_dual_rel_ = std::max(norm_dual_rel_, (d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
         }
       } 
     }
@@ -1250,14 +1245,12 @@ void SolverCSQP::update_lagrangian_parameters(int iter){
         }
         else {
           tmp_dual_cwise_.back() = rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
-          tmp_vec_x_.noalias() = d_T->Gx.transpose() * tmp_dual_cwise_.back();
-          norm_dual_ = std::max(norm_dual_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+          norm_dual_ = std::max(norm_dual_, (d_T->Gx.transpose() * tmp_dual_cwise_.back()).lpNorm<Eigen::Infinity>());
           norm_primal_ = std::max(norm_primal_, (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
 
           norm_primal_rel_= std::max(norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
           norm_primal_rel_= std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-          tmp_vec_x_.noalias() = d_T->Gx.transpose() * y_.back();
-          norm_dual_rel_ = std::max(norm_dual_rel_, tmp_vec_x_.lpNorm<Eigen::Infinity>());
+          norm_dual_rel_ = std::max(norm_dual_rel_, (d_T->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
         }
       }
     }
