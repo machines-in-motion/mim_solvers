@@ -297,6 +297,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
       lag_mul_inf_norm_ = 0;
       for (auto const& lag_mul : lag_mul_)
         lag_mul_inf_norm_ = std::max(lag_mul_inf_norm_, lag_mul.lpNorm<Eigen::Infinity>());
+      for (auto const&y : y_)
+        lag_mul_inf_norm_ = std::max(lag_mul_inf_norm_, y.lpNorm<Eigen::Infinity>());
       merit_ = cost_ + lag_mul_inf_norm_ * (gap_norm_ + constraint_norm_);
     } else
       merit_ = cost_ + mu_dynamic_ * gap_norm_ + mu_constraint_ * constraint_norm_;
