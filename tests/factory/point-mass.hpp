@@ -69,19 +69,19 @@ class DAMPointMass1D
     virtual ~DAMPointMass1D();
 
     // Cost & dynamics
-    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calc(const std::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x,
               const Eigen::Ref<const VectorXd>& u);
-    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calc(const std::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x);
-    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calcDiff(const std::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x,
                   const Eigen::Ref<const VectorXd>& u);
-    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calcDiff(const std::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x);
 
-    virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
-    virtual bool checkData(const boost::shared_ptr<DifferentialActionDataAbstract>& data);
+    virtual std::shared_ptr<DifferentialActionDataAbstract> createData();
+    virtual bool checkData(const std::shared_ptr<DifferentialActionDataAbstract>& data);
     virtual void print(std::ostream& os) const;
 
   protected:
@@ -93,7 +93,7 @@ class DAMPointMass1D
     VectorXd x_weights_terminal_;
     VectorXd target_;
   
-    boost::shared_ptr<StateAbstract> state_;  //!< Model of the state
+    std::shared_ptr<StateAbstract> state_;  //!< Model of the state
     using DAMBase::g_lb_;            //!< Lower bound of the inequality constraints
     using DAMBase::g_ub_;            //!< Lower bound of the inequality constraints
     // VectorXs u_lb_;            //!< Lower control limits
@@ -161,19 +161,19 @@ class DAMPointMass2D
     virtual ~DAMPointMass2D();
 
     // Cost & dynamics
-    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calc(const std::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x,
               const Eigen::Ref<const VectorXd>& u);
-    void calc(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calc(const std::shared_ptr<DifferentialActionDataAbstract>& data,
               const Eigen::Ref<const VectorXd>& x);
-    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calcDiff(const std::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x,
                   const Eigen::Ref<const VectorXd>& u);
-    void calcDiff(const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    void calcDiff(const std::shared_ptr<DifferentialActionDataAbstract>& data,
                   const Eigen::Ref<const VectorXd>& x);
 
-    virtual boost::shared_ptr<DifferentialActionDataAbstract> createData();
-    virtual bool checkData(const boost::shared_ptr<DifferentialActionDataAbstract>& data);
+    virtual std::shared_ptr<DifferentialActionDataAbstract> createData();
+    virtual bool checkData(const std::shared_ptr<DifferentialActionDataAbstract>& data);
     virtual void print(std::ostream& os) const;
 
   protected:
@@ -185,7 +185,7 @@ class DAMPointMass2D
     VectorXd x_weights_terminal_;
     VectorXd target_;
   
-    boost::shared_ptr<StateAbstract> state_;  //!< Model of the state
+    std::shared_ptr<StateAbstract> state_;  //!< Model of the state
     using DAMBase::g_lb_;            //!< Lower bound of the inequality constraints
     using DAMBase::g_ub_;            //!< Lower bound of the inequality constraints
     // VectorXs u_lb_;            //!< Lower control limits

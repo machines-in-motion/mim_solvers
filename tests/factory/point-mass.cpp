@@ -21,9 +21,9 @@ DAMPointMass1D::DAMPointMass1D(const std::size_t ng,
                                const bool u_ineq,
                                const bool isInitial,
                                const bool isTerminal)
-    : DAMBase(boost::make_shared<crocoddyl::StateVector>(2), 1, 1, ng) {
+    : DAMBase(std::make_shared<crocoddyl::StateVector>(2), 1, 1, ng) {
   
-  state_ = boost::make_shared<crocoddyl::StateVector>(2);
+  state_ = std::make_shared<crocoddyl::StateVector>(2);
 
   // Check constraint consistency (safe-guard for bugs in external logic)
   if((u_eq && isTerminal)||(u_ineq && isTerminal)){
@@ -99,7 +99,7 @@ DAMPointMass1D::~DAMPointMass1D() {}
 
 
 void DAMPointMass1D::calc(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x,
     const Eigen::Ref<const VectorXd>& u) {
   // Compute running cost 
@@ -119,7 +119,7 @@ void DAMPointMass1D::calc(
 }
 
 void DAMPointMass1D::calc(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x) {
   // Compute terminal cost
   data->cost = 0.5*pow(x_weights_terminal_[0]*(x[0] - target_[0]), 2);
@@ -135,7 +135,7 @@ void DAMPointMass1D::calc(
 }
 
 void DAMPointMass1D::calcDiff(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x, 
     const Eigen::Ref<const VectorXd>& u) {
   // Compute running cost derivatives
@@ -159,7 +159,7 @@ void DAMPointMass1D::calcDiff(
 }
 
 void DAMPointMass1D::calcDiff(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x) {
   // Compute terminal cost derivatives
   data->Lx[0] = x_weights_terminal_[0] * (x[0] - target_[0]);
@@ -178,15 +178,15 @@ void DAMPointMass1D::calcDiff(
 
 
 
-boost::shared_ptr<crocoddyl::DifferentialActionDataAbstract >
+std::shared_ptr<crocoddyl::DifferentialActionDataAbstract >
 DAMPointMass1D::createData() {
-  return boost::allocate_shared<DADPointMass1D>(Eigen::aligned_allocator<DADPointMass1D>(), this);
+  return std::allocate_shared<DADPointMass1D>(Eigen::aligned_allocator<DADPointMass1D>(), this);
 }
 
 
 bool DAMPointMass1D::checkData(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data) {
-  boost::shared_ptr<DADPointMass1D> d = boost::dynamic_pointer_cast<DADPointMass1D>(data);
+    const std::shared_ptr<DifferentialActionDataAbstract>& data) {
+  std::shared_ptr<DADPointMass1D> d = std::dynamic_pointer_cast<DADPointMass1D>(data);
   if (d != NULL) {
     return true;
   } else {
@@ -217,9 +217,9 @@ DAMPointMass2D::DAMPointMass2D(const std::size_t ng,
                                const bool u_ineq,
                                const bool isInitial,
                                const bool isTerminal)
-    : DAMBase(boost::make_shared<crocoddyl::StateVector>(4), 2, 1, ng) {
+    : DAMBase(std::make_shared<crocoddyl::StateVector>(4), 2, 1, ng) {
 
-  state_ = boost::make_shared<crocoddyl::StateVector>(4);
+  state_ = std::make_shared<crocoddyl::StateVector>(4);
 
   // Check constraint consistency (safe-guard for bugs in external logic)
   if((u_eq && isTerminal)||(u_ineq && isTerminal)){
@@ -301,7 +301,7 @@ DAMPointMass2D::~DAMPointMass2D() {}
 
 
 void DAMPointMass2D::calc(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x,
     const Eigen::Ref<const VectorXd>& u) {
   // Compute running cost 
@@ -322,7 +322,7 @@ void DAMPointMass2D::calc(
 }
 
 void DAMPointMass2D::calc(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x) {
   // Compute terminal cost 
   data->cost = pow(x_weights_terminal_[0]*(x[0] - target_[0]), 2); 
@@ -341,7 +341,7 @@ void DAMPointMass2D::calc(
 }
 
 void DAMPointMass2D::calcDiff(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x, 
     const Eigen::Ref<const VectorXd>& u) {
   // Compute running cost derivatives
@@ -369,7 +369,7 @@ void DAMPointMass2D::calcDiff(
 
 
 void DAMPointMass2D::calcDiff(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data,
+    const std::shared_ptr<DifferentialActionDataAbstract>& data,
     const Eigen::Ref<const VectorXd>& x) {
   // Compute terminal cost derivatives
   data->Lx[0] = x_weights_terminal_[0] * (x[0] - target_[0]);
@@ -393,15 +393,15 @@ void DAMPointMass2D::calcDiff(
 }
 
 
-boost::shared_ptr<crocoddyl::DifferentialActionDataAbstract >
+std::shared_ptr<crocoddyl::DifferentialActionDataAbstract >
 DAMPointMass2D::createData() {
-  return boost::allocate_shared<DADPointMass2D>(Eigen::aligned_allocator<DADPointMass2D>(), this);
+  return std::allocate_shared<DADPointMass2D>(Eigen::aligned_allocator<DADPointMass2D>(), this);
 }
 
 
 bool DAMPointMass2D::checkData(
-    const boost::shared_ptr<DifferentialActionDataAbstract>& data) {
-  boost::shared_ptr<DADPointMass2D> d = boost::dynamic_pointer_cast<DADPointMass2D>(data);
+    const std::shared_ptr<DifferentialActionDataAbstract>& data) {
+  std::shared_ptr<DADPointMass2D> d = std::dynamic_pointer_cast<DADPointMass2D>(data);
   if (d != NULL) {
     return true;
   } else {

@@ -62,7 +62,7 @@ class SolverFDDP : public SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverFDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverFDDP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverFDDP();
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,

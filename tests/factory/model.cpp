@@ -42,14 +42,14 @@ std::ostream& operator<<(std::ostream& os, ModelTypes::Type type) {
 ModelFactory::ModelFactory() {}
 ModelFactory::~ModelFactory() {}
 
-boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::create(
+std::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::create(
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type,
       bool isInitial,
       bool isTerminal) const {
   
-  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> model;
+  std::shared_ptr<crocoddyl::DifferentialActionModelAbstract> model;
 
   bool x_eq = false;
   bool x_ineq = false;
@@ -91,7 +91,7 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
       } else {
         ng = ng_x + ng_u;
       }
-      model = boost::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
+      model = std::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     case ModelTypes::PointMass2D:
       if(x_eq || x_ineq){
@@ -107,7 +107,7 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
       } else {
         ng = ng_x + ng_u;
       }
-      model = boost::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
+      model = std::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
       break;
     default:
       throw_pretty(__FILE__ ": Wrong ModelTypes::Type given");

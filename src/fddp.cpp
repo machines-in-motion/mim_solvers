@@ -22,7 +22,7 @@ using namespace crocoddyl;
 
 namespace mim_solvers {
 
-SolverFDDP::SolverFDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
+SolverFDDP::SolverFDDP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverDDP(problem), dg_(0), dq_(0), dv_(0), th_acceptnegstep_(2) {
       std::cerr << "Warning: Do not use mim_solvers.SolverFDDP !!! " << std::endl;
       std::cerr << "It may differ significantly from its Crocoddyl counterpart. " << std::endl;
@@ -191,15 +191,15 @@ void SolverFDDP::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     KKT_ = std::max(KKT_, (d->Lx + d->Fx.transpose() * lag_mul_[t+1] - lag_mul_[t]).lpNorm<Eigen::Infinity>());
     KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lag_mul_[t+1]).lpNorm<Eigen::Infinity>());
     fs_flat_.segment(t*ndx, ndx) = fs_[t];
   }
   fs_flat_.tail(ndx) = fs_.back();
-  const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
+  const std::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
   KKT_ = std::max(KKT_, (d_ter->Lx - lag_mul_.back()).lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
 }
@@ -215,7 +215,7 @@ const Eigen::Vector2d& SolverFDDP::expectedImprovement() {
     problem_->get_terminalModel()->get_state()->diff(xs_try_.back(), xs_.back(), dx_.back());
     fTVxx_p_.noalias() = Vxx_.back() * dx_.back();
     dv_ -= fs_.back().dot(fTVxx_p_);
-    const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+    const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
 
     for (std::size_t t = 0; t < T; ++t) {
       models[t]->get_state()->diff(xs_try_[t], xs_[t], dx_[t]);
@@ -237,7 +237,7 @@ void SolverFDDP::updateExpectedImprovement() {
     fTVxx_p_.noalias() = Vxx_.back() * fs_.back();
     dq_ += fs_.back().dot(fTVxx_p_);
   }
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
     const std::size_t nu = models[t]->get_nu();
     if (nu != 0) {
@@ -262,12 +262,12 @@ void SolverFDDP::forwardPass(const double steplength) {
   gap_norm_try_ = 0;
   xnext_ = problem_->get_x0();
   const std::size_t T = problem_->get_T();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   if ((is_feasible_) || (steplength == 1)) {
     for (std::size_t t = 0; t < T; ++t) {
-      const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-      const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+      const std::shared_ptr<ActionModelAbstract>& m = models[t];
+      const std::shared_ptr<ActionDataAbstract>& d = datas[t];
       const std::size_t nu = m->get_nu();
       //compute Lagrange multipliers for KKT condition check
       lag_mul_[t].noalias() = Vxx_[t] * dx_[t] + Vx_[t];
@@ -295,8 +295,8 @@ void SolverFDDP::forwardPass(const double steplength) {
       }
     }
 
-    const boost::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
-    const boost::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
+    const std::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
+    const std::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
     lag_mul_.back() = Vxx_.back() * dx_.back() + Vx_.back();  
     xs_try_.back() = xnext_;
     m->calc(d, xs_try_.back());
@@ -308,8 +308,8 @@ void SolverFDDP::forwardPass(const double steplength) {
     }
   } else {
     for (std::size_t t = 0; t < T; ++t) {
-      const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-      const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+      const std::shared_ptr<ActionModelAbstract>& m = models[t];
+      const std::shared_ptr<ActionDataAbstract>& d = datas[t];
       const std::size_t nu = m->get_nu();
       lag_mul_[t].noalias() = Vxx_[t] * (dx_[t] - fs_[t]) + Vx_[t]; 
       m->get_state()->integrate(xnext_, fs_[t] * (steplength - 1), xs_try_[t]);
@@ -336,8 +336,8 @@ void SolverFDDP::forwardPass(const double steplength) {
       }
     }
 
-    const boost::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
-    const boost::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
+    const std::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
+    const std::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
     lag_mul_.back() = Vxx_.back() * (dx_.back() - fs_.back()) + Vx_.back();  
     m->get_state()->integrate(xnext_, fs_.back() * (steplength - 1), xs_try_.back());
     m->calc(d, xs_try_.back());

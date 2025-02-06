@@ -42,7 +42,7 @@ int main(){
     // LOADING THE ROBOT AND INIT VARIABLES
 
     std::string urdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/solo_description/robots/solo12.urdf";
-    boost::shared_ptr<pinocchio::Model> rmodel = boost::make_shared<pinocchio::Model>();
+    std::shared_ptr<pinocchio::Model> rmodel = std::make_shared<pinocchio::Model>();
     pinocchio::urdf::buildModel(urdf_path, pinocchio::JointModelFreeFlyer(), *rmodel.get());
 
     // rmodel->type = "QUADRUPED";
@@ -97,13 +97,13 @@ int main(){
 
 
     // Crocoddyl variables
-    boost::shared_ptr<crocoddyl::StateMultibody> state = boost::make_shared<crocoddyl::StateMultibody>(rmodel);
-    boost::shared_ptr<crocoddyl::ActuationModelFloatingBase> actuation = boost::make_shared<crocoddyl::ActuationModelFloatingBase>(state);
+    std::shared_ptr<crocoddyl::StateMultibody> state = std::make_shared<crocoddyl::StateMultibody>(rmodel);
+    std::shared_ptr<crocoddyl::ActuationModelFloatingBase> actuation = std::make_shared<crocoddyl::ActuationModelFloatingBase>(state);
     const int nu = actuation->get_nu();
 
     // CREATING RUNNING MODELS
-    std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract> > runningModels;
-    boost::shared_ptr<crocoddyl::IntegratedActionModelEuler> terminal_model;
+    std::vector< std::shared_ptr<crocoddyl::ActionModelAbstract> > runningModels;
+    std::shared_ptr<crocoddyl::IntegratedActionModelEuler> terminal_model;
 
     const double state_reg_weight = 1e-1;
     const double control_reg_weight = 1e-3;
@@ -115,11 +115,11 @@ int main(){
     stateWeights.segment(nv+6, nv-6) << (Eigen::VectorXd::Constant(nv-6, 1.0));
 
     for (unsigned t = 0; t < N_ocp + 1; ++t){
-        boost::shared_ptr<crocoddyl::ContactModelMultiple> contactModel = boost::make_shared<crocoddyl::ContactModelMultiple>(state, nu);
-        boost::shared_ptr<crocoddyl::CostModelSum> costModel = boost::make_shared<crocoddyl::CostModelSum>(state, nu);
+        std::shared_ptr<crocoddyl::ContactModelMultiple> contactModel = std::make_shared<crocoddyl::ContactModelMultiple>(state, nu);
+        std::shared_ptr<crocoddyl::CostModelSum> costModel = std::make_shared<crocoddyl::CostModelSum>(state, nu);
 
         for (unsigned idx = 0; idx < supportFeetIds.size(); ++idx){
-            boost::shared_ptr<crocoddyl::ContactModel3D> support_contact = boost::make_shared<crocoddyl::ContactModel3D>(
+            std::shared_ptr<crocoddyl::ContactModel3D> support_contact = std::make_shared<crocoddyl::ContactModel3D>(
                                                                                     state, 
                                                                                     supportFeetIds[idx],
                                                                                     Eigen::Vector3d::Zero(),
@@ -129,9 +129,9 @@ int main(){
                                                                                 );
             contactModel->addContact(rmodel->frames[supportFeetIds[idx]].name + "_contact", support_contact);
         }
-        boost::shared_ptr<crocoddyl::ResidualModelState> stateResidual = boost::make_shared<crocoddyl::ResidualModelState>(state, x0, nu);
-        boost::shared_ptr<crocoddyl::ActivationModelWeightedQuad> stateActivation = boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights.array().square());
-        boost::shared_ptr<crocoddyl::CostModelResidual> stateReg = boost::make_shared<crocoddyl::CostModelResidual>(state, stateActivation, stateResidual);
+        std::shared_ptr<crocoddyl::ResidualModelState> stateResidual = std::make_shared<crocoddyl::ResidualModelState>(state, x0, nu);
+        std::shared_ptr<crocoddyl::ActivationModelWeightedQuad> stateActivation = std::make_shared<crocoddyl::ActivationModelWeightedQuad>(stateWeights.array().square());
+        std::shared_ptr<crocoddyl::CostModelResidual> stateReg = std::make_shared<crocoddyl::CostModelResidual>(state, stateActivation, stateResidual);
 
         if (t == N_ocp){
             costModel->addCost("stateReg", stateReg, state_reg_weight * dt);
@@ -141,33 +141,33 @@ int main(){
         }
 
         if (t != N_ocp){
-            boost::shared_ptr<crocoddyl::ResidualModelControl> ctrlResidual = boost::make_shared<crocoddyl::ResidualModelControl>(state, nu);
-            boost::shared_ptr<crocoddyl::CostModelResidual> ctrlReg = boost::make_shared<crocoddyl::CostModelResidual>(state, ctrlResidual);
+            std::shared_ptr<crocoddyl::ResidualModelControl> ctrlResidual = std::make_shared<crocoddyl::ResidualModelControl>(state, nu);
+            std::shared_ptr<crocoddyl::CostModelResidual> ctrlReg = std::make_shared<crocoddyl::CostModelResidual>(state, ctrlResidual);
             costModel->addCost("ctrlReg", ctrlReg, control_reg_weight);
         }
 
-        boost::shared_ptr<crocoddyl::ResidualModelCoMPosition> com_residual = boost::make_shared<crocoddyl::ResidualModelCoMPosition>(state, comDes[t], nu);
-        boost::shared_ptr<crocoddyl::ActivationModelWeightedQuad> com_activation = boost::make_shared<crocoddyl::ActivationModelWeightedQuad>(Eigen::Vector3d::Ones());
-        boost::shared_ptr<crocoddyl::CostModelResidual> com_track = boost::make_shared<crocoddyl::CostModelResidual>(state, com_activation, com_residual);
+        std::shared_ptr<crocoddyl::ResidualModelCoMPosition> com_residual = std::make_shared<crocoddyl::ResidualModelCoMPosition>(state, comDes[t], nu);
+        std::shared_ptr<crocoddyl::ActivationModelWeightedQuad> com_activation = std::make_shared<crocoddyl::ActivationModelWeightedQuad>(Eigen::Vector3d::Ones());
+        std::shared_ptr<crocoddyl::CostModelResidual> com_track = std::make_shared<crocoddyl::CostModelResidual>(state, com_activation, com_residual);
 
         costModel->addCost("comTrack", com_track, 1e5);
         
         
-        boost::shared_ptr<crocoddyl::ConstraintModelManager> constraints = boost::make_shared<crocoddyl::ConstraintModelManager>(state, nu);    
+        std::shared_ptr<crocoddyl::ConstraintModelManager> constraints = std::make_shared<crocoddyl::ConstraintModelManager>(state, nu);    
         
-        boost::shared_ptr<crocoddyl::ResidualModelState> stateResidualc = boost::make_shared<crocoddyl::ResidualModelState>(state, x0, nu);
+        std::shared_ptr<crocoddyl::ResidualModelState> stateResidualc = std::make_shared<crocoddyl::ResidualModelState>(state, x0, nu);
 
 
         Eigen::VectorXd x_lim; 
         x_lim.resize(nq + nv); 
         x_lim.head(nq + nv) << Eigen::VectorXd::Ones(nq+nv);
 
-        boost::shared_ptr<crocoddyl::ConstraintModelResidual> state_constraint = boost::make_shared<crocoddyl::ConstraintModelResidual>(state, stateResidualc, x0-x_lim, x0+x_lim);
+        std::shared_ptr<crocoddyl::ConstraintModelResidual> state_constraint = std::make_shared<crocoddyl::ConstraintModelResidual>(state, stateResidualc, x0-x_lim, x0+x_lim);
         constraints->addConstraint("State constraint", state_constraint);
 
 
 
-        boost::shared_ptr<crocoddyl::DifferentialActionModelContactFwdDynamics> running_DAM = boost::make_shared<crocoddyl::DifferentialActionModelContactFwdDynamics>(
+        std::shared_ptr<crocoddyl::DifferentialActionModelContactFwdDynamics> running_DAM = std::make_shared<crocoddyl::DifferentialActionModelContactFwdDynamics>(
                                                                                                         state, 
                                                                                                         actuation,
                                                                                                         contactModel,
@@ -177,18 +177,18 @@ int main(){
                                                                                                         true
                                                                                                     );
         if (t != N_ocp){
-            boost::shared_ptr<crocoddyl::IntegratedActionModelEuler> running_model = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(
+            std::shared_ptr<crocoddyl::IntegratedActionModelEuler> running_model = std::make_shared<crocoddyl::IntegratedActionModelEuler>(
                                                                                                         running_DAM,
                                                                                                         dt
                                                                                                         );
             runningModels.push_back(running_model);
         }
         else{
-            terminal_model = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt);
+            terminal_model = std::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt);
         }
     }
 
-    boost::shared_ptr<crocoddyl::ShootingProblem> problem = boost::make_shared<crocoddyl::ShootingProblem>(x0, runningModels, terminal_model); 
+    std::shared_ptr<crocoddyl::ShootingProblem> problem = std::make_shared<crocoddyl::ShootingProblem>(x0, runningModels, terminal_model); 
     
     mim_solvers::Timer timer;
 

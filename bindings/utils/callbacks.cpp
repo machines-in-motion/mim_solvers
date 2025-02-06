@@ -13,7 +13,7 @@ namespace mim_solvers {
 namespace bp = boost::python;
 
 void exposeCallbackVerbose() {
-    bp::register_ptr_to_python<boost::shared_ptr<CallbackAbstract> >();
+    bp::register_ptr_to_python<std::shared_ptr<CallbackAbstract> >();
 
     bp::class_<CallbackVerbose, bp::bases<mim_solvers::CallbackAbstract> >(
       "CallbackVerbose", "Callback function for printing the solver values.",

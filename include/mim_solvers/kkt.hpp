@@ -26,7 +26,7 @@ class SolverKKT : public crocoddyl::SolverAbstract {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  explicit SolverKKT(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverKKT(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverKKT();
 
   virtual bool solve(

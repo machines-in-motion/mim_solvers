@@ -58,7 +58,7 @@ class SolverFactory {
   explicit SolverFactory();
   ~SolverFactory();
 
-  boost::shared_ptr<crocoddyl::SolverAbstract> create(
+  std::shared_ptr<crocoddyl::SolverAbstract> create(
       SolverTypes::Type solver_type, 
       ProblemTypes::Type problem_type,
       ModelTypes::Type model_type,

@@ -17,7 +17,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverPROXQP_solves, SolverPROXQP::solve,
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverPROXQP_computeDirections, SolverDDP::computeDirection, 0, 1)
 
 void exposeSolverPROXQP() {
-  bp::register_ptr_to_python<boost::shared_ptr<SolverPROXQP> >();
+  bp::register_ptr_to_python<std::shared_ptr<SolverPROXQP> >();
 
   bp::class_<SolverPROXQP, bp::bases<SolverDDP> >(
       "SolverPROXQP",
@@ -25,7 +25,7 @@ void exposeSolverPROXQP() {
       "The SolverPROXQP solver computes an optimal trajectory and control commands \n"
       "by using ProxQP to solve the full size sparse sub QP problem at each SQP iteration. U*.\n"
       ":param shootingProblem: shooting problem (list of action models along trajectory.)",
-      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
+      bp::init<std::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
       .def("solve", &SolverPROXQP::solve,

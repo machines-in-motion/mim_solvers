@@ -22,7 +22,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverFDDP_solves, SolverFDDP::solve, 0, 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverFDDP_computeDirections, SolverFDDP::computeDirection, 0, 1)
 
 void exposeSolverFDDP() {
-  bp::register_ptr_to_python<boost::shared_ptr<SolverFDDP> >();
+  bp::register_ptr_to_python<std::shared_ptr<SolverFDDP> >();
 
   bp::class_<SolverFDDP, bp::bases<SolverDDP> >(
       "SolverFDDP",
@@ -33,7 +33,7 @@ void exposeSolverFDDP() {
       "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
       "along a tuple of optimized control commands U*.\n"
       ":param shootingProblem: shooting problem (list of action models along trajectory.)",
-      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
+      bp::init<std::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
       .def("solve", &SolverFDDP::solve,

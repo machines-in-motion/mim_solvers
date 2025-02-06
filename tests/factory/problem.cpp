@@ -45,15 +45,15 @@ std::ostream& operator<<(std::ostream& os, ProblemTypes::Type type) {
 ProblemFactory::ProblemFactory() {}
 ProblemFactory::~ProblemFactory() {}
 
-boost::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
+std::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
       ProblemTypes::Type problem_type, 
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type) const {
   
-  boost::shared_ptr<crocoddyl::ShootingProblem> problem;
-  std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract>> IAMs;
-  boost::shared_ptr<crocoddyl::ActionModelAbstract> IAMt;
+  std::shared_ptr<crocoddyl::ShootingProblem> problem;
+  std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> IAMs;
+  std::shared_ptr<crocoddyl::ActionModelAbstract> IAMt;
   
   // Pick initial state depending on the model
   Eigen::VectorXd x0;
@@ -95,10 +95,10 @@ boost::shared_ptr<crocoddyl::ShootingProblem> ProblemFactory::create(
       } else {
         isInitial = false;
       }
-      IAMs.push_back(boost::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, false), DT));
+      IAMs.push_back(std::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, false), DT));
   }
-  IAMt = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, true), 0.);
-  problem = boost::make_shared<crocoddyl::ShootingProblem>(x0, IAMs, IAMt);
+  IAMt = std::make_shared<crocoddyl::IntegratedActionModelEuler>(ModelFactory().create(model_type, x_cstr_type, u_cstr_type, isInitial, true), 0.);
+  problem = std::make_shared<crocoddyl::ShootingProblem>(x0, IAMs, IAMt);
   
   return problem;
 }
