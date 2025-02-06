@@ -61,7 +61,7 @@ class SolverPROXQP : public SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverPROXQP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverPROXQP();
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
@@ -96,7 +96,7 @@ class SolverPROXQP : public SolverDDP {
 
   virtual void calc(const bool recalc = true);
 
-  // virtual void set_constraints(const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& constraint_models){
+  // virtual void set_constraints(const std::vector<std::shared_ptr<ConstraintModelAbstract>>& constraint_models){
   //   constraint_models_ = constraint_models;
   // };
 

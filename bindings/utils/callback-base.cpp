@@ -9,7 +9,7 @@ namespace bp = boost::python;
 
 
 void exposeCallbackAbstract() {
-    typedef boost::shared_ptr<CallbackAbstract> CallbackAbstractPtr;
+    typedef std::shared_ptr<CallbackAbstract> CallbackAbstractPtr;
     eigenpy::StdVectorPythonVisitor<std::vector<CallbackAbstractPtr>, true>::expose(
         "StdVec_Callback");
 

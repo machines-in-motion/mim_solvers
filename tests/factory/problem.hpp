@@ -47,7 +47,7 @@ class ProblemFactory {
   explicit ProblemFactory();
   ~ProblemFactory();
 
-  boost::shared_ptr<crocoddyl::ShootingProblem> create(
+  std::shared_ptr<crocoddyl::ShootingProblem> create(
       ProblemTypes::Type problem_type,
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,

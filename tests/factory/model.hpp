@@ -49,7 +49,7 @@ class ModelFactory {
   explicit ModelFactory();
   ~ModelFactory();
 
-  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> create(
+  std::shared_ptr<crocoddyl::DifferentialActionModelAbstract> create(
       ModelTypes::Type model_type, 
       XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type,
@@ -57,7 +57,7 @@ class ModelFactory {
       bool isTerminal) const;
 };
 
-// boost::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
+// std::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
 //     StateModelTypes::Type state_type,
 //     std::size_t nu = std::numeric_limits<std::size_t>::max());
 }  // namespace unittest

@@ -23,15 +23,15 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverDDP_computeDirections, SolverDDP::c
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverDDP_trySteps, SolverDDP::tryStep, 0, 1)
 
 // Wrapper function to handle deprecation warning upon instantiation
-boost::shared_ptr<SolverDDP> createSolverDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem) {
+std::shared_ptr<SolverDDP> createSolverDDP(std::shared_ptr<crocoddyl::ShootingProblem> problem) {
       std::cerr << "Warning: Do not use mim_solvers.SolverDDP !!! " << std::endl;
       std::cerr << "It may differ significantly from its Crocoddyl counterpart. " << std::endl;
       std::cerr << "This class served only as a development tool and will be REMOVED in future releases." << std::endl;
-     return boost::make_shared<SolverDDP>(problem);
+     return std::make_shared<SolverDDP>(problem);
 }
 
 void exposeSolverDDP() {
-  bp::register_ptr_to_python<boost::shared_ptr<SolverDDP> >();
+  bp::register_ptr_to_python<std::shared_ptr<SolverDDP> >();
 
   bp::class_<SolverDDP, bp::bases<crocoddyl::SolverAbstract> >(
       "SolverDDP",
@@ -42,7 +42,7 @@ void exposeSolverDDP() {
       "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
       "along a tuple of optimized control commands U*.\n"
       ":param shootingProblem: shooting problem (list of action models along trajectory.)",
-      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
+      bp::init<std::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
       .def("__init__", bp::make_constructor(&createSolverDDP))  // Custom constructor

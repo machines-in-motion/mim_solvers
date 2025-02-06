@@ -21,7 +21,7 @@ using namespace crocoddyl;
 
 namespace mim_solvers {
 
-SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
+SolverPROXQP::SolverPROXQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverDDP(problem){      
       // std::cout << tmp << std::endl;
       const std::size_t T = this->problem_->get_T();
@@ -42,7 +42,7 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
 
       std::size_t n_eq_crocoddyl = 0;
 
-      const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+      const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
       // We allow nx and nu to change with time
       n_vars = 0;
       n_eq = 0;
@@ -64,7 +64,7 @@ SolverPROXQP::SolverPROXQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem
       Asp_.resize(n_eq, n_vars);
       
       for (std::size_t t = 0; t < T; ++t) {
-        const boost::shared_ptr<ActionModelAbstract>& model = models[t];
+        const std::shared_ptr<ActionModelAbstract>& model = models[t];
         const std::size_t nu = model->get_nu();
         xs_try_[t] = model->get_state()->zero();
         us_try_[t] = Eigen::VectorXd::Zero(nu);
@@ -247,14 +247,14 @@ void SolverPROXQP::calc(const bool recalc){
   double nin_count =  0;
 
   const std::size_t T = problem_->get_T();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
 
   double index_u = n_eq;
   for (std::size_t t = 0; t < T; ++t) {
 
-    const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     const int nx = m->get_state()->get_nx(); 
     const int nu = m->get_nu(); 
 
@@ -302,8 +302,8 @@ void SolverPROXQP::calc(const bool recalc){
 
   }
 
-  const boost::shared_ptr<ActionDataAbstract>& d_T = problem_->get_terminalData();
-  const boost::shared_ptr<ActionModelAbstract>& m_T = problem_->get_terminalModel();
+  const std::shared_ptr<ActionDataAbstract>& d_T = problem_->get_terminalData();
+  const std::shared_ptr<ActionModelAbstract>& m_T = problem_->get_terminalModel();
   int nc = m_T->get_ng();
   auto lb = m_T->get_g_lb(); 
   auto ub = m_T->get_g_ub();
@@ -356,12 +356,12 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
   norm_dual_ = qp_.results.info.dua_res;
 
   // std::cout << "ProxQP iters " << qp_iters_ << " norm_primal=" << norm_primal_ << " norm_dual= " << norm_dual_ << std::endl;
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   x_grad_norm_ = 0; u_grad_norm_ = 0;
   double nin_count = 0;
   double index_u = n_eq;
   for (std::size_t t = 0; t < T; ++t){
-    const boost::shared_ptr<ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<ActionModelAbstract>& m = models[t];
     const int nx = m->get_state()->get_nx();
     const int nu = m->get_nu();
     int nc = m->get_ng();
@@ -391,10 +391,10 @@ void SolverPROXQP::computeDirection(const bool recalcDiff){
 void SolverPROXQP::checkKKTConditions(){
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   KKT_ = 0;
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     fs_flat_.segment(t*ndx, ndx) = fs_[t+1];
     if (t == 0){
       KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lag_mul_[t+1] + d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
@@ -404,7 +404,7 @@ void SolverPROXQP::checkKKTConditions(){
     KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lag_mul_[t+1] + d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
 
   }
-  const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
+  const std::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
   KKT_ = std::max(KKT_, (d_ter->Lx - lag_mul_.back() + d_ter->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
 
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
@@ -425,11 +425,11 @@ double SolverPROXQP::tryStep(const double steplength) {
     constraint_norm_try_ = 0;
     
     const std::size_t T = problem_->get_T();
-    const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-    const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+    const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+    const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
 
     for (std::size_t t = 0; t < T; ++t) {
-      const boost::shared_ptr<ActionModelAbstract>& m = models[t];
+      const std::shared_ptr<ActionModelAbstract>& m = models[t];
       m->get_state()->integrate(xs_[t], steplength * dx_[t], xs_try_[t]); 
       const std::size_t nu = m->get_nu();
 
@@ -438,13 +438,13 @@ double SolverPROXQP::tryStep(const double steplength) {
         }        
       } 
 
-    const boost::shared_ptr<ActionModelAbstract>& m_ter = problem_->get_terminalModel();
+    const std::shared_ptr<ActionModelAbstract>& m_ter = problem_->get_terminalModel();
 
     m_ter->get_state()->integrate(xs_.back(), steplength * dx_.back(), xs_try_.back()); 
 
     for (std::size_t t = 0; t < T; ++t) {
-      const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-      const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+      const std::shared_ptr<ActionModelAbstract>& m = models[t];
+      const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     
       m->calc(d, xs_try_[t], us_try_[t]);        
       cost_try_ += d->cost;      
@@ -464,7 +464,7 @@ double SolverPROXQP::tryStep(const double steplength) {
     }
 
     // Terminal state update
-    const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
+    const std::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
 
     m_ter->calc(d_ter, xs_try_.back());
     cost_try_ += d_ter->cost;

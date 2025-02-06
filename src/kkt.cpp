@@ -15,7 +15,7 @@
 
 namespace mim_solvers {
 
-SolverKKT::SolverKKT(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
+SolverKKT::SolverKKT(std::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverAbstract(problem),
       reg_incfactor_(10.),
       reg_decfactor_(10.),
@@ -112,7 +112,7 @@ void SolverKKT::computeDirection(const bool recalc) {
 
   std::size_t ix = 0;
   std::size_t iu = 0;
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
       problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
     const std::size_t ndxi = models[t]->get_state()->get_ndx();
@@ -133,10 +133,10 @@ void SolverKKT::computeDirection(const bool recalc) {
 
 double SolverKKT::tryStep(const double steplength) {
   const std::size_t T = problem_->get_T();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
       problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
 
     m->get_state()->integrate(xs_[t], steplength * dxs_[t], xs_try_[t]);
     if (m->get_nu() != 0) {
@@ -144,7 +144,7 @@ double SolverKKT::tryStep(const double steplength) {
       us_try_[t] += steplength * dus_[t];
     }
   }
-  const boost::shared_ptr<crocoddyl::ActionModelAbstract> m =
+  const std::shared_ptr<crocoddyl::ActionModelAbstract> m =
       problem_->get_terminalModel();
   m->get_state()->integrate(xs_[T], steplength * dxs_[T], xs_try_[T]);
   cost_try_ = problem_->calc(xs_try_, us_try_);
@@ -155,15 +155,15 @@ void SolverKKT::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     KKT_ = std::max(KKT_, (d->Lx + d->Fx.transpose() * lambdas_[t+1] - lambdas_[t]).lpNorm<Eigen::Infinity>());
     KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lambdas_[t+1]).lpNorm<Eigen::Infinity>());
     fs_flat_.segment(t*ndx, ndx) = fs_[t];
   }
   fs_flat_.tail(ndx) = fs_.back();
-  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter = problem_->get_terminalData();
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter = problem_->get_terminalData();
   KKT_ = std::max(KKT_, (d_ter->Lx - lambdas_.back()).lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
 }
@@ -172,12 +172,12 @@ double SolverKKT::stoppingCriteria() {
   const std::size_t T = problem_->get_T();
   std::size_t ix = 0;
   std::size_t iu = 0;
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
       problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas =
       problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t ndxi = models[t]->get_state()->get_ndx();
     const std::size_t nui = models[t]->get_nu();
 
@@ -238,9 +238,9 @@ double SolverKKT::calcDiff() {
   const std::size_t T = problem_->get_T();
   kkt_.block(ndx_ + nu_, 0, ndx_, ndx_).setIdentity();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m =
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m =
         problem_->get_runningModels()[t];
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d =
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d =
         problem_->get_runningDatas()[t];
     const std::size_t ndxi = m->get_state()->get_ndx();
     const std::size_t nui = m->get_nu();
@@ -268,7 +268,7 @@ double SolverKKT::calcDiff() {
     ix += ndxi;
     iu += nui;
   }
-  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& df =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& df =
       problem_->get_terminalData();
   const std::size_t ndxf =
       problem_->get_terminalModel()->get_state()->get_ndx();
@@ -314,10 +314,10 @@ void SolverKKT::allocateData() {
   nu_ = 0;
   const std::size_t nx = problem_->get_nx();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models =
       problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
     if (t == 0) {
       xs_try_[t] = problem_->get_x0();
     } else {
