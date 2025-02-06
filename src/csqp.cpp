@@ -299,7 +299,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs, const std::v
         lag_mul_inf_norm_ = std::max(lag_mul_inf_norm_, lag_mul.lpNorm<Eigen::Infinity>());
       for (auto const&y : y_)
         lag_mul_inf_norm_ = std::max(lag_mul_inf_norm_, y.lpNorm<Eigen::Infinity>());
-      merit_ = cost_ + lag_mul_inf_norm_ * (gap_norm_ + constraint_norm_);
+      merit_ = cost_ + lag_mul_inf_norm_coef_ * lag_mul_inf_norm_ * (gap_norm_ + constraint_norm_);
     } else
       merit_ = cost_ + mu_dynamic_ * gap_norm_ + mu_constraint_ * constraint_norm_;
 
@@ -1326,7 +1326,7 @@ double SolverCSQP::tryStep(const double steplength) {
     constraint_norm_try_ += (d_ter->g - m_ter->get_g_ub()).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
 
     if (mu_dynamic_ < 0 || mu_constraint_ < 0)
-      merit_try_ = cost_try_ + lag_mul_inf_norm_ * (gap_norm_try_ + constraint_norm_try_);
+      merit_try_ = cost_try_ + lag_mul_inf_norm_coef_ * lag_mul_inf_norm_ * (gap_norm_try_ + constraint_norm_try_);
     else
       merit_try_ = cost_try_ + mu_dynamic_ * gap_norm_try_ + mu_constraint_ * constraint_norm_try_;
 

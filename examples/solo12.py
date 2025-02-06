@@ -150,6 +150,8 @@ max_iter = 500
 solver.setCallbacks([mim_solvers.CallbackVerbose()])
 solver.use_filter_line_search = False
 solver.termination_tolerance = 1e-4
+solver.mu_dynamic = -1 # use Nocedal's L1 merit based on Lagrange multipliers norm
+solver.lag_mul_inf_norm_coef = 10.
 solver.eps_abs = 1e-6
 solver.eps_rel = 1e-6
 

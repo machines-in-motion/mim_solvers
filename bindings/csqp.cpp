@@ -109,7 +109,9 @@ void exposeSolverCSQP() {
                     "KKT residual norm")
       .add_property("merit", bp::make_function(&SolverCSQP::get_merit),
                     "Merit function value")
-                          
+
+      .add_property("lag_mul_inf_norm_coef", bp::make_function(&SolverCSQP::get_lag_mul_inf_norm_coef), bp::make_function(&SolverCSQP::set_lag_mul_inf_norm_coef),
+                    "Scaling coefficient for the Lagrange multipliers norm in Nocedal's L1 merit function (default: 10.)")                   
       .add_property("mu_dynamic", bp::make_function(&SolverCSQP::get_mu_dynamic), bp::make_function(&SolverCSQP::set_mu_dynamic),
                     "Penalty weight for dynamic violation in the merit function (default: 10.)")
       .add_property("mu_constraint", bp::make_function(&SolverCSQP::get_mu_constraint), bp::make_function(&SolverCSQP::set_mu_constraint),

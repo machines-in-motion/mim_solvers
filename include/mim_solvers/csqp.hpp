@@ -142,6 +142,7 @@ class SolverCSQP : public SolverDDP {
   double get_merit() const { return merit_; };
   bool get_extra_iteration_for_last_kkt() const { return extra_iteration_for_last_kkt_; };
   bool get_use_filter_line_search() const { return use_filter_line_search_; };
+  double get_lag_mul_inf_norm_coef() const { return lag_mul_inf_norm_coef_; };
   double get_mu_dynamic() const { return mu_dynamic_; };
   double get_mu_constraint() const { return mu_constraint_; };
   double get_termination_tolerance() const { return termination_tol_; };
@@ -180,6 +181,7 @@ class SolverCSQP : public SolverDDP {
   void set_rho_update_interval(std::size_t interval) { rho_update_interval_ = interval; };
   void set_adaptive_rho_tolerance(std::size_t tolerance) { adaptive_rho_tolerance_ = tolerance; };
 
+  void set_lag_mul_inf_norm_coef(double lag_mul_inf_norm_coef) { lag_mul_inf_norm_coef_ = lag_mul_inf_norm_coef; };
   void set_mu_dynamic(double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
   void set_mu_constraint(double mu_constraint) { mu_constraint_ = mu_constraint; };
   void set_alpha(double alpha) { alpha_ = alpha; };
@@ -219,6 +221,7 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::VectorXd> du_;                            //!< the descent direction for u
   std::vector<Eigen::VectorXd> lag_mul_;                       //!< the Lagrange multiplier of the dynamics constraint
   double lag_mul_inf_norm_;                                    //!< the infinite norm of Lagrange multiplier
+  double lag_mul_inf_norm_coef_ = 10.;                               //!< merit function coefficient scaling the infinite norm of Lagrange multiplier
   Eigen::VectorXd fs_flat_;                                    //!< Gaps/defects between shooting nodes (1D array)
   bool use_filter_line_search_ = true;                         //!< Use filter line search
 
