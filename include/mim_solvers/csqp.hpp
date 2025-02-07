@@ -58,7 +58,7 @@ class SolverCSQP : public SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverCSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverCSQP();
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
@@ -105,7 +105,7 @@ class SolverCSQP : public SolverDDP {
 
   virtual void reset_rho_vec();
 
-  // virtual void set_constraints(const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& constraint_models){
+  // virtual void set_constraints(const std::vector<std::shared_ptr<ConstraintModelAbstract>>& constraint_models){
   //   constraint_models_ = constraint_models;
   // };
 
@@ -131,7 +131,7 @@ class SolverCSQP : public SolverDDP {
 
   const std::vector<Eigen::VectorXd>& get_rho_vec() const { return rho_vec_; };
 
-//   const std::vector<boost::shared_ptr<ConstraintModelAbstract>>& get_constraints() const { return cmodels_; };
+//   const std::vector<std::shared_ptr<ConstraintModelAbstract>>& get_constraints() const { return cmodels_; };
 
   double get_KKT() const { return KKT_; };
   double get_gap_norm() const { return gap_norm_; };

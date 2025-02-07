@@ -54,15 +54,15 @@ SolverFactory::SolverFactory() {}
 
 SolverFactory::~SolverFactory() {}
 
-boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
+std::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
     SolverTypes::Type solver_type, 
     ProblemTypes::Type problem_type,
     ModelTypes::Type model_type,
     XConstraintType::Type x_cstr_type,
     UConstraintType::Type u_cstr_type) const {
 
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver;
-  boost::shared_ptr<crocoddyl::ShootingProblem> problem =
+  std::shared_ptr<crocoddyl::SolverAbstract> solver;
+  std::shared_ptr<crocoddyl::ShootingProblem> problem =
       ProblemFactory().create( problem_type, model_type, x_cstr_type, u_cstr_type );
 
   switch (solver_type) {
@@ -70,14 +70,14 @@ boost::shared_ptr<crocoddyl::SolverAbstract> SolverFactory::create(
       if(x_cstr_type != XConstraintType::None || u_cstr_type != UConstraintType::None){
         throw_pretty(__FILE__": Impossible test case : SolverSQP cannot be tested on constrained problem !")
       }
-      solver = boost::make_shared<mim_solvers::SolverSQP>(problem);
+      solver = std::make_shared<mim_solvers::SolverSQP>(problem);
       break;
     case SolverTypes::SolverCSQP:
-      solver = boost::make_shared<mim_solvers::SolverCSQP>(problem);
+      solver = std::make_shared<mim_solvers::SolverCSQP>(problem);
       break;
 #ifdef MIM_SOLVERS_WITH_PROXQP
     case SolverTypes::SolverPROXQP:
-      solver = boost::make_shared<mim_solvers::SolverPROXQP>(problem);
+      solver = std::make_shared<mim_solvers::SolverPROXQP>(problem);
       break;
 #endif
     default:

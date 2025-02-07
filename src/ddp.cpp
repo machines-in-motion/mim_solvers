@@ -19,7 +19,7 @@ using namespace crocoddyl;
 
 namespace mim_solvers {
 
-SolverDDP::SolverDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem)
+SolverDDP::SolverDDP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
     : SolverAbstract(problem),
       reg_incfactor_(10.),
       reg_decfactor_(10.),
@@ -171,15 +171,15 @@ void SolverDDP::checkKKTConditions(){
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     KKT_ = std::max(KKT_, (d->Lx + d->Fx.transpose() * lag_mul_[t+1] - lag_mul_[t]).lpNorm<Eigen::Infinity>());
     KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lag_mul_[t+1]).lpNorm<Eigen::Infinity>());
     fs_flat_.segment(t*ndx, ndx) = fs_[t];
   }
   fs_flat_.tail(ndx) = fs_.back();
-  const boost::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
+  const std::shared_ptr<ActionDataAbstract>& d_ter = problem_->get_terminalData();
   KKT_ = std::max(KKT_, (d_ter->Lx - lag_mul_.back()).lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
 }
@@ -187,7 +187,7 @@ void SolverDDP::checkKKTConditions(){
 double SolverDDP::stoppingCriteria() {
   stop_ = 0.;
   const std::size_t T = this->problem_->get_T();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
 
   for (std::size_t t = 0; t < T; ++t) {
     const std::size_t nu = models[t]->get_nu();
@@ -201,7 +201,7 @@ double SolverDDP::stoppingCriteria() {
 const Eigen::Vector2d& SolverDDP::expectedImprovement() {
   d_.fill(0);
   const std::size_t T = this->problem_->get_T();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
     const std::size_t nu = models[t]->get_nu();
     if (nu != 0) {
@@ -218,9 +218,9 @@ void SolverDDP::resizeData() {
 
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionModelAbstract>& model = models[t];
+    const std::shared_ptr<ActionModelAbstract>& model = models[t];
     const std::size_t nu = model->get_nu();
     Qxu_[t].conservativeResize(ndx, nu);
     Quu_[t].conservativeResize(nu, nu);
@@ -248,7 +248,7 @@ double SolverDDP::calcDiff() {
 
 void SolverDDP::backwardPass() {
   START_PROFILER("SolverDDP::backwardPass");
-  const boost::shared_ptr<ActionDataAbstract>& d_T = problem_->get_terminalData();
+  const std::shared_ptr<ActionDataAbstract>& d_T = problem_->get_terminalData();
   Vxx_.back() = d_T->Lxx;
   Vx_.back() = d_T->Lx;
 
@@ -259,11 +259,11 @@ void SolverDDP::backwardPass() {
   if (!is_feasible_) {
     Vx_.back().noalias() += Vxx_.back() * fs_.back();
   }
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
-    const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
     const Eigen::VectorXd& Vx_p = Vx_[t + 1];
     const std::size_t nu = m->get_nu();
@@ -337,11 +337,11 @@ void SolverDDP::forwardPass(const double steplength) {
   START_PROFILER("SolverDDP::forwardPass");
   cost_try_ = 0.;
   const std::size_t T = problem_->get_T();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionDataAbstract> >& datas = problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     lag_mul_[t].noalias() = Vxx_[t] * dx_[t] + Vx_[t]; 
     m->get_state()->diff(xs_[t], xs_try_[t], dx_[t]);
     if (m->get_nu() != 0) {
@@ -365,8 +365,8 @@ void SolverDDP::forwardPass(const double steplength) {
     }
   }
 
-  const boost::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
-  const boost::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
+  const std::shared_ptr<ActionModelAbstract>& m = problem_->get_terminalModel();
+  const std::shared_ptr<ActionDataAbstract>& d = problem_->get_terminalData();
   lag_mul_.back() = Vxx_.back() * dx_.back() + Vx_.back();
   m->calc(d, xs_try_.back());
   cost_try_ += d->cost;
@@ -442,9 +442,9 @@ void SolverDDP::allocateData() {
   Quuk_.resize(T);
 
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<boost::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<ActionModelAbstract> >& models = problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
-    const boost::shared_ptr<ActionModelAbstract>& model = models[t];
+    const std::shared_ptr<ActionModelAbstract>& model = models[t];
     const std::size_t nu = model->get_nu();
     Vxx_[t] = Eigen::MatrixXd::Zero(ndx, ndx);
     Vx_[t] = Eigen::VectorXd::Zero(ndx);
@@ -618,11 +618,11 @@ void SolverDDP::set_th_grad(const double th_grad) {
   th_grad_ = th_grad;
 }
 void SolverDDP::setCallbacks(
-    const std::vector<boost::shared_ptr<CallbackAbstract> >& callbacks) {
+    const std::vector<std::shared_ptr<CallbackAbstract> >& callbacks) {
   callbacks_ = callbacks;
 }
 
-const std::vector<boost::shared_ptr<CallbackAbstract> >&
+const std::vector<std::shared_ptr<CallbackAbstract> >&
 SolverDDP::getCallbacks() const {
   return callbacks_;
 }

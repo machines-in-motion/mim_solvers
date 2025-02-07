@@ -35,7 +35,7 @@ int main(){
 
     auto urdf_path = EXAMPLE_ROBOT_DATA_MODEL_DIR "/ur_description/urdf/ur5_robot.urdf";
 
-    boost::shared_ptr<pinocchio::Model> rmodel = boost::make_shared<pinocchio::Model>();
+    std::shared_ptr<pinocchio::Model> rmodel = std::make_shared<pinocchio::Model>();
     pinocchio::urdf::buildModel(urdf_path, *rmodel.get());
     const int nq = rmodel->nq;
     const int nv = rmodel->nv;
@@ -44,28 +44,28 @@ int main(){
 
     // STATE AND ACTUATION VARIABLES
 
-    boost::shared_ptr<crocoddyl::StateMultibody> state = boost::make_shared<crocoddyl::StateMultibody>(rmodel);
-    boost::shared_ptr<crocoddyl::ActuationModelFull> actuation = boost::make_shared<crocoddyl::ActuationModelFull>(state);
+    std::shared_ptr<crocoddyl::StateMultibody> state = std::make_shared<crocoddyl::StateMultibody>(rmodel);
+    std::shared_ptr<crocoddyl::ActuationModelFull> actuation = std::make_shared<crocoddyl::ActuationModelFull>(state);
      
-    boost::shared_ptr<crocoddyl::ResidualModelControlGrav> uResidual = boost::make_shared<crocoddyl::ResidualModelControlGrav>(state); 
-    boost::shared_ptr<crocoddyl::CostModelResidual> uRegCost = boost::make_shared<crocoddyl::CostModelResidual>(state, uResidual); 
+    std::shared_ptr<crocoddyl::ResidualModelControlGrav> uResidual = std::make_shared<crocoddyl::ResidualModelControlGrav>(state); 
+    std::shared_ptr<crocoddyl::CostModelResidual> uRegCost = std::make_shared<crocoddyl::CostModelResidual>(state, uResidual); 
     
-    boost::shared_ptr<crocoddyl::ResidualModelState> xResidual = boost::make_shared<crocoddyl::ResidualModelState>(state, x0);
-    boost::shared_ptr<crocoddyl::CostModelResidual> xRegCost = boost::make_shared<crocoddyl::CostModelResidual>(state, xResidual); 
+    std::shared_ptr<crocoddyl::ResidualModelState> xResidual = std::make_shared<crocoddyl::ResidualModelState>(state, x0);
+    std::shared_ptr<crocoddyl::CostModelResidual> xRegCost = std::make_shared<crocoddyl::CostModelResidual>(state, xResidual); 
      
     // END EFFECTOR FRAME TRANSLATION COST
 
     const int endeff_frame_id = rmodel->getFrameId("tool0");
     Eigen::Vector3d endeff_translation = {0.4, 0.4, 0.4};
-    boost::shared_ptr<crocoddyl::ResidualModelFrameTranslation> frameTranslationResidual = boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(
+    std::shared_ptr<crocoddyl::ResidualModelFrameTranslation> frameTranslationResidual = std::make_shared<crocoddyl::ResidualModelFrameTranslation>(
                                                                                                     state, 
                                                                                                     endeff_frame_id, 
                                                                                                     endeff_translation    
                                                                                                 );
-    boost::shared_ptr<crocoddyl::CostModelResidual> frameTranslationCost = boost::make_shared<crocoddyl::CostModelResidual>(state, frameTranslationResidual); 
+    std::shared_ptr<crocoddyl::CostModelResidual> frameTranslationCost = std::make_shared<crocoddyl::CostModelResidual>(state, frameTranslationResidual); 
 
     // DEFINE CONSTRAINTS
-    boost::shared_ptr<crocoddyl::ResidualModelFrameTranslation> frameTranslationConstraintResidual = boost::make_shared<crocoddyl::ResidualModelFrameTranslation>(
+    std::shared_ptr<crocoddyl::ResidualModelFrameTranslation> frameTranslationConstraintResidual = std::make_shared<crocoddyl::ResidualModelFrameTranslation>(
                                                                                                     state, 
                                                                                                     endeff_frame_id, 
                                                                                                     Eigen::Vector3d::Zero()    
@@ -74,7 +74,7 @@ int main(){
     Eigen::Vector3d lb = {-1.0, -1.0, -1.0};
     Eigen::Vector3d ub = {1.0, 0.4, 0.4};
     
-    boost::shared_ptr<crocoddyl::ConstraintModelResidual> ee_constraint = boost::make_shared<crocoddyl::ConstraintModelResidual>(
+    std::shared_ptr<crocoddyl::ConstraintModelResidual> ee_constraint = std::make_shared<crocoddyl::ConstraintModelResidual>(
                                                                                                     state, 
                                                                                                     frameTranslationResidual,
                                                                                                     lb,
@@ -82,13 +82,13 @@ int main(){
                                                                                                 );
 
     // CREATING RUNNING MODELS
-    std::vector< boost::shared_ptr<crocoddyl::ActionModelAbstract> > runningModels;
-    boost::shared_ptr<crocoddyl::IntegratedActionModelEuler> terminal_model;
+    std::vector< std::shared_ptr<crocoddyl::ActionModelAbstract> > runningModels;
+    std::shared_ptr<crocoddyl::IntegratedActionModelEuler> terminal_model;
     const double dt = 5e-2;
     const int T = 40;
 
     for (unsigned t = 0; t < T + 1; ++t){
-        boost::shared_ptr<crocoddyl::CostModelSum> runningCostModel = boost::make_shared<crocoddyl::CostModelSum>(state);
+        std::shared_ptr<crocoddyl::CostModelSum> runningCostModel = std::make_shared<crocoddyl::CostModelSum>(state);
         runningCostModel->addCost("stateReg", xRegCost, 1e-1);
         runningCostModel->addCost("ctrlRegGrav", uRegCost, 1e-4);
         if (t != T){
@@ -97,31 +97,31 @@ int main(){
         else{
             runningCostModel->addCost("translation", frameTranslationCost, 40);
         }
-        boost::shared_ptr<crocoddyl::ConstraintModelManager> constraints = boost::make_shared<crocoddyl::ConstraintModelManager>(state, nu);    
+        std::shared_ptr<crocoddyl::ConstraintModelManager> constraints = std::make_shared<crocoddyl::ConstraintModelManager>(state, nu);    
         if(t != 0){
             constraints->addConstraint("ee_bound", ee_constraint);
         }
 
         // CREATING DAM MODEL
-        boost::shared_ptr<crocoddyl::DifferentialActionModelFreeFwdDynamics> running_DAM = boost::make_shared<crocoddyl::DifferentialActionModelFreeFwdDynamics>(
+        std::shared_ptr<crocoddyl::DifferentialActionModelFreeFwdDynamics> running_DAM = std::make_shared<crocoddyl::DifferentialActionModelFreeFwdDynamics>(
                                                                                                         state, 
                                                                                                         actuation,
                                                                                                         runningCostModel, 
                                                                                                         constraints
                                                                                                     );
         if (t != T){
-            boost::shared_ptr<crocoddyl::IntegratedActionModelEuler> running_model = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(
+            std::shared_ptr<crocoddyl::IntegratedActionModelEuler> running_model = std::make_shared<crocoddyl::IntegratedActionModelEuler>(
                                                                                                         running_DAM,
                                                                                                         dt
                                                                                                         );
             runningModels.push_back(running_model);
         }
         else{
-            terminal_model = boost::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt);
+            terminal_model = std::make_shared<crocoddyl::IntegratedActionModelEuler>(running_DAM, dt);
         }
     }
 
-    boost::shared_ptr<crocoddyl::ShootingProblem> problem = boost::make_shared<crocoddyl::ShootingProblem>(x0, runningModels, terminal_model); 
+    std::shared_ptr<crocoddyl::ShootingProblem> problem = std::make_shared<crocoddyl::ShootingProblem>(x0, runningModels, terminal_model); 
 
 
 

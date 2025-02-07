@@ -30,13 +30,13 @@ const double TOL     = 1e-6;
 void test_sqp_core(){
   // Create solver
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverSQP, 
+  std::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverSQP, 
                                                                        ProblemTypes::ShootingProblem, 
                                                                        ModelTypes::PointMass2D, 
                                                                        XConstraintType::None, 
                                                                        UConstraintType::None);
   // Downcast
-  boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
+  std::shared_ptr<mim_solvers::SolverSQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
   
   // Test initial & default attributes
   BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
@@ -56,8 +56,8 @@ void test_sqp_core(){
   solver_cast->set_filter_size(filter_size);
   BOOST_CHECK_EQUAL(solver_cast->get_filter_size(), 2);
 
-  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
-  std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
+  std::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = std::make_shared<mim_solvers::CallbackVerbose>(3);
+  std::vector<std::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
   callbacks.push_back(callback_verbose);
   solver_cast->setCallbacks(callbacks);
 }
@@ -67,17 +67,17 @@ void test_sqp_core(){
 void test_csqp_core(){
   // Create solver
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverCSQP, 
+  std::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverCSQP, 
                                                                        ProblemTypes::ShootingProblem, 
                                                                        ModelTypes::PointMass2D, 
                                                                        XConstraintType::AllIneq, 
                                                                        UConstraintType::AllEq);
   // Downcast
-  boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
+  std::shared_ptr<mim_solvers::SolverCSQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
   
 
   // Test initial & default attributes
-  std::vector<boost::shared_ptr<crocoddyl::CallbackAbstract>> empty_callbacks;
+  std::vector<std::shared_ptr<crocoddyl::CallbackAbstract>> empty_callbacks;
 
   BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
   BOOST_CHECK_EQUAL(solver_cast->get_gap_norm(), 0);
@@ -152,8 +152,8 @@ void test_csqp_core(){
   const double eps_rel = 10;
   solver_cast->set_eps_rel(eps_rel);
   BOOST_CHECK_EQUAL(solver_cast->get_eps_rel(), 10);
-  boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
-  std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
+  std::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = std::make_shared<mim_solvers::CallbackVerbose>(3);
+  std::vector<std::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
   callbacks.push_back(callback_verbose);
   solver_cast->setCallbacks(callbacks);
 }
@@ -164,13 +164,13 @@ void test_csqp_core(){
   void test_proxqp_core(){
     // Create solver
     SolverFactory factory;
-    boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverPROXQP, 
+    std::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(SolverTypes::SolverPROXQP, 
                                                                         ProblemTypes::ShootingProblem, 
                                                                         ModelTypes::PointMass2D, 
                                                                         XConstraintType::AllIneq, 
                                                                         UConstraintType::AllEq);
     // Downcast
-    boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    std::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
     
     // Test initial & default attributes
     BOOST_CHECK_EQUAL(solver_cast->get_KKT(), std::numeric_limits<double>::infinity());
@@ -235,7 +235,7 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   std::cout << "test_solver_convergence_" << solver_type << "_" << problem_type << "_" << model_type << "_" << x_cstr_type << "_" << u_cstr_type << std::endl;
 
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
+  std::shared_ptr<crocoddyl::SolverAbstract> solver = factory.create(solver_type, problem_type, model_type, x_cstr_type, u_cstr_type);
 
   // SQP params
   const int MAXITER    = 10;
@@ -249,11 +249,11 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   {
   case SolverTypes::SolverSQP:
   {
-    boost::shared_ptr<mim_solvers::SolverSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
+    std::shared_ptr<mim_solvers::SolverSQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverSQP>(solver); 
     solver_cast->set_termination_tolerance(SQP_TOL);
 
-    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
-    std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
+    std::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = std::make_shared<mim_solvers::CallbackVerbose>(3);
+    std::vector<std::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
     callbacks.push_back(callback_verbose);
     solver_cast->setCallbacks(callbacks);
 
@@ -265,14 +265,14 @@ void test_solver_convergence(SolverTypes::Type solver_type,
   case SolverTypes::SolverCSQP:
   {
     // if(x_cstr_type == XConstraintType::None && u_cstr_type == UConstraintType::AllEq){
-    boost::shared_ptr<mim_solvers::SolverCSQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
+    std::shared_ptr<mim_solvers::SolverCSQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverCSQP>(solver); 
     solver_cast->set_termination_tolerance(SQP_TOL);
     solver_cast->set_eps_rel(EPS_REL);
     solver_cast->set_eps_abs(EPS_ABS);
     solver_cast->set_max_qp_iters(QP_MAXITER);
 
-    boost::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = boost::make_shared<mim_solvers::CallbackVerbose>(3);
-    std::vector<boost::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
+    std::shared_ptr<mim_solvers::CallbackVerbose> callback_verbose = std::make_shared<mim_solvers::CallbackVerbose>(3);
+    std::vector<std::shared_ptr<mim_solvers::CallbackAbstract>> callbacks;
     callbacks.push_back(callback_verbose);
     solver_cast->setCallbacks(callbacks);
 
@@ -290,7 +290,7 @@ void test_solver_convergence(SolverTypes::Type solver_type,
 #ifdef MIM_SOLVERS_WITH_PROXQP
   case SolverTypes::SolverPROXQP:
   {
-    boost::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = boost::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
+    std::shared_ptr<mim_solvers::SolverPROXQP> solver_cast = std::static_pointer_cast<mim_solvers::SolverPROXQP>(solver); 
     solver_cast->set_termination_tolerance(SQP_TOL);
     solver_cast->set_eps_rel(EPS_REL);
     solver_cast->set_eps_abs(EPS_ABS);
@@ -317,8 +317,8 @@ void test_csqp_equiv_sqp(ProblemTypes::Type problem_type,
                          ModelTypes::Type model_type) {
   std::cout << "test_csqp_equiv_sqp_" << problem_type << "_" << model_type << std::endl;
   SolverFactory factory;
-  boost::shared_ptr<crocoddyl::SolverAbstract> solverSQP  = factory.create(SolverTypes::SolverSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
-  boost::shared_ptr<crocoddyl::SolverAbstract> solverCSQP = factory.create(SolverTypes::SolverCSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
+  std::shared_ptr<crocoddyl::SolverAbstract> solverSQP  = factory.create(SolverTypes::SolverSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
+  std::shared_ptr<crocoddyl::SolverAbstract> solverCSQP = factory.create(SolverTypes::SolverCSQP, problem_type, model_type, XConstraintType::None, UConstraintType::None);
   // Compare with constrained solver in the absence of constraints
   solverCSQP->solve();
   solverSQP->solve();

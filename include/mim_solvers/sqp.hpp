@@ -57,7 +57,7 @@ class SolverSQP : public SolverDDP {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverSQP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverSQP();
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,

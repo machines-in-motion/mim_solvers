@@ -62,7 +62,7 @@ class SolverDDP : public crocoddyl::SolverAbstract {
    *
    * @param[in] problem  shooting problem
    */
-  explicit SolverDDP(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverDDP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverDDP();
 
   virtual bool solve(const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
@@ -306,12 +306,12 @@ class SolverDDP : public crocoddyl::SolverAbstract {
    * @param  callbacks  set of callback functions
    */
   void setCallbacks(
-      const std::vector<boost::shared_ptr<CallbackAbstract> >& callbacks);
+      const std::vector<std::shared_ptr<CallbackAbstract> >& callbacks);
 
   /**
    * @brief Return the list of callback functions using for diagnostic
    */
-  const std::vector<boost::shared_ptr<CallbackAbstract> >& getCallbacks() const;
+  const std::vector<std::shared_ptr<CallbackAbstract> >& getCallbacks() const;
 
 
   /**
@@ -360,7 +360,7 @@ class SolverDDP : public crocoddyl::SolverAbstract {
   double th_stepdec_;                                      //!< Step-length threshold used to decrease regularization
   double th_stepinc_;                                      //!< Step-length threshold used to increase regularization
   double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
-  std::vector<boost::shared_ptr<CallbackAbstract> > callbacks_;                 //!< Callback function
+  std::vector<std::shared_ptr<CallbackAbstract> > callbacks_;                 //!< Callback function
 
  public:
   std::vector<Eigen::VectorXd> lag_mul_;                   //!< the Lagrange multiplier of the dynamics constraint

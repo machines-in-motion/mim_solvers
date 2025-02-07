@@ -17,7 +17,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_solves, SolverCSQP::solve, 0, 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections, SolverCSQP::computeDirection, 0, 1)
 
 void exposeSolverCSQP() {
-  bp::register_ptr_to_python<boost::shared_ptr<SolverCSQP> >();
+  bp::register_ptr_to_python<std::shared_ptr<SolverCSQP> >();
 
   bp::class_<SolverCSQP, bp::bases<SolverDDP> >(
       "SolverCSQP",
@@ -28,7 +28,7 @@ void exposeSolverCSQP() {
       "and the forward-pass rollouts this new policy by integrating the system dynamics\n"
       "along a tuple of optimized control commands U*.\n"
       ":param shootingProblem: shooting problem (list of action models along trajectory.)",
-      bp::init<boost::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
+      bp::init<std::shared_ptr<crocoddyl::ShootingProblem> >(bp::args("self", "problem"),
                                                     "Initialize the vector dimension.\n\n"
                                                     ":param problem: shooting problem."))
       .def("solve", &SolverCSQP::solve,
