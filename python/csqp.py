@@ -32,6 +32,8 @@ class CSQP(StagewiseADMM, QPSolvers):
 
         self.mu1 = 1e1
         self.mu2 = 1e1
+        self.lag_mul_inf_norm_coef = 1.01
+        self.lag_mul_inf_norm = 0
         self.termination_tolerance = 1e-6
 
         self.iter = 0
@@ -81,7 +83,11 @@ class CSQP(StagewiseADMM, QPSolvers):
 
 
         self.gap_norm_try = sum(np.linalg.norm(self.gap_try, 1, axis = 1))
-        self.merit_try =  self.cost_try + self.mu1 * self.gap_norm_try + self.mu2 * self.constraint_norm_try
+
+        if(self.mu1 < 0  or self.mu2 < 0):
+            self.merit_try =  self.cost_try + self.lag_mul_inf_norm_coef * self.lag_mul_inf_norm * (self.gap_norm_try + self.constraint_norm_try)
+        else:
+            self.merit_try =  self.cost_try + self.mu1 * self.gap_norm_try + self.mu2 * self.constraint_norm_try
    
     def LQ_problem_KKT_check(self):
         KKT = 0

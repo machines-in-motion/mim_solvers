@@ -101,8 +101,17 @@ class StagewiseADMM(SolverAbstract):
 
         self.gap_norm = sum(np.linalg.norm(self.gap.copy(), 1, axis = 1))
         self.gap = self.gap.copy()
-
-        self.merit =  self.cost + self.mu1 * self.gap_norm + self.mu2 * self.constraint_norm
+        
+        if(self.mu1 < 0  or self.mu2 < 0):
+            self.lag_mul_inf_norm = 0
+            for lag_mul in self.lag_mul:
+                self.lag_mul_inf_norm = max(self.lag_mul_inf_norm, np.linalg.norm(lag_mul, np.inf))
+            for y in self.y:
+                if len(y) > 0:
+                    self.lag_mul_inf_norm = max(self.lag_mul_inf_norm, np.linalg.norm(y, np.inf))
+            self.merit =  self.cost + self.lag_mul_inf_norm_coef * self.lag_mul_inf_norm * (self.gap_norm + self.constraint_norm)
+        else:
+            self.merit =  self.cost + self.mu1 * self.gap_norm + self.mu2 * self.constraint_norm
 
     def computeDirection(self):
 

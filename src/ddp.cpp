@@ -379,26 +379,30 @@ void SolverDDP::forwardPass(const double steplength) {
 }
 
 void SolverDDP::computeGains(const std::size_t t) {
-  START_PROFILER("SolverDDP::computeGains");
+  static auto profiler_all = crocoddyl::getProfiler().watcher("SolverDDP::computeGains");
+  static auto profiler_Quu_inv = crocoddyl::getProfiler().watcher("SolverDDP::computeGains::Quu_inv");
+  static auto profiler_Quu_inv_Qux = crocoddyl::getProfiler().watcher("SolverDDP::computeGains::Quu_inv_Qux");
+  profiler_all.start();
+
   const std::size_t nu = problem_->get_runningModels()[t]->get_nu();
   if (nu > 0) {
-    START_PROFILER("SolverDDP::Quu_inv");
+    profiler_Quu_inv.start();
     Quu_llt_[t].compute(Quu_[t]);
-    STOP_PROFILER("SolverDDP::Quu_inv");
+    profiler_Quu_inv.stop();
     const Eigen::ComputationInfo& info = Quu_llt_[t].info();
     if (info != Eigen::Success) {
-      STOP_PROFILER("SolverDDP::computeGains");
+      profiler_all.stop();
       throw_pretty("backward_error");
     }
     K_[t] = Qxu_[t].transpose();
 
-    START_PROFILER("SolverDDP::Quu_inv_Qux");
+    profiler_Quu_inv_Qux.start();
     Quu_llt_[t].solveInPlace(K_[t]);
-    STOP_PROFILER("SolverDDP::Quu_inv_Qux");
+    profiler_Quu_inv_Qux.stop();
     k_[t] = Qu_[t];
     Quu_llt_[t].solveInPlace(k_[t]);
   }
-  STOP_PROFILER("SolverDDP::computeGains");
+  profiler_all.stop();
 }
 
 void SolverDDP::increaseRegularization() {
