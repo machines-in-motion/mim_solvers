@@ -882,7 +882,7 @@ void SolverCSQP::backwardPass_mt() {
   static auto profiler_lock = crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_mt::lock");
   profiler_all.start();
 
-  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
   Vxx_.back() = d_T->Lxx; 
   Vxx_.back().diagonal().array() += sigma_;
@@ -900,12 +900,12 @@ void SolverCSQP::backwardPass_mt() {
     Vxx_.back().diagonal().array() += preg_;
   }
 
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
 #pragma omp parallel for num_threads(problem_->get_nthreads())
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
     std::size_t nc = m->get_ng();
     
@@ -953,8 +953,8 @@ void SolverCSQP::backwardPass_mt() {
 
   profiler_lock.start();
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
@@ -1078,10 +1078,10 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
 
   profiler_all.start();
 
-  const std::vector<boost::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
-  const std::vector<boost::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
-  const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
-  const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract> >& models = problem_->get_runningModels();
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::shared_ptr<crocoddyl::ActionModelAbstract>& m_T = problem_->get_terminalModel();
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T = problem_->get_terminalData();
 
   Vx_.back().noalias() = d_T->Lx - sigma_ * dx_.back();
 
@@ -1095,8 +1095,8 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
 #pragma omp parallel for num_threads(problem_->get_nthreads())
 #endif // CROCODDYL_WITH_MULTITHREADING
   for (int t = 0; t < static_cast<int>(problem_->get_T()); ++t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
@@ -1119,8 +1119,8 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
 
   profiler_pass.start();
   for (int t = static_cast<int>(problem_->get_T()) - 1; t >= 0; --t) {
-    const boost::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    const boost::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
     tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
