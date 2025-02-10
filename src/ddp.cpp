@@ -67,8 +67,8 @@ bool SolverDDP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   if (problem_->is_updated()) {
     resizeData();
   }
-  xs_try_[0] =
-      problem_->get_x0();  // it is needed in case that init_xs[0] is infeasible
+  // it is needed in case that init_xs[0] is infeasible
+  xs_try_[0] = problem_->get_x0();
   setCandidate(init_xs, init_us, is_feasible);
 
   if (std::isnan(reginit)) {
