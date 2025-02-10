@@ -2,18 +2,15 @@ if(GENERATE_PYTHON_STUBS)
   include(${JRL_CMAKE_MODULES}/stubs.cmake)
 endif(GENERATE_PYTHON_STUBS)
 
-set( ${PY_NAME}_HEADERS
-  utils/callback-base.hpp
-  )
+set(${PY_NAME}_HEADERS utils/callback-base.hpp)
 set(${PY_NAME}_SOURCES
-  ddp.cpp
-  fddp.cpp
-  sqp.cpp
-  csqp.cpp
-  main.cpp
-  utils/callbacks.cpp
-  utils/callback-base.cpp
-  )
+    ddp.cpp
+    fddp.cpp
+    sqp.cpp
+    csqp.cpp
+    main.cpp
+    utils/callbacks.cpp
+    utils/callback-base.cpp)
 
 if(BUILD_WITH_PROXSUITE)
   list(APPEND ${PY_NAME}_SOURCES csqp_proxqp.cpp)

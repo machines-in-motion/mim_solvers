@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the cost model unittests factory from the Crocoddyl library
-// This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.hpp
-// 
+//
+// This file is a modified version of the cost model unittests factory from the
+// Crocoddyl library This modified version is used for testing purposes only
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.hpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -48,8 +49,7 @@ class ProblemFactory {
   ~ProblemFactory();
 
   std::shared_ptr<crocoddyl::ShootingProblem> create(
-      ProblemTypes::Type problem_type,
-      ModelTypes::Type model_type, 
+      ProblemTypes::Type problem_type, ModelTypes::Type model_type,
       XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type) const;
 };

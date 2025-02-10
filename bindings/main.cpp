@@ -8,19 +8,18 @@
 
 #include "mim_solvers/python.hpp"
 
-BOOST_PYTHON_MODULE(mim_solvers_pywrap) { 
+BOOST_PYTHON_MODULE(mim_solvers_pywrap) {
+  namespace bp = boost::python;
 
-    namespace bp = boost::python;
+  bp::import("crocoddyl");
 
-    bp::import("crocoddyl");
-    
-    mim_solvers::exposeCallbackAbstract();
-    mim_solvers::exposeCallbackVerbose();
-    mim_solvers::exposeSolverDDP(); 
-    mim_solvers::exposeSolverFDDP(); 
-    mim_solvers::exposeSolverSQP(); 
-    mim_solvers::exposeSolverCSQP(); 
+  mim_solvers::exposeCallbackAbstract();
+  mim_solvers::exposeCallbackVerbose();
+  mim_solvers::exposeSolverDDP();
+  mim_solvers::exposeSolverFDDP();
+  mim_solvers::exposeSolverSQP();
+  mim_solvers::exposeSolverCSQP();
 #ifdef MIM_SOLVERS_WITH_PROXQP
-    mim_solvers::exposeSolverPROXQP();
+  mim_solvers::exposeSolverPROXQP();
 #endif
 }

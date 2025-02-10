@@ -8,17 +8,19 @@ All rights reserved.
 This file checks that all methods converge to the same solution on the taichi example.
 """
 
-
-import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent.parent/'python'
-os.sys.path.insert(1, str(python_path))
+import pathlib
+
 import mim_solvers
 import numpy as np
+
 np.set_printoptions(precision=4, linewidth=180)
-from sqp_cpp import SQP_CPP
-from sqp import SQP
-from problems import create_taichi
+python_path = pathlib.Path(".").absolute().parent.parent / "python"
+os.sys.path.insert(1, str(python_path))
+
+from problems import create_taichi  # noqa: E402
+from sqp import SQP  # noqa: E402
+from sqp_cpp import SQP_CPP  # noqa: E402
 
 LINE_WIDTH = 100
 print("TEST HUMANOID TAICHI PROBLEM SQP".center(LINE_WIDTH, "-"))
@@ -30,22 +32,22 @@ ddp0 = SQP(problem)
 ddp1 = SQP_CPP(problem)
 ddp2 = mim_solvers.SolverSQP(problem)
 
-# Set Filter Line Search
+# Set Filter Line Search
 ddp0.use_filter_line_search = True
 ddp1.use_filter_line_search = True
 ddp2.use_filter_line_search = True
 
-# Set filter size
+# Set filter size
 ddp0.filter_size = 10
 ddp1.filter_size = 10
 ddp2.filter_size = 10
 
-# Set callbacks
+# Set callbacks
 ddp0.with_callbacks = True
 ddp1.with_callbacks = True
 ddp2.with_callbacks = True
 
-# Set tolerance 
+# Set tolerance
 ddp0.termination_tolerance = 1e-8
 ddp1.termination_tolerance = 1e-8
 ddp2.termination_tolerance = 1e-8
@@ -68,8 +70,12 @@ assert np.linalg.norm(np.array(ddp0.us) - np.array(ddp2.us)) < tol, "Test failed
 assert ddp0.cost - ddp1.cost < tol, "Test failed"
 assert ddp0.cost - ddp2.cost < tol, "Test failed"
 
-assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp1.lag_mul)) < tol, "Test failed"
-assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp2.lag_mul)) < tol, "Test failed"
+assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp1.lag_mul)) < tol, (
+    "Test failed"
+)
+assert np.linalg.norm(np.array(ddp0.lag_mul) - np.array(ddp2.lag_mul)) < tol, (
+    "Test failed"
+)
 
 assert ddp0.KKT - ddp1.KKT < tol, "Test failed"
 assert ddp0.KKT - ddp2.KKT < tol, "Test failed"

@@ -8,51 +8,57 @@ All rights reserved.
 This file checks that the python and c++ sqp implementation match without regularization.
 """
 
-
-import pathlib
 import os
-import numpy as np
-import mim_solvers
+import pathlib
 
-python_path = pathlib.Path('.').absolute().parent.parent/'python'
-print(python_path)
+import mim_solvers
+import numpy as np
+
+python_path = pathlib.Path(".").absolute().parent.parent / "python"
 os.sys.path.insert(1, str(python_path))
 
-from sqp import SQP
-
-from problems import create_double_pendulum_problem, create_quadrotor_problem, create_unconstrained_ur5, create_taichi
-import pinocchio as pin
+from problems import (  # noqa: E402
+    create_double_pendulum_problem,
+    create_quadrotor_problem,
+    create_taichi,
+    create_unconstrained_ur5,
+)
+from sqp import SQP  # noqa: E402
 
 # Solver params
-MAXITER     = 100
-TOL         = 1e-4
-with_callbacks   = True
+MAXITER = 100
+TOL = 1e-4
+with_callbacks = True
 FILTER_SIZE = MAXITER
 
-# Create 1 solver of each type for each problem
+# Create 1 solver of each type for each problem
 
-problems = [create_double_pendulum_problem(), create_quadrotor_problem(), create_unconstrained_ur5(), create_taichi()]
+problems = [
+    create_double_pendulum_problem(),
+    create_quadrotor_problem(),
+    create_unconstrained_ur5(),
+    create_taichi(),
+]
 
 for problem, xs_init, us_init in problems:
-
     x0 = problem.x0.copy()
-    # Create solver SQP (MS)
+    # Create solver SQP (MS)
     solverSQP = mim_solvers.SolverSQP(problem)
-    solverSQP.termination_tolerance  = TOL
+    solverSQP.termination_tolerance = TOL
     solverSQP.use_filter_line_search = True
-    solverSQP.filter_size            = MAXITER
-    solverSQP.with_callbacks         = with_callbacks
-    solverSQP.reg_min                = 0.0 # This turns of regularization completely. 
-    reginit                          = 0.0
+    solverSQP.filter_size = MAXITER
+    solverSQP.with_callbacks = with_callbacks
+    solverSQP.reg_min = 0.0  # This turns of regularization completely.
+    reginit = 0.0
 
     # Create python solver
     pysolverSQP = SQP(problem, with_callbacks=with_callbacks)
-    pysolverSQP.termination_tolerance  = TOL
-    pysolverSQP.use_filter_line_search  = True
-    pysolverSQP.filter_size  = MAXITER
+    pysolverSQP.termination_tolerance = TOL
+    pysolverSQP.use_filter_line_search = True
+    pysolverSQP.filter_size = MAXITER
 
-    # SQP    
-    solverSQP.solve(xs_init , us_init, MAXITER, False, reginit)
+    # SQP
+    solverSQP.solve(xs_init, us_init, MAXITER, False, reginit)
 
     pysolverSQP.solve(xs_init, us_init, MAXITER)
 
@@ -60,12 +66,24 @@ for problem, xs_init, us_init in problems:
 
 set_tol = 1e-4
 
-for t in range(problem.T-1, 0, -1):
-    assert np.linalg.norm(pysolverSQP.L[t] + solverSQP.K[t], 1) < (np.size(pysolverSQP.L[t])) * set_tol
-    assert np.linalg.norm(pysolverSQP.l[t] + solverSQP.k[t], 1)/(len(pysolverSQP.l[t])) < set_tol
+for t in range(problem.T - 1, 0, -1):
+    assert (
+        np.linalg.norm(pysolverSQP.L[t] + solverSQP.K[t], 1)
+        < (np.size(pysolverSQP.L[t])) * set_tol
+    )
+    assert (
+        np.linalg.norm(pysolverSQP.l[t] + solverSQP.k[t], 1) / (len(pysolverSQP.l[t]))
+        < set_tol
+    )
 
-assert np.linalg.norm(np.array(pysolverSQP.xs) - np.array(solverSQP.xs))/(problem.T+1) < set_tol, "Test failed"
-assert np.linalg.norm(np.array(pysolverSQP.us) - np.array(solverSQP.us))/problem.T < set_tol, "Test failed"
+assert (
+    np.linalg.norm(np.array(pysolverSQP.xs) - np.array(solverSQP.xs)) / (problem.T + 1)
+    < set_tol
+), "Test failed"
+assert (
+    np.linalg.norm(np.array(pysolverSQP.us) - np.array(solverSQP.us)) / problem.T
+    < set_tol
+), "Test failed"
 
 assert pysolverSQP.KKT - solverSQP.KKT < set_tol, "Test failed"
 

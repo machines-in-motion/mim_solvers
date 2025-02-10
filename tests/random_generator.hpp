@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the random generator from the Crocoddyl library
-// This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/random_generator.hpp
-// 
+//
+// This file is a modified version of the random generator from the Crocoddyl
+// library This modified version is used for testing purposes only Original file
+// :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/random_generator.hpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //

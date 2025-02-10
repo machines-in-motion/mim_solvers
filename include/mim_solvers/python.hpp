@@ -11,26 +11,26 @@
 
 #include <boost/python.hpp>
 
+#include "mim_solvers/csqp.hpp"
 #include "mim_solvers/ddp.hpp"
 #include "mim_solvers/fddp.hpp"
 #include "mim_solvers/sqp.hpp"
-#include "mim_solvers/csqp.hpp"
 #include "mim_solvers/utils/callbacks.hpp"
 
 #ifdef MIM_SOLVERS_WITH_PROXQP
-    #include "mim_solvers/csqp_proxqp.hpp"
+#include "mim_solvers/csqp_proxqp.hpp"
 #endif
 
-namespace mim_solvers{
-    void exposeCallbackAbstract();
-    void exposeCallbackVerbose();
-    void exposeSolverDDP();
-    void exposeSolverFDDP();
-    void exposeSolverSQP();
-    void exposeSolverCSQP();
+namespace mim_solvers {
+void exposeCallbackAbstract();
+void exposeCallbackVerbose();
+void exposeSolverDDP();
+void exposeSolverFDDP();
+void exposeSolverSQP();
+void exposeSolverCSQP();
 #ifdef MIM_SOLVERS_WITH_PROXQP
-    void exposeSolverPROXQP();
+void exposeSolverPROXQP();
 #endif
-} // namespace mim_solvers
+}  // namespace mim_solvers
 
 #endif

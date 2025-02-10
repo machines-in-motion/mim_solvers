@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 // This file is a modified version of SolverKKT from the Crocoddyl library
 // This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/src/core/solvers/kkt.cpp
-// 
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/src/core/solvers/kkt.cpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -34,7 +35,7 @@ SolverKKT::SolverKKT(std::shared_ptr<crocoddyl::ShootingProblem> problem)
   }
   const std::size_t T = this->problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  fs_flat_.resize(ndx*(T + 1));
+  fs_flat_.resize(ndx * (T + 1));
   fs_flat_.setZero();
 }
 
@@ -64,7 +65,7 @@ bool SolverKKT::solve(const std::vector<Eigen::VectorXd>& init_xs,
     expectedImprovement();
 
     // KKT termination criteria
-    if (KKT_  <= termination_tol_) {
+    if (KKT_ <= termination_tol_) {
       return true;
     }
 
@@ -151,20 +152,26 @@ double SolverKKT::tryStep(const double steplength) {
   return cost_ - cost_try_;
 }
 
-void SolverKKT::checkKKTConditions(){
+void SolverKKT::checkKKTConditions() {
   KKT_ = 0.;
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas = problem_->get_runningDatas();
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract> >& datas =
+      problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-    KKT_ = std::max(KKT_, (d->Lx + d->Fx.transpose() * lambdas_[t+1] - lambdas_[t]).lpNorm<Eigen::Infinity>());
-    KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lambdas_[t+1]).lpNorm<Eigen::Infinity>());
-    fs_flat_.segment(t*ndx, ndx) = fs_[t];
+    KKT_ = std::max(KKT_,
+                    (d->Lx + d->Fx.transpose() * lambdas_[t + 1] - lambdas_[t])
+                        .lpNorm<Eigen::Infinity>());
+    KKT_ = std::max(KKT_, (d->Lu + d->Fu.transpose() * lambdas_[t + 1])
+                              .lpNorm<Eigen::Infinity>());
+    fs_flat_.segment(t * ndx, ndx) = fs_[t];
   }
   fs_flat_.tail(ndx) = fs_.back();
-  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter = problem_->get_terminalData();
-  KKT_ = std::max(KKT_, (d_ter->Lx - lambdas_.back()).lpNorm<Eigen::Infinity>());
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter =
+      problem_->get_terminalData();
+  KKT_ =
+      std::max(KKT_, (d_ter->Lx - lambdas_.back()).lpNorm<Eigen::Infinity>());
   KKT_ = std::max(KKT_, fs_flat_.lpNorm<Eigen::Infinity>());
 }
 
@@ -355,4 +362,4 @@ void SolverKKT::allocateData() {
   dF.setZero();
 }
 
-}  // namespace crocoddyl
+}  // namespace mim_solvers

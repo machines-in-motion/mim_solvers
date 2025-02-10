@@ -96,34 +96,23 @@ if(BUILD_PYTHON_INTERFACE)
   set(${PY_NAME}_INSTALL_DIR ${PYTHON_SITELIB}/${PY_NAME})
 endif()
 
-
 if(CHECK_RUNTIME_MALLOC)
   message(STATUS "Check if some memory allocations are performed at runtime.")
   add_definitions(-DMIM_SOLVERS_EIGEN_CHECK_MALLOC)
   add_definitions(-DEIGEN_RUNTIME_NO_MALLOC)
 endif(CHECK_RUNTIME_MALLOC)
 
-
 # Main Library
 set(${PROJECT_NAME}_HEADERS
-  include/${PROJECT_NAME}/kkt.hpp
-  include/${PROJECT_NAME}/ddp.hpp
-  include/${PROJECT_NAME}/fddp.hpp
-  include/${PROJECT_NAME}/sqp.hpp
-  include/${PROJECT_NAME}/csqp.hpp
-  include/${PROJECT_NAME}/utils/callbacks.hpp
-  )
+    include/${PROJECT_NAME}/kkt.hpp
+    include/${PROJECT_NAME}/ddp.hpp
+    include/${PROJECT_NAME}/fddp.hpp
+    include/${PROJECT_NAME}/sqp.hpp
+    include/${PROJECT_NAME}/csqp.hpp
+    include/${PROJECT_NAME}/utils/callbacks.hpp)
 
-set(${PROJECT_NAME}_SOURCES
-  src/kkt.cpp
-  src/ddp.cpp
-  src/fddp.cpp
-  src/sqp.cpp
-  src/csqp.cpp
-  src/utils/callbacks.cpp
-  )
-
-
+set(${PROJECT_NAME}_SOURCES src/kkt.cpp src/ddp.cpp src/fddp.cpp src/sqp.cpp
+                            src/csqp.cpp src/utils/callbacks.cpp)
 
 if(BUILD_WITH_PROXSUITE)
   list(APPEND ${PROJECT_NAME}_HEADERS include/${PROJECT_NAME}/csqp_proxqp.hpp)

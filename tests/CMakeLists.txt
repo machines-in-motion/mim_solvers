@@ -34,8 +34,8 @@ if(BUILD_PYTHON_INTERFACE)
                        "tests/python/test_sqp_ur5_convergence.py" bindings)
   add_python_unit_test("py-test-csqp-ur5" "tests/python/test_ur5_csqp.py"
                        bindings)
-  add_python_unit_test("py-test-qp-ur5-all" "tests/python/test_qp_ur5_all.py" 
+  add_python_unit_test("py-test-qp-ur5-all" "tests/python/test_qp_ur5_all.py"
                        bindings)
-  add_python_unit_test("py-test-qp-solo-all" "tests/python/test_qp_solo_all.py" 
+  add_python_unit_test("py-test-qp-solo-all" "tests/python/test_qp_solo_all.py"
                        bindings)
 endif()

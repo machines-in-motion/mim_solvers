@@ -8,19 +8,18 @@ All rights reserved.
 This file checks that all methods converge in one iteration on a LQR problem.
 """
 
-
-import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent.parent/'python'
+import pathlib
+
+import mim_solvers
+import numpy as np
+
+python_path = pathlib.Path(".").absolute().parent.parent / "python"
 os.sys.path.insert(1, str(python_path))
 
-from sqp import SQP
-from sqp_cpp import SQP_CPP
-import numpy as np
-import crocoddyl
-import mim_solvers
-from problems import create_lqr_problem
-
+from problems import create_lqr_problem  # noqa: E402
+from sqp import SQP  # noqa: E402
+from sqp_cpp import SQP_CPP  # noqa: E402
 
 LINE_WIDTH = 100
 
@@ -39,7 +38,6 @@ ddp2.with_callbacks = True
 ddp0.termination_tolerance = 1e-6
 ddp1.termination_tolerance = 1e-6
 ddp2.termination_tolerance = 1e-6
-
 
 
 converged = ddp0.solve(xs_init, us_init, 10)
