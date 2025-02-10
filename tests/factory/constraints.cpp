@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the cost model unittests factory from the Crocoddyl library
-// This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.cpp
-// 
+//
+// This file is a modified version of the cost model unittests factory from the
+// Crocoddyl library This modified version is used for testing purposes only
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.cpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -12,8 +13,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "constraints.hpp"
-#include <crocoddyl/core/utils/exception.hpp>
 
+#include <crocoddyl/core/utils/exception.hpp>
 
 namespace mim_solvers {
 namespace unittest {

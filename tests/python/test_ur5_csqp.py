@@ -8,15 +8,18 @@ All rights reserved.
 This file checks that the python and c++ csqp implementation match on ur5.
 """
 
-import pathlib
 import os
-python_path = pathlib.Path('.').absolute().parent.parent/'python'
-os.sys.path.insert(1, str(python_path))
+import pathlib
+
 import crocoddyl
-import numpy as np
-import mim_solvers
 import example_robot_data
-from csqp import CSQP
+import mim_solvers
+import numpy as np
+
+python_path = pathlib.Path(".").absolute().parent.parent / "python"
+os.sys.path.insert(1, str(python_path))
+
+from csqp import CSQP  # noqa: E402
 
 # # # # # # # # # # # # # # #
 ###       LOAD ROBOT      ###
@@ -62,7 +65,7 @@ ee_contraint = crocoddyl.ConstraintModelResidual(
     state,
     frameTranslationResidual,
     np.array([-1.0, -1.0, -1.0]),
-    np.array([1., 0.4, 0.4]),
+    np.array([1.0, 0.4, 0.4]),
 )
 
 # Create the running models
@@ -117,8 +120,8 @@ ddp2.use_filter_line_search = True
 
 max_sqp_iter = 4
 
-ddp1.filter_size = max_sqp_iter 
-ddp2.filter_size = max_sqp_iter 
+ddp1.filter_size = max_sqp_iter
+ddp2.filter_size = max_sqp_iter
 
 ddp1.extra_iteration_for_last_kkt = True
 ddp2.extra_iteration_for_last_kkt = True
@@ -131,10 +134,10 @@ ddp1.max_qp_iters = 1000
 ddp2.max_qp_iters = 1000
 
 ddp1.eps_abs = 1e-4
-ddp1.eps_rel = 0.
+ddp1.eps_rel = 0.0
 
 ddp2.eps_abs = 1e-4
-ddp2.eps_rel = 0.
+ddp2.eps_rel = 0.0
 
 # Remove regularization in cpp solver
 ddp1.remove_reg = True
@@ -144,23 +147,32 @@ set_tol = 1e-8
 
 for reset_rho in [True, False]:
     for reset_y in [True, False]:
-        ddp1.reset_rho = reset_rho  
-        ddp1.reset_y   = reset_y 
+        ddp1.reset_rho = reset_rho
+        ddp1.reset_y = reset_y
 
         ddp2.reset_rho = reset_rho
-        ddp2.reset_y   = reset_y 
+        ddp2.reset_y = reset_y
 
         converged = ddp1.solve(xs_init_1, us_init_1, max_sqp_iter)
         converged = ddp2.solve(xs_init_2, us_init_2, max_sqp_iter)
 
-
         ##### UNIT TEST #####################################
-        assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, "Test failed"
-        assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, "Test failed"
+        assert np.linalg.norm(np.array(ddp1.xs) - np.array(ddp2.xs)) < set_tol, (
+            "Test failed"
+        )
+        assert np.linalg.norm(np.array(ddp1.us) - np.array(ddp2.us)) < set_tol, (
+            "Test failed"
+        )
 
-        assert np.linalg.norm(np.array(ddp1.dx_tilde) - np.array(ddp2.dx_tilde)) < set_tol, "Test failed"
-        assert np.linalg.norm(np.array(ddp1.du_tilde) - np.array(ddp2.du_tilde)) < set_tol, "Test failed"
+        assert (
+            np.linalg.norm(np.array(ddp1.dx_tilde) - np.array(ddp2.dx_tilde)) < set_tol
+        ), "Test failed"
+        assert (
+            np.linalg.norm(np.array(ddp1.du_tilde) - np.array(ddp2.du_tilde)) < set_tol
+        ), "Test failed"
 
-        assert np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol, "Test failed"
+        assert (
+            np.linalg.norm(np.array(ddp1.lag_mul) - np.array(ddp2.lag_mul)) < set_tol
+        ), "Test failed"
 
-        assert ddp1.qp_iters == ddp2.qp_iters 
+        assert ddp1.qp_iters == ddp2.qp_iters

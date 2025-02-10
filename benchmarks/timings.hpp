@@ -8,7 +8,6 @@
 
 #include <chrono>
 
-
 namespace mim_solvers {
 
 struct CPUTimes {
@@ -52,7 +51,6 @@ struct Timer {
     return current;
   }
 
-
   duration_type duration() const { return (m_end - m_start); }
 
   void start() {
@@ -61,7 +59,6 @@ struct Timer {
       m_times.clear();
 
       m_start = std::chrono::steady_clock::now();
-
     }
   }
 
@@ -69,23 +66,19 @@ struct Timer {
     if (m_is_stopped) return;
     m_is_stopped = true;
 
-
     m_end = std::chrono::steady_clock::now();
     m_times.user += static_cast<double>(
                         std::chrono::duration_cast<std::chrono::nanoseconds>(
                             m_end - m_start)
                             .count()) *
                     1e-6;
-
   }
 
   void resume() {
-
     if (m_is_stopped) {
       m_start = std::chrono::steady_clock::now();
       m_is_stopped = false;
     }
-
   }
 
   bool is_stopped() const { return m_is_stopped; }
@@ -94,12 +87,9 @@ struct Timer {
   CPUTimes m_times;
   bool m_is_stopped;
 
-
   std::chrono::time_point<std::chrono::steady_clock> m_start, m_end;
-
 };
 
 }  // namespace mim_solvers
-
 
 #endif  // ifndef MIM_SOLVERS_TIMINGS_FWD_H

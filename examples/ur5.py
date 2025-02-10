@@ -8,9 +8,10 @@ All rights reserved.
 """
 
 import crocoddyl
-import numpy as np
-import mim_solvers
 import example_robot_data
+import matplotlib.pyplot as plt
+import mim_solvers
+import numpy as np
 
 # # # # # # # # # # # # # # #
 ###       LOAD ROBOT      ###
@@ -56,7 +57,7 @@ ee_contraint = crocoddyl.ConstraintModelResidual(
     state,
     frameTranslationResidual,
     np.array([-1.0, -1.0, -1.0]),
-    np.array([1., 0.4, 0.4]),
+    np.array([1.0, 0.4, 0.4]),
 )
 
 # Create the running models
@@ -100,7 +101,7 @@ us = [np.zeros(nu)] * T
 # Define solver
 solver = mim_solvers.SolverCSQP(problem)
 solver.termination_tolerance = 1e-4
-# solver.with_callbacks = True 
+# solver.with_callbacks = True
 solver.setCallbacks([mim_solvers.CallbackVerbose(), mim_solvers.CallbackLogger()])
 
 # Solve
@@ -111,8 +112,6 @@ crocoddyl.plotOCSolution(solver.xs, solver.us)
 mim_solvers.plotConvergence(log.convergence_data)
 
 
-
-
 x_traj = np.array(solver.xs)
 u_traj = np.array(solver.us)
 p_traj = np.zeros((len(solver.xs), 3))
@@ -121,9 +120,8 @@ for i in range(T + 1):
     robot.framesForwardKinematics(x_traj[i, :nq])
     p_traj[i] = robot.data.oMf[endeff_frame_id].translation
 
-import matplotlib.pyplot as plt 
 
-time_lin = np.linspace(0, dt * (T + 1), T+1)
+time_lin = np.linspace(0, dt * (T + 1), T + 1)
 
 fig, axs = plt.subplots(nq)
 for i in range(nq):
@@ -148,6 +146,7 @@ plt.show()
 WITHDISPLAY = True
 if WITHDISPLAY:
     import time
+
     display = crocoddyl.MeshcatDisplay(robot)
     display.rate = -1
     display.freq = 1
