@@ -409,7 +409,7 @@ class StagewiseADMM(SolverAbstract):
         self.norm_primal_rel = max(self.norm_primal_rel)
 
     def acceptStep(self, alpha):
-        for t, (model, data) in enumerate(
+        for t, (model, _) in enumerate(
             zip(self.problem.runningModels, self.problem.runningDatas)
         ):
             self.xs_try[t] = model.state.integrate(self.xs[t], alpha * self.dx[t])
@@ -423,7 +423,7 @@ class StagewiseADMM(SolverAbstract):
     def forwardPass(self):
         """computes step updates dx and du"""
         assert np.linalg.norm(self.dx[0]) < 1e-6
-        for t, (model, data) in enumerate(
+        for t, (_, data) in enumerate(
             zip(self.problem.runningModels, self.problem.runningDatas)
         ):
             # self.lag_mul[t] = self.Vxx[t] @ self.dx_tilde[t] + self.Vx[t]
