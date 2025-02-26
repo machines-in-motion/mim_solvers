@@ -250,8 +250,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
           computeDirection(true);
         } catch (std::exception& e) {
           increaseRegularization();
-          if (std::fabs(preg_ - reg_max_) <=
-              std::numeric_limits<double>::epsilon()) {
+          if (preg_ >= reg_max_) {
             return false;
           } else {
             continue;
@@ -345,8 +344,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
       } else {
         increaseRegularization();
         // preg_ equal to reg_max_
-        if (std::fabs(preg_ - reg_max_) <=
-            std::numeric_limits<double>::epsilon()) {
+        if (preg_ >= reg_max_) {
           STOP_PROFILER("SolverCSQP::solve");
           return false;
         }
@@ -369,8 +367,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         } catch (std::exception& e) {
           increaseRegularization();
           // preg_ equal to reg_max_
-          if (std::fabs(preg_ - reg_max_) <=
-              std::numeric_limits<double>::epsilon()) {
+          if (preg_ >= reg_max_) {
             return false;
           } else {
             continue;
