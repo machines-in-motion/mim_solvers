@@ -333,7 +333,9 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         }
       }
     }
-    if (!found) break;
+    if (!found) {
+      break;
+    }
 
     // Regularization logic
     if (!remove_reg_) {
