@@ -627,7 +627,7 @@ void SolverCSQP::forwardPass(const double /*stepLength*/) {
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
 
-    dutilde_[t] = k_[t];
+    dutilde_[t] = -k_[t];
     dutilde_[t].noalias() -= K_[t] * dxtilde_[t];
     dxtilde_[t + 1].noalias() = d->Fx * dxtilde_[t];
     dxtilde_[t + 1].noalias() += d->Fu * dutilde_[t];
