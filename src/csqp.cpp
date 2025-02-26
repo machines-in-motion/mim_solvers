@@ -250,7 +250,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
           computeDirection(true);
         } catch (std::exception& e) {
           increaseRegularization();
-          if (preg_ == reg_max_) {
+          if (std::fabs(preg_ - reg_max_) <=
+              std::numeric_limits<double>::epsilon()) {
             return false;
           } else {
             continue;
