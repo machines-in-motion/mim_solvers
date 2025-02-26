@@ -420,7 +420,6 @@ void SolverCSQP::calc(const bool recalc) {
     gap_norm_ += fs_[t + 1].lpNorm<1>();
 
     const std::size_t nc = m->get_ng();
-    // TODO check dynamic allocations
     constraint_norm_ +=
         (m->get_g_lb() - d->g).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
     constraint_norm_ +=
@@ -514,9 +513,7 @@ void SolverCSQP::update_rho_vec(const int iter) {
     if (rho_estimate_sparse_ > rho_sparse_ * adaptive_rho_tolerance_ ||
         rho_estimate_sparse_ < rho_sparse_ / adaptive_rho_tolerance_) {
       rho_sparse_ = rho_estimate_sparse_;
-      // MIM_SOLVERS_EIGEN_MALLOC_NOT_ALLOWED();
       apply_rho_update(rho_sparse_);
-      // MIM_SOLVERS_EIGEN_MALLOC_ALLOWED();
     }
   }
 }
@@ -742,7 +739,6 @@ void SolverCSQP::backwardPass() {
     if (nu != 0) {
       profiler_Quu.start();
       FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
-      // TODO check memory allocation
       Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0) {
         Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
