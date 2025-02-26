@@ -507,7 +507,8 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
 void SolverCSQP::update_rho_vec(const int iter) {
   const double scale = std::sqrt((norm_primal_ * norm_dual_rel_) /
                                  (norm_dual_ * norm_primal_rel_));
-  rho_estimate_sparse_ = std::clamp(scale * rho_sparse_, rho_min_, rho_max_);
+  rho_estimate_sparse_ =
+      std::max(rho_min_, std::min(scale * rho_sparse_, rho_max_));
 
   if (iter % rho_update_interval_ == 0) {  // && iter > 1){
     if (rho_estimate_sparse_ > rho_sparse_ * adaptive_rho_tolerance_ ||
