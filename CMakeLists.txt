@@ -23,6 +23,9 @@ option(BUILD_BENCHMARKS "Build the benchmarks" OFF)
 option(CHECK_RUNTIME_MALLOC "Check eigen mallocs" OFF)
 option(ENABLE_VECTORIZATION
        "Enable vectorization and further processor-related optimizations" OFF)
+option(BUILD_WITH_MULTITHREADS
+       "Build the library with the Multithreading support (required OpenMP)"
+       OFF)
 
 # Project configuration
 set(PROJECT_USE_CMAKE_EXPORT TRUE)
@@ -94,7 +97,9 @@ if(BUILD_WITH_PROXSUITE)
   add_definitions(-DMIM_SOLVERS_WITH_PROXQP)
 endif()
 
-find_package(OpenMP REQUIRED COMPONENTS CXX)
+if(BUILD_WITH_MULTITHREADS)
+  find_package(OpenMP REQUIRED COMPONENTS CXX)
+endif()
 
 if(BUILD_PYTHON_INTERFACE)
   set(PY_NAME ${PROJECT_NAME}_pywrap)
