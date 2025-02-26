@@ -62,10 +62,10 @@ SolverCSQP::SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
   tmp_vec_u_.resize(T);
   Vxx_fs_.resize(T);
 
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &model = models[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
     const std::size_t nu = model->get_nu();
     std::size_t nc = model->get_ng();
     n_eq_crocoddyl += model->get_nh();
@@ -194,8 +194,8 @@ void SolverCSQP::reset_params() {
 
 SolverCSQP::~SolverCSQP() {}
 
-bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
-                       const std::vector<Eigen::VectorXd> &init_us,
+bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
+                       const std::vector<Eigen::VectorXd>& init_us,
                        const std::size_t maxiter, const bool /*is_feasible*/,
                        const double reginit) {
   START_PROFILER("SolverCSQP::solve");
@@ -248,7 +248,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
       while (true) {
         try {
           computeDirection(true);
-        } catch (std::exception &e) {
+        } catch (std::exception& e) {
           increaseRegularization();
           if (preg_ == reg_max_) {
             return false;
@@ -264,7 +264,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
     checkKKTConditions();
 
     // Perform callbacks
-    for (const auto &callback : callbacks_) {
+    for (const auto& callback : callbacks_) {
       (*callback)(*this, "CSQP");
     }
 
@@ -281,11 +281,11 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
     // Calculate the coefficient of the merit function.
     if (mu_dynamic_ < 0. || mu_constraint_ < 0.) {
       lag_mul_inf_norm_ = 0;
-      for (const auto &lag_mul : lag_mul_) {
+      for (const auto& lag_mul : lag_mul_) {
         lag_mul_inf_norm_ =
             std::max(lag_mul_inf_norm_, lag_mul.lpNorm<Eigen::Infinity>());
       }
-      for (const auto &y : y_) {
+      for (const auto& y : y_) {
         lag_mul_inf_norm_ =
             std::max(lag_mul_inf_norm_, y.lpNorm<Eigen::Infinity>());
       }
@@ -303,7 +303,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
     for (const double steplength_ : alphas_) {
       try {
         merit_try_ = tryStep(steplength_);
-      } catch (std::exception &e) {
+      } catch (std::exception& e) {
         continue;
       }
       // Filter line search criteria
@@ -363,7 +363,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
       while (true) {
         try {
           computeDirection(true);
-        } catch (std::exception &e) {
+        } catch (std::exception& e) {
           increaseRegularization();
           // preg_ equal to reg_max_
           if (std::fabs(preg_ - reg_max_) <=
@@ -381,7 +381,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd> &init_xs,
     checkKKTConditions();
 
     // Perform callbacks
-    for (const auto &callback : callbacks_) {
+    for (const auto& callback : callbacks_) {
       (*callback)(*this, "CSQP");
     }
 
@@ -406,14 +406,14 @@ void SolverCSQP::calc(const bool recalc) {
   // double infty = std::numeric_limits<double>::infinity();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
     m->get_state()->diff(xs_[t + 1], d->xnext, fs_[t + 1]);
 
@@ -426,7 +426,7 @@ void SolverCSQP::calc(const bool recalc) {
         (d->g - m->get_g_ub()).cwiseMax(Eigen::VectorXd::Zero(nc)).lpNorm<1>();
   }
 
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
   const std::size_t nc = problem_->get_terminalModel()->get_ng();
 
@@ -526,12 +526,12 @@ void SolverCSQP::reset_rho_vec() {
 void SolverCSQP::apply_rho_update(const double rho_sparse_tmp) {
   START_PROFILER("SolverCSQP::apply_rho_update");
   const std::size_t T = this->problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
   double infty = std::numeric_limits<double>::infinity();
 
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const std::size_t nc = m->get_ng();
 
     for (std::size_t k = 0; k < nc; ++k) {
@@ -579,11 +579,11 @@ void SolverCSQP::checkKKTConditions() {
     lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
   }
   const std::size_t ndx = problem_->get_ndx();
-  const std::vector<std::shared_ptr<ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<ActionDataAbstract>& d = datas[t];
     tmp_vec_x_ = d->Lx;
     tmp_vec_x_.noalias() += d->Fx.transpose() * lag_mul_[t + 1];
     tmp_vec_x_ -= lag_mul_[t];
@@ -601,7 +601,7 @@ void SolverCSQP::checkKKTConditions() {
   }
 
   fs_flat_.tail(ndx) = fs_.back();
-  const std::shared_ptr<ActionDataAbstract> &d_ter =
+  const std::shared_ptr<ActionDataAbstract>& d_ter =
       problem_->get_terminalData();
   tmp_vec_x_ = d_ter->Lx;
   tmp_vec_x_ -= lag_mul_.back();
@@ -619,10 +619,10 @@ void SolverCSQP::forwardPass(const double /*stepLength*/) {
   profiler.start();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
     dutilde_[t] = -k_[t];
     dutilde_[t].noalias() -= K_[t] * dxtilde_[t];
@@ -639,11 +639,11 @@ void SolverCSQP::forwardPass_without_constraints() {
   profiler.start();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
     du_[t].noalias() = k_[t];
     du_[t].noalias() -= K_[t] * dx_[t];
@@ -674,7 +674,7 @@ void SolverCSQP::backwardPass() {
       crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass::Vxx");
   profiler_all.start();
 
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
   Vxx_.back() = d_T->Lxx;
@@ -694,15 +694,15 @@ void SolverCSQP::backwardPass() {
   }
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
-    const Eigen::MatrixXd &Vxx_p = Vxx_[t + 1];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
 
     Vxx_fs_[t].noalias() = Vxx_[t + 1] * fs_[t + 1];
     tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
@@ -808,7 +808,7 @@ void SolverCSQP::backwardPass_without_constraints() {
 
   profiler_all.start();
 
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
   Vxx_.back() = d_T->Lxx;
@@ -819,15 +819,15 @@ void SolverCSQP::backwardPass_without_constraints() {
   }
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
-    const Eigen::MatrixXd &Vxx_p = Vxx_[t + 1];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
     tmp_Vx_.noalias() = Vxx_[t + 1] * fs_[t + 1];
     tmp_Vx_.noalias() += Vx_[t + 1];
 
@@ -891,7 +891,7 @@ void SolverCSQP::backwardPass_mt() {
       crocoddyl::getProfiler().watcher("SolverCSQP::backwardPass_mt::lock");
   profiler_all.start();
 
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
   Vxx_.back() = d_T->Lxx;
@@ -911,15 +911,15 @@ void SolverCSQP::backwardPass_mt() {
   }
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
 #pragma omp parallel for num_threads(problem_->get_nthreads())
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
@@ -967,11 +967,11 @@ void SolverCSQP::backwardPass_mt() {
 
   profiler_lock.start();
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
-    const Eigen::MatrixXd &Vxx_p = Vxx_[t + 1];
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
     Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
 
@@ -1023,9 +1023,9 @@ void SolverCSQP::backwardPass_without_rho_update() {
 
   profiler_all.start();
 
-  const std::shared_ptr<crocoddyl::ActionModelAbstract> &m_T =
+  const std::shared_ptr<crocoddyl::ActionModelAbstract>& m_T =
       problem_->get_terminalModel();
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
   profiler_Vx.start();
@@ -1040,14 +1040,14 @@ void SolverCSQP::backwardPass_without_rho_update() {
   profiler_Vx.stop();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
@@ -1107,13 +1107,13 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
   profiler_all.start();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
-  const std::shared_ptr<crocoddyl::ActionModelAbstract> &m_T =
+  const std::shared_ptr<crocoddyl::ActionModelAbstract>& m_T =
       problem_->get_terminalModel();
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
   Vx_.back().noalias() = d_T->Lx - sigma_ * dx_.back();
@@ -1129,8 +1129,8 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
 #pragma omp parallel for num_threads(problem_->get_nthreads())
 #endif  // CROCODDYL_WITH_MULTITHREADING
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
@@ -1153,8 +1153,8 @@ void SolverCSQP::backwardPass_without_rho_update_mt() {
 
   profiler_pass.start();
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
     tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
@@ -1191,9 +1191,9 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
   norm_dual_rel_ = -std::numeric_limits<double>::infinity();
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
 #ifdef CROCODDYL_WITH_MULTITHREADING
@@ -1203,8 +1203,8 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
   for (std::size_t t = 0; t < T; ++t) {
     START_PROFILER("SolverCSQP::update_lagrangian_parameters::update");
 
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
     if (m->get_ng() == 0) {
       dx_[t] = dxtilde_[t];
@@ -1268,9 +1268,9 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
   }
 
   dx_.back() = dxtilde_.back();
-  const std::shared_ptr<crocoddyl::ActionModelAbstract> &m_T =
+  const std::shared_ptr<crocoddyl::ActionModelAbstract>& m_T =
       problem_->get_terminalModel();
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_T =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
   const std::size_t nc = m_T->get_ng();
 
@@ -1341,13 +1341,13 @@ double SolverCSQP::tryStep(const double steplength) {
   constraint_norm_try_ = 0.;
 
   const std::size_t T = problem_->get_T();
-  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>> &models =
+  const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
-  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>> &datas =
+  const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
 
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     m->get_state()->integrate(xs_[t], steplength * dx_[t], xs_try_[t]);
     const std::size_t nu = m->get_nu();
 
@@ -1356,9 +1356,9 @@ double SolverCSQP::tryStep(const double steplength) {
     }
   }
 
-  const std::shared_ptr<crocoddyl::ActionModelAbstract> &m_ter =
+  const std::shared_ptr<crocoddyl::ActionModelAbstract>& m_ter =
       problem_->get_terminalModel();
-  const std::shared_ptr<crocoddyl::ActionDataAbstract> &d_ter =
+  const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter =
       problem_->get_terminalData();
 
   m_ter->get_state()->integrate(xs_.back(), steplength * dx_.back(),
@@ -1369,8 +1369,8 @@ double SolverCSQP::tryStep(const double steplength) {
     reduction(+ : cost_try_, gap_norm_try_, constraint_norm_try_)
 #endif  // CROCODDYL_WITH_MULTITHREADING
   for (std::size_t t = 0; t < T; ++t) {
-    const std::shared_ptr<crocoddyl::ActionModelAbstract> &m = models[t];
-    const std::shared_ptr<crocoddyl::ActionDataAbstract> &d = datas[t];
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
+    const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
     m->calc(d, xs_try_[t], us_try_[t]);
     cost_try_ += d->cost;

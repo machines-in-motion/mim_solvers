@@ -71,8 +71,8 @@ class SolverCSQP : public SolverDDP {
   virtual ~SolverCSQP();
 
   virtual bool solve(
-      const std::vector<Eigen::VectorXd> &init_xs = crocoddyl::DEFAULT_VECTOR,
-      const std::vector<Eigen::VectorXd> &init_us = crocoddyl::DEFAULT_VECTOR,
+      const std::vector<Eigen::VectorXd>& init_xs = crocoddyl::DEFAULT_VECTOR,
+      const std::vector<Eigen::VectorXd>& init_us = crocoddyl::DEFAULT_VECTOR,
       const std::size_t maxiter = 100, const bool is_feasible = false,
       const double regInit = NAN);
 
@@ -130,22 +130,22 @@ class SolverCSQP : public SolverDDP {
    */
   virtual void checkKKTConditions();
 
-  const std::vector<Eigen::VectorXd> &get_xs_try() const { return xs_try_; };
-  const std::vector<Eigen::VectorXd> &get_us_try() const { return us_try_; };
+  const std::vector<Eigen::VectorXd>& get_xs_try() const { return xs_try_; };
+  const std::vector<Eigen::VectorXd>& get_us_try() const { return us_try_; };
 
-  const std::vector<Eigen::VectorXd> &get_xs() const { return xs_; };
-  const std::vector<Eigen::VectorXd> &get_us() const { return us_; };
+  const std::vector<Eigen::VectorXd>& get_xs() const { return xs_; };
+  const std::vector<Eigen::VectorXd>& get_us() const { return us_; };
 
-  const std::vector<Eigen::VectorXd> &get_dx_tilde() const { return dxtilde_; };
-  const std::vector<Eigen::VectorXd> &get_du_tilde() const { return dutilde_; };
+  const std::vector<Eigen::VectorXd>& get_dx_tilde() const { return dxtilde_; };
+  const std::vector<Eigen::VectorXd>& get_du_tilde() const { return dutilde_; };
 
-  const std::vector<Eigen::VectorXd> &get_dx() const { return dx_; };
-  const std::vector<Eigen::VectorXd> &get_du() const { return du_; };
+  const std::vector<Eigen::VectorXd>& get_dx() const { return dx_; };
+  const std::vector<Eigen::VectorXd>& get_du() const { return du_; };
 
-  const std::vector<Eigen::VectorXd> &get_y() const { return y_; };
-  const std::vector<Eigen::VectorXd> &get_z() const { return z_; };
+  const std::vector<Eigen::VectorXd>& get_y() const { return y_; };
+  const std::vector<Eigen::VectorXd>& get_z() const { return z_; };
 
-  const std::vector<Eigen::VectorXd> &get_rho_vec() const { return rho_vec_; };
+  const std::vector<Eigen::VectorXd>& get_rho_vec() const { return rho_vec_; };
 
   //   const std::vector<std::shared_ptr<ConstraintModelAbstract>>&
   //   get_constraints() const { return cmodels_; };
