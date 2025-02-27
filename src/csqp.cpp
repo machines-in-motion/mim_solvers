@@ -199,6 +199,9 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
                        const std::size_t maxiter, const bool /*is_feasible*/,
                        const double reginit) {
   START_PROFILER("SolverCSQP::solve");
+
+  start_time_ = crocoddyl::getProfiler().take_time();
+
   if (problem_->is_updated()) {
     resizeData();
   }
@@ -231,7 +234,13 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   }
 
   // Main SQP loop
+  max_solve_time_reached_ = false;
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
+    if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
+      max_solve_time_reached_ = true;
+      std::cerr << "timed out" << std::endl;
+      break;
+    }
     // Compute gradients
     calc(true);
 
@@ -251,6 +260,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         } catch (std::exception& e) {
           increaseRegularization();
           if (preg_ >= reg_max_) {
+            STOP_PROFILER("SolverCSQP::solve");
             return false;
           } else {
             continue;
@@ -353,7 +363,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   }
 
   // If reached max iter, still compute KKT residual
-  if (extra_iteration_for_last_kkt_) {
+  if (extra_iteration_for_last_kkt_ && !max_solve_time_reached_) {
     // Compute gradients
     calc(true);
 
@@ -453,10 +463,15 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
   if (with_qp_callbacks_) {
     printQPCallbacks(0);
   }
-  bool converged = false;
 
-  for (std::size_t iter = 1; iter < max_qp_iters_ + 1; ++iter) {
+  std::size_t iter = 1;
+  for (iter = 1; iter < max_qp_iters_ + 1; ++iter) {
     if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
+      if (crocoddyl::getProfiler().take_time() - start_time_ >=
+          max_solve_time_) {
+        max_solve_time_reached_ = true;
+        break;
+      }
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
@@ -489,16 +504,12 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       }
       if (norm_primal_ <= norm_primal_tolerance_ &&
           norm_dual_ <= norm_dual_tolerance_) {
-        qp_iters_ = iter;
-        converged = true;
         break;
       }
     }
   }
 
-  if (!converged) {
-    qp_iters_ = max_qp_iters_;
-  }
+  qp_iters_ = max_qp_iters_;
 
   STOP_PROFILER("SolverCSQP::computeDirection");
   // MIM_SOLVERS_EIGEN_MALLOC_ALLOWED();

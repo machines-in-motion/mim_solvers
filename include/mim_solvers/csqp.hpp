@@ -11,6 +11,7 @@
 
 #include <Eigen/Cholesky>
 #include <boost/circular_buffer.hpp>
+#include <limits>
 #include <vector>
 
 #include "mim_solvers/ddp.hpp"
@@ -190,6 +191,8 @@ class SolverCSQP : public SolverDDP {
   double get_reset_rho() const { return reset_rho_; };
   double get_rho_min() const { return rho_min_; };
   double get_rho_max() const { return rho_max_; };
+  double get_max_solve_time() const { return max_solve_time_; };
+  bool get_max_solve_time_reached() const { return max_solve_time_reached_; };
 
   bool getQPCallbacks() const { return with_qp_callbacks_; };
 
@@ -240,6 +243,9 @@ class SolverCSQP : public SolverDDP {
   void set_max_qp_iters(const int iters) { max_qp_iters_ = iters; };
   void set_eps_abs(const double eps_abs) { eps_abs_ = eps_abs; };
   void set_eps_rel(const double eps_rel) { eps_rel_ = eps_rel; };
+  void set_max_solve_time(const double max_solve_time) {
+    max_solve_time_ = max_solve_time;
+  };
 
  public:
   boost::circular_buffer<double>
@@ -342,6 +348,10 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::MatrixXd> tmp_rhoGx_mat_;   //!< Temporary variable
   std::vector<Eigen::MatrixXd> tmp_rhoGu_mat_;   //!< Temporary variable
   std::vector<Eigen::VectorXd> Vxx_fs_;          //!< Temporary variable
+
+  double start_time_ = 0.0;
+  bool max_solve_time_reached_ = false;
+  double max_solve_time_ = std::numeric_limits<double>::infinity();
 };
 
 }  // namespace mim_solvers
