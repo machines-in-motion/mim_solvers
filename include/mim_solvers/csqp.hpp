@@ -349,9 +349,12 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::MatrixXd> tmp_rhoGu_mat_;   //!< Temporary variable
   std::vector<Eigen::VectorXd> Vxx_fs_;          //!< Temporary variable
 
-  double start_time_ = 0.0;
-  bool max_solve_time_reached_ = false;
-  double max_solve_time_ = std::numeric_limits<double>::infinity();
+  double start_time_ = 0.0;  // Time when the solve function was called
+  bool max_solve_time_reached_ = false;  // Flag indicating solver timedout
+  double max_solve_time_ =
+      std::numeric_limits<double>::infinity();  // Maximum time in seconds used
+                                                // to stop execution of the
+                                                // solver
 };
 
 }  // namespace mim_solvers
