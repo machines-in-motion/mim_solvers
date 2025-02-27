@@ -453,7 +453,7 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
   if (with_qp_callbacks_) {
     printQPCallbacks(0);
   }
-  bool converged_ = false;
+  bool converged = false;
 
   for (std::size_t iter = 1; iter < max_qp_iters_ + 1; ++iter) {
     if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
@@ -490,13 +490,13 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       if (norm_primal_ <= norm_primal_tolerance_ &&
           norm_dual_ <= norm_dual_tolerance_) {
         qp_iters_ = iter;
-        converged_ = true;
+        converged = true;
         break;
       }
     }
   }
 
-  if (!converged_) {
+  if (!converged) {
     qp_iters_ = max_qp_iters_;
   }
 
@@ -508,7 +508,7 @@ void SolverCSQP::update_rho_vec(const int iter) {
   const double scale = std::sqrt((norm_primal_ * norm_dual_rel_) /
                                  (norm_dual_ * norm_primal_rel_));
   rho_estimate_sparse_ =
-      std::max(rho_min_, std::min(scale * rho_sparse_, rho_max_));
+      std::min(std::max(scale * rho_sparse_, rho_min_), rho_max_);
 
   if (iter % rho_update_interval_ == 0) {  // && iter > 1){
     if (rho_estimate_sparse_ > rho_sparse_ * adaptive_rho_tolerance_ ||
