@@ -98,7 +98,7 @@ class SolverCSQP : public SolverDDP {
    */
   void updateExpectedImprovement();
 
-  virtual void forwardPass(const double stepLength = 0);
+  virtual void forwardPass(const double stepLength = 0.);
   virtual void forwardPass_without_constraints();
   virtual void backwardPass();
   virtual void backwardPass_without_rho_update();
@@ -165,59 +165,64 @@ class SolverCSQP : public SolverDDP {
   double get_mu_dynamic() const { return mu_dynamic_; };
   double get_mu_constraint() const { return mu_constraint_; };
   double get_termination_tolerance() const { return termination_tol_; };
-  std::size_t get_max_qp_iters() { return max_qp_iters_; };
-  bool get_equality_qp_initial_guess() { return equality_qp_initial_guess_; };
+  std::size_t get_max_qp_iters() const { return max_qp_iters_; };
+  bool get_equality_qp_initial_guess() const {
+    return equality_qp_initial_guess_;
+  };
   std::size_t get_filter_size() const { return filter_size_; };
 
-  std::size_t get_rho_update_interval() { return rho_update_interval_; };
-  std::size_t get_adaptive_rho_tolerance() { return adaptive_rho_tolerance_; };
-  double get_alpha() { return alpha_; };
-  double get_sigma() { return sigma_; };
-  double get_rho_sparse() { return rho_sparse_; };
+  std::size_t get_rho_update_interval() const { return rho_update_interval_; };
+  std::size_t get_adaptive_rho_tolerance() const {
+    return adaptive_rho_tolerance_;
+  };
+  double get_alpha() const { return alpha_; };
+  double get_sigma() const { return sigma_; };
+  double get_rho_sparse() const { return rho_sparse_; };
 
-  double get_eps_abs() { return eps_abs_; };
-  double get_eps_rel() { return eps_rel_; };
-  double get_norm_primal() { return norm_primal_; };
-  double get_norm_primal_tolerance() { return norm_primal_tolerance_; };
-  double get_norm_dual() { return norm_dual_; };
-  double get_norm_dual_tolerance() { return norm_dual_tolerance_; };
+  double get_eps_abs() const { return eps_abs_; };
+  double get_eps_rel() const { return eps_rel_; };
+  double get_norm_primal() const { return norm_primal_; };
+  double get_norm_primal_tolerance() const { return norm_primal_tolerance_; };
+  double get_norm_dual() const { return norm_dual_; };
+  double get_norm_dual_tolerance() const { return norm_dual_tolerance_; };
 
-  double get_reset_y() { return reset_y_; };
-  double get_reset_rho() { return reset_rho_; };
-  double get_rho_min() { return rho_min_; };
-  double get_rho_max() { return rho_max_; };
+  double get_reset_y() const { return reset_y_; };
+  double get_reset_rho() const { return reset_rho_; };
+  double get_rho_min() const { return rho_min_; };
+  double get_rho_max() const { return rho_max_; };
 
-  void printQPCallbacks(int iter);
+  bool getQPCallbacks() const { return with_qp_callbacks_; };
 
-  void setQPCallbacks(bool inCallbacks);
-  bool getQPCallbacks();
+  void printQPCallbacks(const int iter);
 
-  void set_rho_update_interval(std::size_t interval) {
+  void setQPCallbacks(const bool inCallbacks);
+
+  void set_rho_update_interval(const std::size_t interval) {
     rho_update_interval_ = interval;
   };
-  void set_adaptive_rho_tolerance(std::size_t tolerance) {
+  void set_adaptive_rho_tolerance(const std::size_t tolerance) {
     adaptive_rho_tolerance_ = tolerance;
   };
 
-  void set_lag_mul_inf_norm_coef(double lag_mul_inf_norm_coef) {
+  void set_lag_mul_inf_norm_coef(const double lag_mul_inf_norm_coef) {
     lag_mul_inf_norm_coef_ = lag_mul_inf_norm_coef;
   };
-  void set_mu_dynamic(double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
-  void set_mu_constraint(double mu_constraint) {
+  void set_mu_dynamic(const double mu_dynamic) { mu_dynamic_ = mu_dynamic; };
+  void set_mu_constraint(const double mu_constraint) {
     mu_constraint_ = mu_constraint;
   };
-  void set_alpha(double alpha) { alpha_ = alpha; };
-  void set_sigma(double sigma) { sigma_ = sigma; };
+  void set_alpha(const double alpha) { alpha_ = alpha; };
+  void set_sigma(const double sigma) { sigma_ = sigma; };
 
-  void set_equality_qp_initial_guess(bool equality_qp_initial_guess) {
+  void set_equality_qp_initial_guess(const bool equality_qp_initial_guess) {
     equality_qp_initial_guess_ = equality_qp_initial_guess;
   };
 
-  void set_termination_tolerance(double tol) { termination_tol_ = tol; };
-  void set_extra_iteration_for_last_kkt(bool inBool) {
+  void set_termination_tolerance(const double tol) { termination_tol_ = tol; };
+  void set_extra_iteration_for_last_kkt(const bool inBool) {
     extra_iteration_for_last_kkt_ = inBool;
   };
-  void set_use_filter_line_search(bool inBool) {
+  void set_use_filter_line_search(const bool inBool) {
     use_filter_line_search_ = inBool;
   };
   void set_filter_size(const std::size_t inFilterSize) {
@@ -227,14 +232,14 @@ class SolverCSQP : public SolverDDP {
     cost_list_.resize(filter_size_);
   };
 
-  void update_lagrangian_parameters(int iter);
-  void set_rho_sparse(double rho_sparse) { rho_sparse_ = rho_sparse; };
-  void update_rho_vec(int iter);
-  void apply_rho_update(double rho_sparse_);
+  void update_lagrangian_parameters(const int iter);
+  void set_rho_sparse(const double rho_sparse) { rho_sparse_ = rho_sparse; };
+  void update_rho_vec(const int iter);
+  void apply_rho_update(const double rho_sparse);
 
-  void set_max_qp_iters(int iters) { max_qp_iters_ = iters; };
-  void set_eps_abs(double eps_abs) { eps_abs_ = eps_abs; };
-  void set_eps_rel(double eps_rel) { eps_rel_ = eps_rel; };
+  void set_max_qp_iters(const int iters) { max_qp_iters_ = iters; };
+  void set_eps_abs(const double eps_abs) { eps_abs_ = eps_abs; };
+  void set_eps_rel(const double eps_rel) { eps_rel_ = eps_rel; };
 
  public:
   boost::circular_buffer<double>
