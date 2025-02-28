@@ -253,7 +253,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     if (remove_reg_) {
       computeDirection(true);
     } else {
-      while (true) {
+      while (!max_solve_time_reached_) {
         try {
           computeDirection(true);
         } catch (std::exception& e) {
@@ -267,6 +267,10 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         }
         break;
       }
+    }
+    if (qp_iters_ == 0) {
+      STOP_PROFILER("SolverCSQP::solve");
+      return false;
     }
 
     // Check KKT criteria
@@ -463,13 +467,14 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
     printQPCallbacks(0);
   }
 
-  std::size_t iter = 1;
-  for (iter = 1; iter < max_qp_iters_ + 1; ++iter) {
+  for (qp_iters_ = 1; qp_iters_ < max_qp_iters_ + 1; ++qp_iters_) {
     if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
+      // Reduce number of QP iterations, to match real number of executed loops
+      qp_iters_--;
       max_solve_time_reached_ = true;
       break;
     }
-    if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
+    if (qp_iters_ % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
@@ -485,13 +490,13 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
         backwardPass_without_rho_update();
     }
     forwardPass();
-    update_lagrangian_parameters(iter);
-    update_rho_vec(iter);
+    update_lagrangian_parameters(qp_iters_);
+    update_rho_vec(qp_iters_);
 
     // Because (eps_rel=0) x inf = NaN
-    if (iter % rho_update_interval_ == 0) {
+    if (qp_iters_ % rho_update_interval_ == 0) {
       if (with_qp_callbacks_) {
-        printQPCallbacks(iter);
+        printQPCallbacks(qp_iters_);
       }
       if (std::fabs(eps_rel_) <= std::numeric_limits<double>::epsilon()) {
         norm_primal_tolerance_ = eps_abs_;
@@ -506,8 +511,6 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       }
     }
   }
-
-  qp_iters_ = max_qp_iters_;
 
   STOP_PROFILER("SolverCSQP::computeDirection");
   // MIM_SOLVERS_EIGEN_MALLOC_ALLOWED();
