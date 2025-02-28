@@ -576,7 +576,7 @@ void SolverCSQP::checkKKTConditions() {
   u_grad_norm_ = 0.;
 
   for (std::size_t t = 0; t < T + 1; ++t) {
-    lag_mul_[t].noalias() = Vx_[t];
+    lag_mul_[t] = Vx_[t];
     lag_mul_[t].noalias() += Vxx_[t] * dxtilde_[t];
   }
   const std::size_t ndx = problem_->get_ndx();
@@ -646,7 +646,7 @@ void SolverCSQP::forwardPass_without_constraints() {
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-    du_[t].noalias() = -k_[t];
+    du_[t] = -k_[t];
     du_[t].noalias() -= K_[t] * dx_[t];
     dx_[t + 1] = fs_[t + 1];
     dx_[t + 1].noalias() += d->Fx * dx_[t];
@@ -830,7 +830,7 @@ void SolverCSQP::backwardPass_without_constraints() {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
     tmp_Vx_.noalias() = Vxx_[t + 1] * fs_[t + 1];
-    tmp_Vx_.noalias() += Vx_[t + 1];
+    tmp_Vx_ += Vx_[t + 1];
 
     const std::size_t nu = m->get_nu();
     FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
