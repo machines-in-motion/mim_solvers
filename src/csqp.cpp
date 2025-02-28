@@ -238,7 +238,6 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
     if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
       max_solve_time_reached_ = true;
-      std::cerr << "timed out" << std::endl;
       break;
     }
     // Compute gradients
@@ -466,12 +465,11 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
 
   std::size_t iter = 1;
   for (iter = 1; iter < max_qp_iters_ + 1; ++iter) {
+    if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
+      max_solve_time_reached_ = true;
+      break;
+    }
     if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
-      if (crocoddyl::getProfiler().take_time() - start_time_ >=
-          max_solve_time_) {
-        max_solve_time_reached_ = true;
-        break;
-      }
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
