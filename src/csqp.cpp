@@ -627,9 +627,9 @@ void SolverCSQP::forwardPass(const double /*stepLength*/) {
 
     dutilde_[t] = -k_[t];
     dutilde_[t].noalias() -= K_[t] * dxtilde_[t];
-    dxtilde_[t + 1].noalias() = d->Fx * dxtilde_[t];
+    dxtilde_[t + 1] = fs_[t + 1];
+    dxtilde_[t + 1].noalias() += d->Fx * dxtilde_[t];
     dxtilde_[t + 1].noalias() += d->Fu * dutilde_[t];
-    dxtilde_[t + 1].noalias() += fs_[t + 1];
   }
   profiler.stop();
 }
@@ -646,9 +646,9 @@ void SolverCSQP::forwardPass_without_constraints() {
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-    du_[t].noalias() = k_[t];
+    du_[t].noalias() = -k_[t];
     du_[t].noalias() -= K_[t] * dx_[t];
-    dx_[t + 1].noalias() = fs_[t + 1];
+    dx_[t + 1] = fs_[t + 1];
     dx_[t + 1].noalias() += d->Fx * dx_[t];
     dx_[t + 1].noalias() += d->Fu * du_[t];
   }
@@ -720,7 +720,7 @@ void SolverCSQP::backwardPass() {
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
 
@@ -932,7 +932,7 @@ void SolverCSQP::backwardPass_mt() {
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
 
@@ -1062,7 +1062,7 @@ void SolverCSQP::backwardPass_without_rho_update() {
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx_[t] += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
     Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
