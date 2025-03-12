@@ -234,7 +234,7 @@ void exposeSolverCSQP() {
       .add_property("max_solve_time",
                     bp::make_function(&SolverCSQP::get_max_solve_time),
                     bp::make_function(&SolverCSQP::set_max_solve_time),
-                    "get and set max solve time")
+                    "get and set max solve time in seconds")
       .add_property("max_solve_time_reached",
                     bp::make_function(&SolverCSQP::get_max_solve_time_reached),
                     "get if solver timed out");
