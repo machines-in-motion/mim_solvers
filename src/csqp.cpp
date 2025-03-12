@@ -365,7 +365,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     }
   }
 
-  // If reached max iter, still compute KKT residual
+  // If reached max iter and timeout not reached, still compute KKT residual
   if (extra_iteration_for_last_kkt_ && !max_solve_time_reached_) {
     // Compute gradients
     calc(true);
