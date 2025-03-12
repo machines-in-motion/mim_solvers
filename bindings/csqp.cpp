@@ -230,7 +230,14 @@ void exposeSolverCSQP() {
       .add_property("adaptive_rho_tolerance",
                     bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance),
                     bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
-                    "get and set adaptive rho tolerance");
+                    "get and set adaptive rho tolerance")
+      .add_property("max_solve_time",
+                    bp::make_function(&SolverCSQP::get_max_solve_time),
+                    bp::make_function(&SolverCSQP::set_max_solve_time),
+                    "get and set max solve time in seconds")
+      .add_property("max_solve_time_reached",
+                    bp::make_function(&SolverCSQP::get_max_solve_time_reached),
+                    "get if solver timed out");
 }
 
 }  // namespace mim_solvers

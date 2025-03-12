@@ -199,6 +199,9 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
                        const std::size_t maxiter, const bool /*is_feasible*/,
                        const double reginit) {
   START_PROFILER("SolverCSQP::solve");
+
+  start_time_ = crocoddyl::getProfiler().take_time();
+
   if (problem_->is_updated()) {
     resizeData();
   }
@@ -231,7 +234,12 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   }
 
   // Main SQP loop
+  max_solve_time_reached_ = false;
   for (iter_ = 0; iter_ < maxiter; ++iter_) {
+    if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
+      max_solve_time_reached_ = true;
+      break;
+    }
     // Compute gradients
     calc(true);
 
@@ -245,12 +253,13 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     if (remove_reg_) {
       computeDirection(true);
     } else {
-      while (true) {
+      while (!max_solve_time_reached_) {
         try {
           computeDirection(true);
         } catch (std::exception& e) {
           increaseRegularization();
           if (preg_ >= reg_max_) {
+            STOP_PROFILER("SolverCSQP::solve");
             return false;
           } else {
             continue;
@@ -258,6 +267,10 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         }
         break;
       }
+    }
+    if (qp_iters_ == 0) {
+      STOP_PROFILER("SolverCSQP::solve");
+      return false;
     }
 
     // Check KKT criteria
@@ -352,8 +365,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     }
   }
 
-  // If reached max iter, still compute KKT residual
-  if (extra_iteration_for_last_kkt_) {
+  // If reached max iter and timeout not reached, still compute KKT residual
+  if (extra_iteration_for_last_kkt_ && !max_solve_time_reached_) {
     // Compute gradients
     calc(true);
 
@@ -453,10 +466,15 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
   if (with_qp_callbacks_) {
     printQPCallbacks(0);
   }
-  bool converged = false;
 
-  for (std::size_t iter = 1; iter < max_qp_iters_ + 1; ++iter) {
-    if (iter % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
+  for (qp_iters_ = 1; qp_iters_ < max_qp_iters_ + 1; ++qp_iters_) {
+    if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
+      // Reduce number of QP iterations, to match real number of executed loops
+      qp_iters_--;
+      max_solve_time_reached_ = true;
+      break;
+    }
+    if (qp_iters_ % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
@@ -472,13 +490,13 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
         backwardPass_without_rho_update();
     }
     forwardPass();
-    update_lagrangian_parameters(iter);
-    update_rho_vec(iter);
+    update_lagrangian_parameters(qp_iters_);
+    update_rho_vec(qp_iters_);
 
     // Because (eps_rel=0) x inf = NaN
-    if (iter % rho_update_interval_ == 0) {
+    if (qp_iters_ % rho_update_interval_ == 0) {
       if (with_qp_callbacks_) {
-        printQPCallbacks(iter);
+        printQPCallbacks(qp_iters_);
       }
       if (std::fabs(eps_rel_) <= std::numeric_limits<double>::epsilon()) {
         norm_primal_tolerance_ = eps_abs_;
@@ -489,15 +507,9 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       }
       if (norm_primal_ <= norm_primal_tolerance_ &&
           norm_dual_ <= norm_dual_tolerance_) {
-        qp_iters_ = iter;
-        converged = true;
         break;
       }
     }
-  }
-
-  if (!converged) {
-    qp_iters_ = max_qp_iters_;
   }
 
   STOP_PROFILER("SolverCSQP::computeDirection");
