@@ -8,6 +8,7 @@
     crocoddyl = {
       # Devel branch because boost::shared_ptr -> std::shared_ptr
       url = "github:loco-3d/crocoddyl/devel";
+      inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -29,7 +30,10 @@
           };
           packages = {
             default = self'.packages.mim-solvers;
-            mim-solvers = pkgs.python3Packages.mim-solvers.overrideAttrs (_: {
+            mim-solvers = pkgs.python3Packages.mim-solvers.overrideAttrs (old: {
+              propagatedBuildInputs = (old.propagatedBuildInputs or []) ++ [
+                inputs.crocoddyl.packages.${pkgs.system}.default
+              ];
               src = pkgs.lib.fileset.toSource {
                 root = ./.;
                 fileset = pkgs.lib.fileset.unions [
