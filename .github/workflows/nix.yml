@@ -21,4 +21,4 @@ jobs:
           name: gepetto
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
           extraPullNames: ros
-      - run: nix build -L --cores 4
+      - run: nix build -L
