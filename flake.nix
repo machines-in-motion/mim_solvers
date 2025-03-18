@@ -1,5 +1,5 @@
 {
-  description = "ROS integration for Franka research robots";
+  description = "Implementation of numerical solvers used in the Machines in Motion Laboratory";
 
   inputs = {
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -33,7 +33,7 @@
               src = pkgs.lib.fileset.toSource {
                 root = ./.;
                 fileset = pkgs.lib.fileset.unions [
-                  ./benchmark
+                  ./benchmarks
                   ./bindings
                   ./examples
                   ./include
