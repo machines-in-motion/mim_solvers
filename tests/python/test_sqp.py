@@ -19,7 +19,7 @@ os.sys.path.insert(1, str(python_path))
 
 from problems import (  # noqa: E402
     create_double_pendulum_problem,
-    create_quadrotor_problem,
+    # create_quadrotor_problem,
     create_taichi,
     create_unconstrained_ur5,
 )
@@ -35,7 +35,7 @@ FILTER_SIZE = MAXITER
 
 problems = [
     create_double_pendulum_problem(),
-    create_quadrotor_problem(),
+    # create_quadrotor_problem(),
     create_unconstrained_ur5(),
     create_taichi(),
 ]
