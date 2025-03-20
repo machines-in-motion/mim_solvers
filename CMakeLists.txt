@@ -82,7 +82,7 @@ apply_default_apple_configuration()
 
 # Project dependencies
 find_package(Boost REQUIRED COMPONENTS unit_test_framework)
-add_project_dependency(crocoddyl 2.0.0 REQUIRED)
+add_project_dependency(crocoddyl 3.0.0 REQUIRED)
 if(BUILD_PYTHON_INTERFACE)
   add_project_dependency(eigenpy 2.7.10 REQUIRED)
 endif()
