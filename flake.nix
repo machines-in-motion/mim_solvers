@@ -7,7 +7,7 @@
 
     crocoddyl = {
       # Devel branch because boost::shared_ptr -> std::shared_ptr
-      url = "github:loco-3d/crocoddyl/devel";
+      url = "github:loco-3d/crocoddyl/master";
       inputs.flake-parts.follows = "flake-parts";
       inputs.nixpkgs.follows = "nixpkgs";
     };
