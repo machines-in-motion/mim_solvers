@@ -11,8 +11,12 @@ on:
     - devel
 
 jobs:
-  nix:
-    runs-on: "ubuntu-latest"
+  tests:
+    name: "Nix build on ${{ matrix.os }}"
+    runs-on: "${{ matrix.os }}-latest"
+    strategy:
+      matrix:
+        os: [ubuntu, macos]
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v30
@@ -20,5 +24,4 @@ jobs:
         with:
           name: gepetto
           authToken: '${{ secrets.CACHIX_AUTH_TOKEN }}'
-          extraPullNames: ros
       - run: nix build -L
