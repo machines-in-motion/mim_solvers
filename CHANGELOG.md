@@ -9,6 +9,8 @@ Releases are available on the [github repository](https://github.com/machines-in
 
 ## [Unreleased]
 
+## [0.1.0] - 2025-03-21
+
 ### Added
 
 - Nix flake.nix
@@ -134,7 +136,8 @@ Implementation of numerical solvers used in the Machines in Motion Laboratory.
 
 ## Git changelogs
 
-[unreleased]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.5...HEAD
+[unreleased]: https://github.com/machines-in-motion/mim_solvers/compare/v0.1.0...HEAD
+[v0.0.4...v0.0.5]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.5...v0.1.0
 [v0.0.4...v0.0.5]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5
 [v0.0.3...v0.0.4]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4
 [v0.0.2...v0.0.3]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.2...v0.0.3
