@@ -134,7 +134,8 @@ Implementation of numerical solvers used in the Machines in Motion Laboratory.
 
 ## Git changelogs
 
-Full Changelog: [v0.0.4...v0.0.5](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5)
-Full Changelog: [v0.0.3...v0.0.4](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4)
-Full Changelog: [v0.0.2...v0.0.3](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.2...v0.0.3)
-Full Changelog: [v0.0.1...v0.0.2](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.1...v0.0.2)
+[unreleased]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.5...HEAD
+[v0.0.4...v0.0.5]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5
+[v0.0.3...v0.0.4]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4
+[v0.0.2...v0.0.3]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.2...v0.0.3
+[v0.0.1...v0.0.2]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.1...v0.0.2
