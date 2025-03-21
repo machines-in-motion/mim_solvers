@@ -9,9 +9,6 @@ Releases are available on the [github repository](https://github.com/machines-in
 
 ## [Unreleased]
 
-
-## [0.1.0] - 2025-03-21
-
 ### Added
 
 - Nix flake.nix
@@ -56,13 +53,7 @@ Releases are available on the [github repository](https://github.com/machines-in
 - Changing boost::shared_ptr to std::shared_ptr
 - Clean up code of CSQP
 
-### Removed
-
-- 
-
 ## [0.0.5] - 2024-08-16
-
-Full Changelog: [v0.0.4...v0.0.5](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5)
 
 ### Added
 
@@ -82,8 +73,6 @@ Full Changelog: [v0.0.4...v0.0.5](https://github.com/machines-in-motion/mim_solv
 
 ## [0.0.4] - 2024-04-03
 
-Full Changelog: [v0.0.3...v0.0.4](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4)
-
 ### Added
 
 - Added callbacks in QP solvers
@@ -98,8 +87,6 @@ Full Changelog: [v0.0.3...v0.0.4](https://github.com/machines-in-motion/mim_solv
 - Fixed rho initialization in CSQP
 
 ## [0.0.3] - 2024-01-27
-
-Full Changelog: [v0.0.2...v0.0.3](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.2...v0.0.3)
 
 ### Added
 
@@ -124,8 +111,6 @@ Full Changelog: [v0.0.2...v0.0.3](https://github.com/machines-in-motion/mim_solv
 
 ## [0.0.2] - 2023-12-10
 
-Full Changelog: [v0.0.1...v0.0.2](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.1...v0.0.2)
-
 ### Added
 
 - Solvers C++ unittests (unconstrained) by @skleff1994 in #9
@@ -146,3 +131,10 @@ Full Changelog: [v0.0.1...v0.0.2](https://github.com/machines-in-motion/mim_solv
 ## [0.0.1] - 2023-11-30
 
 Implementation of numerical solvers used in the Machines in Motion Laboratory.
+
+## Git changelogs
+
+Full Changelog: [v0.0.4...v0.0.5](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5)
+Full Changelog: [v0.0.3...v0.0.4](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4)
+Full Changelog: [v0.0.2...v0.0.3](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.2...v0.0.3)
+Full Changelog: [v0.0.1...v0.0.2](https://github.com/machines-in-motion/mim_solvers/compare/v0.0.1...v0.0.2)
