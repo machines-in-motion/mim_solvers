@@ -9,9 +9,9 @@
 #ifndef MIM_SOLVERS_UTILS_CALLBACKS_HPP_
 #define MIM_SOLVERS_UTILS_CALLBACKS_HPP_
 
+#include <crocoddyl/core/solver-base.hpp>
 #include <iomanip>
 #include <iostream>
-#include <crocoddyl/core/solver-base.hpp>
 
 namespace mim_solvers {
 
@@ -38,8 +38,8 @@ class CallbackAbstract {
    * @param[in]  solver solver to be diagnostic
    */
   virtual void operator()(crocoddyl::SolverAbstract& solver) = 0;
-  virtual void operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) = 0;
-
+  virtual void operator()(crocoddyl::SolverAbstract& solver,
+                          std::string solver_type) = 0;
 };
 
 class CallbackVerbose : public CallbackAbstract {
@@ -50,8 +50,9 @@ class CallbackVerbose : public CallbackAbstract {
   ~CallbackVerbose() override;
 
   void operator()(crocoddyl::SolverAbstract& solver) override;
-  void operator()(crocoddyl::SolverAbstract& solver, std::string solver_type) override;
-  
+  void operator()(crocoddyl::SolverAbstract& solver,
+                  std::string solver_type) override;
+
   int get_precision() const;
   void set_precision(int precision);
 
@@ -63,8 +64,6 @@ class CallbackVerbose : public CallbackAbstract {
 
   void update_header(const std::string solver_type);
 };
-
-
 
 }  // namespace mim_solvers
 

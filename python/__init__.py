@@ -6,4 +6,4 @@ Copyright note valid unless otherwise stated in individual files.
 All rights reserved.
 """
 
-from . sqp import SQP
+from .sqp import SQP  # noqa: F401

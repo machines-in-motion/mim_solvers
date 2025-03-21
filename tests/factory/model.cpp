@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the cost model unittests factory from the Crocoddyl library
-// This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.cpp
-// 
+//
+// This file is a modified version of the cost model unittests factory from the
+// Crocoddyl library This modified version is used for testing purposes only
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.cpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -18,8 +19,7 @@
 namespace mim_solvers {
 namespace unittest {
 
-const std::vector<ModelTypes::Type> ModelTypes::all(
-    ModelTypes::init_all());
+const std::vector<ModelTypes::Type> ModelTypes::all(ModelTypes::init_all());
 
 std::ostream& operator<<(std::ostream& os, ModelTypes::Type type) {
   switch (type) {
@@ -38,18 +38,15 @@ std::ostream& operator<<(std::ostream& os, ModelTypes::Type type) {
   return os;
 }
 
-
 ModelFactory::ModelFactory() {}
 ModelFactory::~ModelFactory() {}
 
-boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::create(
-      ModelTypes::Type model_type, 
-      XConstraintType::Type x_cstr_type,
-      UConstraintType::Type u_cstr_type,
-      bool isInitial,
-      bool isTerminal) const {
-  
-  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> model;
+std::shared_ptr<crocoddyl::DifferentialActionModelAbstract>
+ModelFactory::create(ModelTypes::Type model_type,
+                     XConstraintType::Type x_cstr_type,
+                     UConstraintType::Type u_cstr_type, bool isInitial,
+                     bool isTerminal) const {
+  std::shared_ptr<crocoddyl::DifferentialActionModelAbstract> model;
 
   bool x_eq = false;
   bool x_ineq = false;
@@ -57,57 +54,61 @@ boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> ModelFactory::crea
   bool u_ineq = false;
 
   // state equality constraint
-  if((x_cstr_type==XConstraintType::AllEq && isInitial==false) || (x_cstr_type==XConstraintType::TermEq && isTerminal==true)){
+  if ((x_cstr_type == XConstraintType::AllEq && isInitial == false) ||
+      (x_cstr_type == XConstraintType::TermEq && isTerminal == true)) {
     x_eq = true;
   }
   // state inequality constraint
-  if((x_cstr_type==XConstraintType::AllIneq && isInitial==false) || (x_cstr_type==XConstraintType::TermIneq && isTerminal==true)){
+  if ((x_cstr_type == XConstraintType::AllIneq && isInitial == false) ||
+      (x_cstr_type == XConstraintType::TermIneq && isTerminal == true)) {
     x_ineq = true;
-  } 
+  }
   // control equality constraint
-  if(u_cstr_type==UConstraintType::AllEq && isTerminal==false){
+  if (u_cstr_type == UConstraintType::AllEq && isTerminal == false) {
     u_eq = true;
   }
   // control inequality constraint
-  if(u_cstr_type==UConstraintType::AllIneq && isTerminal==false){
+  if (u_cstr_type == UConstraintType::AllIneq && isTerminal == false) {
     u_ineq = true;
   }
 
   std::size_t ng_x = 0;
   std::size_t ng_u = 0;
   std::size_t ng = 0;
-  switch(model_type) {
+  switch (model_type) {
     case ModelTypes::PointMass1D:
-      if(x_eq || x_ineq){
+      if (x_eq || x_ineq) {
         ng_x = 2;
       }
-      if(u_eq || u_ineq){
+      if (u_eq || u_ineq) {
         ng_u = 1;
       }
-      if(isTerminal){
+      if (isTerminal) {
         ng = ng_x;
-      } else if(isInitial) {
+      } else if (isInitial) {
         ng = ng_u;
       } else {
         ng = ng_x + ng_u;
       }
-      model = boost::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
+      model = std::make_shared<DAMPointMass1D>(ng, x_eq, x_ineq, u_eq, u_ineq,
+                                               isInitial, isTerminal);
       break;
     case ModelTypes::PointMass2D:
-      if(x_eq || x_ineq){
+      if (x_eq || x_ineq) {
         ng_x = 4;
       }
-      if(u_eq || u_ineq){
+      if (u_eq || u_ineq) {
         ng_u = 2;
       }
-      if(isTerminal){
+      if (isTerminal) {
         ng = ng_x;
-      } else if(isInitial) {
+      } else if (isInitial) {
         ng = ng_u;
       } else {
         ng = ng_x + ng_u;
       }
-      model = boost::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq, isInitial, isTerminal);
+      model = std::make_shared<DAMPointMass2D>(ng, x_eq, x_ineq, u_eq, u_ineq,
+                                               isInitial, isTerminal);
       break;
     default:
       throw_pretty(__FILE__ ": Wrong ModelTypes::Type given");

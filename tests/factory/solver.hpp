@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the solvers unittests from the Crocoddyl library
-// This modified version is used to test our solvers (mim_solvers repository)
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/solver.hpp
-// 
+//
+// This file is a modified version of the solvers unittests from the Crocoddyl
+// library This modified version is used to test our solvers (mim_solvers
+// repository) Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/solver.hpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -16,10 +17,10 @@
 
 #include <crocoddyl/core/solver-base.hpp>
 
-#include "mim_solvers/sqp.hpp"
 #include "mim_solvers/csqp.hpp"
+#include "mim_solvers/sqp.hpp"
 #ifdef MIM_SOLVERS_WITH_PROXQP
-  #include "mim_solvers/csqp_proxqp.hpp"
+#include "mim_solvers/csqp_proxqp.hpp"
 #endif
 #include "problem.hpp"
 
@@ -27,12 +28,7 @@ namespace mim_solvers {
 namespace unittest {
 
 struct SolverTypes {
-  enum Type {
-    SolverSQP,
-    SolverCSQP,
-    SolverPROXQP,
-    NbSolverTypes
-  };
+  enum Type { SolverSQP, SolverCSQP, SolverPROXQP, NbSolverTypes };
   static std::vector<Type> init_all() {
     std::vector<Type> v;
     v.reserve(NbSolverTypes);
@@ -58,11 +54,9 @@ class SolverFactory {
   explicit SolverFactory();
   ~SolverFactory();
 
-  boost::shared_ptr<crocoddyl::SolverAbstract> create(
-      SolverTypes::Type solver_type, 
-      ProblemTypes::Type problem_type,
-      ModelTypes::Type model_type,
-      XConstraintType::Type x_cstr_type,
+  std::shared_ptr<crocoddyl::SolverAbstract> create(
+      SolverTypes::Type solver_type, ProblemTypes::Type problem_type,
+      ModelTypes::Type model_type, XConstraintType::Type x_cstr_type,
       UConstraintType::Type u_cstr_type) const;
 };
 

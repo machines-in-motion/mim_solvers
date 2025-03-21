@@ -1,8 +1,8 @@
 # mim_solvers
-Implementation of efficient numerical optimal control solvers. 
+Implementation of efficient numerical optimal control solvers.
 In particular, the Sequential Quadratic Programming (SQP) solver described in [this paper](https://laas.hal.science/hal-04330251) solves nonlinear constrained OCPs efficiently by leveraging sparsity.
 
-All the solvers are implemented based on the API of [Crocoddyl](https://github.com/loco-3d/crocoddyl/tree/devel) (v2). 
+All the solvers are implemented based on the API of [Crocoddyl](https://github.com/loco-3d/crocoddyl/tree/devel) (v2).
 In other words, our solvers take as input a `crocoddyl.ShootingProblem`.
 
 Examples on how to use the solvers can be found in the `examples` directory.

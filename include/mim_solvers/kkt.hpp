@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
+//
 // This file is a modified version of SolverKKT from the Crocoddyl library
 // This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/include/crocoddyl/core/solvers/kkt.hpp
-// 
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/include/crocoddyl/core/solvers/kkt.hpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -14,11 +15,11 @@
 #ifndef MIM_SOLVERS_KKT_HPP_
 #define MIM_SOLVERS_KKT_HPP_
 
-#include <vector>
 #include <Eigen/Cholesky>
-#include <crocoddyl/core/solver-base.hpp>
 #include <crocoddyl/core/mathbase.hpp>
+#include <crocoddyl/core/solver-base.hpp>
 #include <crocoddyl/core/utils/deprecate.hpp>
+#include <vector>
 
 namespace mim_solvers {
 
@@ -26,7 +27,7 @@ class SolverKKT : public crocoddyl::SolverAbstract {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  explicit SolverKKT(boost::shared_ptr<crocoddyl::ShootingProblem> problem);
+  explicit SolverKKT(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverKKT();
 
   virtual bool solve(
@@ -91,10 +92,10 @@ class SolverKKT : public crocoddyl::SolverAbstract {
   bool was_feasible_;
   Eigen::VectorXd kkt_primal_;
   Eigen::VectorXd dF;
-  double KKT_ = std::numeric_limits<double>::infinity();   //!< KKT conditions residual
-  Eigen::VectorXd fs_flat_;                                //!< Gaps/defects between shooting nodes (1D array)
-  double termination_tol_ = 1e-6;                          //!< Termination tolerance
-
+  double KKT_ =
+      std::numeric_limits<double>::infinity();  //!< KKT conditions residual
+  Eigen::VectorXd fs_flat_;  //!< Gaps/defects between shooting nodes (1D array)
+  double termination_tol_ = 1e-6;  //!< Termination tolerance
 };
 
 }  // namespace mim_solvers

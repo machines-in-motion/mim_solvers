@@ -1,9 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////
-// 
-// This file is a modified version of the cost model unittests factory from the Crocoddyl library
-// This modified version is used for testing purposes only
-// Original file : https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.hpp
-// 
+//
+// This file is a modified version of the cost model unittests factory from the
+// Crocoddyl library This modified version is used for testing purposes only
+// Original file :
+// https://github.com/loco-3d/crocoddyl/blob/devel/unittest/factory/cost.hpp
+//
 // BSD 3-Clause License
 // Copyright (C) 2023, New York University
 //
@@ -21,11 +22,7 @@ namespace mim_solvers {
 namespace unittest {
 
 struct ModelTypes {
-  enum Type {
-    PointMass1D,
-    PointMass2D,
-    NbModelTypes
-  };
+  enum Type { PointMass1D, PointMass2D, NbModelTypes };
   static std::vector<Type> init_all() {
     std::vector<Type> v;
     v.reserve(NbModelTypes);
@@ -49,15 +46,12 @@ class ModelFactory {
   explicit ModelFactory();
   ~ModelFactory();
 
-  boost::shared_ptr<crocoddyl::DifferentialActionModelAbstract> create(
-      ModelTypes::Type model_type, 
-      XConstraintType::Type x_cstr_type,
-      UConstraintType::Type u_cstr_type,
-      bool isInitial,
-      bool isTerminal) const;
+  std::shared_ptr<crocoddyl::DifferentialActionModelAbstract> create(
+      ModelTypes::Type model_type, XConstraintType::Type x_cstr_type,
+      UConstraintType::Type u_cstr_type, bool isInitial, bool isTerminal) const;
 };
 
-// boost::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
+// std::shared_ptr<crocoddyl::CostModelAbstract> create_random_cost(
 //     StateModelTypes::Type state_type,
 //     std::size_t nu = std::numeric_limits<std::size_t>::max());
 }  // namespace unittest

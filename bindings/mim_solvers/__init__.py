@@ -6,11 +6,12 @@ Copyright note valid unless otherwise stated in individual files.
 All rights reserved.
 """
 
-from .mim_solvers_pywrap import * #noqa
+from .mim_solvers_pywrap import *  # noqa
 import copy
 import numpy as np
 
-class CallbackLogger(CallbackAbstract):
+
+class CallbackLogger(CallbackAbstract):  # noqa: F405
     def __init__(self, verbose=False):
         super().__init__()
         self.convergence_data = {}
@@ -22,9 +23,9 @@ class CallbackLogger(CallbackAbstract):
             self.convergence_data[key].append(value)
 
         if solver_type == "CSQP":
-            safe_append('us', solver.us)
-            safe_append('xs', solver.xs)
-            safe_append('fs', solver.fs)
+            safe_append("us", copy.copy((solver.us)))
+            safe_append("xs", copy.copy((solver.xs)))
+            safe_append("fs", copy.copy((solver.fs)))
             safe_append("iter", solver.iter)
             safe_append("cost", solver.cost)
             safe_append("merit", solver.merit)
@@ -36,9 +37,9 @@ class CallbackLogger(CallbackAbstract):
             safe_append("qp_iter", solver.qp_iters)
             safe_append("KKT", solver.KKT)
         elif solver_type == "SQP":
-            safe_append('us', solver.us)
-            safe_append('xs', solver.xs)
-            safe_append('fs', solver.fs)
+            safe_append("us", copy.copy((solver.us)))
+            safe_append("xs", copy.copy((solver.xs)))
+            safe_append("fs", copy.copy((solver.fs)))
             safe_append("iter", solver.iter)
             safe_append("cost", solver.cost)
             safe_append("merit", solver.merit)
@@ -50,15 +51,16 @@ class CallbackLogger(CallbackAbstract):
             raise NotImplementedError("CallbackLogger is implemented for CSQP and SQP.")
 
 
-
-def plotConvergence(data, show = True):
+def plotConvergence(data, show=True):
     import matplotlib.pyplot as plt
 
     axis = 0
     for i, (key, values) in enumerate(data.items()):
         if len(np.asarray(values, dtype="object").shape) == 1:
             axis += 1
-    fig, axs = plt.subplots(axis-2, 1, sharex='col', figsize=(55, 25.5)) # exclude dreg and preg
+    fig, axs = plt.subplots(
+        axis - 2, 1, sharex="col", figsize=(55, 25.5)
+    )  # exclude dreg and preg
 
     i = 0
     for key, values in data.items():
@@ -69,11 +71,23 @@ def plotConvergence(data, show = True):
             axs[i].plot(values)
             axs[i].set_title(key)
             if key == "qp_iter":
-                axs[i].text(0.9, 0.9, f"Total qp_iters: {sum(values)}", transform=axs[i].transAxes, ha='right')
-                axs[i].text(0.9, 0.8, f"Total sqp_iters: {len(values)}", transform=axs[i].transAxes, ha='right')
+                axs[i].text(
+                    0.9,
+                    0.9,
+                    f"Total qp_iters: {sum(values)}",
+                    transform=axs[i].transAxes,
+                    ha="right",
+                )
+                axs[i].text(
+                    0.9,
+                    0.8,
+                    f"Total sqp_iters: {len(values)}",
+                    transform=axs[i].transAxes,
+                    ha="right",
+                )
 
             if key == "KKT":
-                axs[i].set_yscale('log')
+                axs[i].set_yscale("log")
             i += 1
     plt.tight_layout()
 
@@ -81,4 +95,3 @@ def plotConvergence(data, show = True):
         plt.show()
 
     return fig
-

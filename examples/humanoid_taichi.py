@@ -12,24 +12,21 @@ All rights reserved.
 # The solver relies on mim_solvers by default
 # Run 'python humanoid_taichi.py use_fddp' to switch to fddp.
 
-
 import os
 import signal
 import sys
 import time
 
+import crocoddyl
 import example_robot_data
+import mim_solvers
 import numpy as np
 import pinocchio
-
-import crocoddyl
 from crocoddyl.utils.biped import plotSolution
-
-import mim_solvers
 
 WITHDISPLAY = "display" in sys.argv or "CROCODDYL_DISPLAY" in os.environ
 WITHPLOT = "plot" in sys.argv or "CROCODDYL_PLOT" in os.environ
-USE_FDDP = "use_fddp" in sys.argv   # Use SQP by default
+USE_FDDP = "use_fddp" in sys.argv  # Use SQP by default
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -232,12 +229,16 @@ problem = crocoddyl.ShootingProblem(
 
 # Creating the DDP solver for this OC problem, defining a logger
 if not USE_FDDP:
-    print("\n--------------------------------- USING SQP ---------------------------------\n")
+    print(
+        "\n--------------------------------- USING SQP ---------------------------------\n"
+    )
     solver = mim_solvers.SolverSQP(problem)
     solver.setCallbacks([mim_solvers.CallbackVerbose(), mim_solvers.CallbackLogger()])
-        
+
 else:
-    print("\n--------------------------------- USING FDDP --------------------------------\n")
+    print(
+        "\n--------------------------------- USING FDDP --------------------------------\n"
+    )
     solver = crocoddyl.SolverFDDP(problem)
     solver.setCallbacks(
         [
@@ -253,7 +254,7 @@ solver.solve(xs, us, 500, False, 1e-9)
 log = solver.getCallbacks()[-1]
 crocoddyl.plotOCSolution(solver.xs, solver.us)
 mim_solvers.plotConvergence(log.convergence_data)
-      
+
 # Visualizing the solution in gepetto-viewer
 if WITHDISPLAY:
     display.rate = -1
