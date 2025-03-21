@@ -76,14 +76,6 @@ class DAMPointMass1D : public crocoddyl::DifferentialActionModelAbstract {
   virtual bool checkData(
       const std::shared_ptr<DifferentialActionDataAbstract>& data);
   virtual void print(std::ostream& os) const;
-  // inline std::shared_ptr<crocoddyl::DifferentialActionModelBase> cloneAsDouble() const override
-  // {
-  //   return std::make_shared<DAMPointMass1D>(*this);
-  // }
-  // inline std::shared_ptr<crocoddyl::DifferentialActionModelBase> cloneAsFloat() const override
-  // {
-  //   return std::make_shared<DAMPointMass1D>(*this);
-  // }
 
  protected:
   using DAMBase::ng_;  //!< Number of inequality constraints
@@ -159,14 +151,6 @@ class DAMPointMass2D : public crocoddyl::DifferentialActionModelAbstract {
   virtual bool checkData(
       const std::shared_ptr<DifferentialActionDataAbstract>& data);
   virtual void print(std::ostream& os) const;
-  // inline std::shared_ptr<crocoddyl::DifferentialActionModelBase> cloneAsDouble() const override
-  // {
-  //   return std::make_shared<DAMPointMass2D>(*this);
-  // }
-  // inline std::shared_ptr<crocoddyl::DifferentialActionModelBase> cloneAsFloat() const override
-  // {
-  //   return std::make_shared<DAMPointMass2D>(*this);
-  // }
 
  protected:
   using DAMBase::ng_;  //!< Number of inequality constraints
