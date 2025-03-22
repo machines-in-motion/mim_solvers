@@ -9,6 +9,8 @@ Releases are available on the [github repository](https://github.com/machines-in
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-03-22
+
 ### Fixed
 
 - Changelog last lines format.
@@ -145,7 +147,8 @@ Implementation of numerical solvers used in the Machines in Motion Laboratory.
 
 ## Git changelogs
 
-[Unreleased]: https://github.com/machines-in-motion/mim_solvers/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/machines-in-motion/mim_solvers/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/machines-in-motion/mim_solvers/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.5...v0.1.0
 [0.0.5]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.4...v0.0.5
 [0.0.4]: https://github.com/machines-in-motion/mim_solvers/compare/v0.0.3...v0.0.4
