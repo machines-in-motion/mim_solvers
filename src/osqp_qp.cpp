@@ -183,10 +183,10 @@ void SolverOSQP_QP::apply_rho_update(const double rho_sparse_tmp) {
       if (m->get_g_lb()[k] == -infty && m->get_g_ub()[k] == infty) {
         rho_vec_[t][k] = rho_min_;
         inv_rho_vec_[t][k] = 1. / rho_min_;
-      } else if (abs(m->get_g_lb()[k] - m->get_g_ub()[k]) < 1e-6) {
+      } else if (abs(m->get_g_lb()[k] - m->get_g_ub()[k]) <= 1e-6) {
         rho_vec_[t][k] = 1e3 * rho_sparse_tmp;
         inv_rho_vec_[t][k] = 1. / (1e3 * rho_sparse_tmp);
-      } else if (m->get_g_lb()[k] != m->get_g_ub()[k]) {
+      } else if (m->get_g_lb()[k] < m->get_g_ub()[k]) {
         rho_vec_[t][k] = rho_sparse_tmp;
         inv_rho_vec_[t][k] = 1. / rho_sparse_tmp;
       }
@@ -201,10 +201,10 @@ void SolverOSQP_QP::apply_rho_update(const double rho_sparse_tmp) {
       rho_vec_.back()[k] = rho_min_;
       inv_rho_vec_.back()[k] = 1. / rho_min_;
     } else if (abs(problem_->get_terminalModel()->get_g_lb()[k] -
-                   problem_->get_terminalModel()->get_g_ub()[k]) < 1e-6) {
+                   problem_->get_terminalModel()->get_g_ub()[k]) <= 1e-6) {
       rho_vec_.back()[k] = 1e3 * rho_sparse_tmp;
       inv_rho_vec_.back()[k] = 1. / (1e3 * rho_sparse_tmp);
-    } else if (problem_->get_terminalModel()->get_g_lb()[k] !=
+    } else if (problem_->get_terminalModel()->get_g_lb()[k] <
                problem_->get_terminalModel()->get_g_ub()[k]) {
       rho_vec_.back()[k] = rho_sparse_tmp;
       inv_rho_vec_.back()[k] = 1. / rho_sparse_tmp;

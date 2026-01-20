@@ -93,6 +93,6 @@ assert np.linalg.norm(ddp1.rho_sparse - np.array(ddp2.rho_sparse)) < set_tol, (
 
 
 for t in range(len(ddp1.rho_vec)):
-    assert np.linalg.norm(ddp1.rho_vec[t] - ddp2.rho_vec[t]) < set_tol, "Test failed"
+    assert np.linalg.norm(ddp1.qp.rho_vec[t] - ddp2.rho_vec[t]) < set_tol, "Test failed"
     assert np.linalg.norm(ddp1.y[t] - ddp2.y[t]) < set_tol, "Test failed"
     assert np.linalg.norm(ddp1.z[t] - ddp2.z[t]) < set_tol, "Test failed"

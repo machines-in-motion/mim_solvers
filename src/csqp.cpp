@@ -16,6 +16,7 @@
 #include <iostream>
 
 #include "mim_solvers/csqp.hpp"
+#include <iostream>
 
 using namespace crocoddyl;
 
@@ -153,6 +154,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     if (iter_ == 0 && !qp_solver_->get_reset_rho()) {
       qp_solver_->reset_rho_vec();
     }
+    std::cout << "SolverCSQP::solve: rho_vec[1] BEFORE QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
 
     // Solve QP
     if (remove_reg_) {
@@ -173,6 +175,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         break;
       }
     }
+    std::cout << "SolverCSQP::solve: rho_vec[1] AFTER QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
+
     if (qp_solver_->get_qp_iters() == 0) {
       STOP_PROFILER("SolverCSQP::solve");
       return false;
