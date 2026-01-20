@@ -27,6 +27,7 @@ void exposeCallbackVerbose();
 void exposeSolverDDP();
 void exposeSolverFDDP();
 void exposeSolverSQP();
+void exposeSolverOSQP_QP();
 void exposeSolverCSQP();
 #ifdef MIM_SOLVERS_WITH_PROXQP
 void exposeSolverPROXQP();

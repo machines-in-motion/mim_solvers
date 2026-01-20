@@ -22,17 +22,15 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections,
 void exposeSolverCSQP() {
   bp::register_ptr_to_python<std::shared_ptr<SolverCSQP> >();
 
-  bp::class_<SolverCSQP, bp::bases<SolverDDP> >(
+  bp::class_<SolverCSQP, bp::bases<SolverDDP>, boost::noncopyable>(
       "SolverCSQP",
       "CSQP solver.\n\n"
       "The CSQP solver computes an optimal trajectory and control commands by "
       "iterates\n"
-      "running backward and forward passes. The backward-pass updates locally "
-      "the\n"
-      "quadratic approximation of the problem and computes descent direction,\n"
-      "and the forward-pass rollouts this new policy by integrating the system "
-      "dynamics\n"
-      "along a tuple of optimized control commands U*.\n"
+      "running SQP steps. Each iteration computes cost/constraint "
+      "derivatives,\n"
+      "solves the inner QP subproblem (via qp property), and performs line "
+      "search.\n"
       ":param shootingProblem: shooting problem (list of action models along "
       "trajectory.)",
       bp::init<std::shared_ptr<crocoddyl::ShootingProblem> >(
@@ -68,61 +66,38 @@ void exposeSolverCSQP() {
                "describes if convergence was reached."))
 
       .def("calc", &SolverCSQP::calc, bp::args("self", "recalc"), "")
-      .def("update_lagrangian_parameters",
-           &SolverCSQP::update_lagrangian_parameters, bp::args("self"), "")
-      .def("forwardPass", &SolverCSQP::forwardPass, bp::args("self"), "")
-      .def("backwardPass", &SolverCSQP::backwardPass, bp::args("self"), "")
-      .def("backwardPass_without_constraints",
-           &SolverCSQP::backwardPass_without_constraints, bp::args("self"), "")
-      .def("backwardPass_without_rho_update",
-           &SolverCSQP::backwardPass_without_rho_update, bp::args("self"), "")
-      .def("update_rho_vec", &SolverCSQP::update_rho_vec,
-           bp::args("self", "iter"), "")
       .def("computeDirection", &SolverCSQP::computeDirection,
            bp::args("self", "recalcDiff"), "")
       .def("checkKKTConditions", &SolverCSQP::checkKKTConditions,
            bp::args("self"), "")
+
+      // State/trial trajectories
       .def_readwrite("xs_try", &SolverCSQP::xs_try_, "xs try")
       .def_readwrite("us_try", &SolverCSQP::us_try_, "us try")
       .def_readwrite("cost_try", &SolverCSQP::cost_try_, "cost try")
       .def_readwrite("fs_try", &SolverCSQP::fs_try_, "fs_try")
       .def_readwrite("lag_mul", &SolverCSQP::lag_mul_, "lagrange multipliers")
-      .def_readwrite("norm_primal", &SolverCSQP::norm_primal_, "norm_primal")
-      .def_readwrite("norm_dual", &SolverCSQP::norm_dual_, "norm_dual ")
-      .def_readwrite("norm_dual_rel", &SolverCSQP::norm_dual_rel_,
-                     "norm_dual_rel")
-      .def_readwrite("norm_primal_rel", &SolverCSQP::norm_primal_rel_,
-                     "norm_primal_rel")
-      .def_readwrite("rho_vec", &SolverCSQP::rho_vec_, "rho vector")
-      .def_readwrite("y", &SolverCSQP::y_, "y")
-      .def_readwrite("z", &SolverCSQP::z_, "z")
-      .def_readwrite("reset_y", &SolverCSQP::reset_y_,
-                     "Reset ADMM Lagrange multipliers to zero (default: False, "
-                     "i.e. reset to previous)")
-      .def_readwrite(
-          "reset_rho", &SolverCSQP::reset_rho_,
-          "Reset the rho parameter (default: False, i.e. reset to previous)")
-      .def_readwrite("update_rho_with_heuristic",
-                     &SolverCSQP::update_rho_with_heuristic_,
-                     "Update the heuristic for the rho update (default: False)")
       .def_readwrite("remove_reg", &SolverCSQP::remove_reg_,
                      "Removes Crocoddyl's regularization by setting "
                      "(preg,dreg)=0 when True (default: False)")
 
-      //  .add_property("with_callbacks",
-      //  bp::make_function(&SolverCSQP::getCallbacks),
-      //  bp::make_function(&SolverCSQP::setCallbacks),
-      //                "Activates the callbacks when true (default: False)")
+      // Inner QP solver access
+      .add_property(
+          "qp",
+          bp::make_function(
+              static_cast<SolverOSQP_QP& (SolverCSQP::*)()>(
+                  &SolverCSQP::get_qp_solver),
+              bp::return_internal_reference<>()),
+          "Inner QP solver (SolverOSQP_QP). Use to configure ADMM parameters, "
+          "e.g. solver.qp.sigma = 1e-5")
 
-      .add_property("with_qp_callbacks",
-                    bp::make_function(&SolverCSQP::getQPCallbacks),
-                    bp::make_function(&SolverCSQP::setQPCallbacks),
-                    "Activates the QP callbacks when true (default: False)")
+      // SQP-level parameters
       .add_property(
           "extra_iteration_for_last_kkt",
           bp::make_function(&SolverCSQP::get_extra_iteration_for_last_kkt),
           bp::make_function(&SolverCSQP::set_extra_iteration_for_last_kkt),
           "Additional iteration if SQP max. iter reached (default: False)")
+
       .add_property(
           "xs",
           make_function(&SolverCSQP::get_xs,
@@ -153,6 +128,21 @@ void exposeSolverCSQP() {
           make_function(&SolverCSQP::get_du,
                         bp::return_value_policy<bp::copy_const_reference>()),
           "du")
+      .add_property(
+          "y",
+          make_function(&SolverCSQP::get_y,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "ADMM dual variable")
+      .add_property(
+          "z",
+          make_function(&SolverCSQP::get_z,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "ADMM z variable")
+      .add_property(
+          "rho_vec",
+          make_function(&SolverCSQP::get_rho_vec,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Per-constraint rho values")
 
       .add_property("constraint_norm",
                     bp::make_function(&SolverCSQP::get_constraint_norm),
@@ -182,30 +172,6 @@ void exposeSolverCSQP() {
                     "Penalty weight for constraint violation in the merit "
                     "function (default: 10.)")
 
-      .add_property("eps_abs", bp::make_function(&SolverCSQP::get_eps_abs),
-                    bp::make_function(&SolverCSQP::set_eps_abs),
-                    "sets epsillon absolute termination criteria for qp solver")
-      .add_property("eps_rel", bp::make_function(&SolverCSQP::get_eps_rel),
-                    bp::make_function(&SolverCSQP::set_eps_rel),
-                    "sets epsillon relative termination criteria for qp solver")
-      .add_property("rho_sparse",
-                    bp::make_function(&SolverCSQP::get_rho_sparse),
-                    bp::make_function(&SolverCSQP::set_rho_sparse),
-                    "Penalty term for dynamic violation in the merit function "
-                    "(default: 1.)")
-      .add_property(
-          "equality_qp_initial_guess",
-          bp::make_function(&SolverCSQP::get_equality_qp_initial_guess),
-          bp::make_function(&SolverCSQP::set_equality_qp_initial_guess),
-          "initialize each qp with the solution of the equality qp. (default: "
-          "True)")
-      .add_property("sigma", bp::make_function(&SolverCSQP::get_sigma),
-                    bp::make_function(&SolverCSQP::set_sigma),
-                    "get and set sigma")
-      .add_property("alpha", bp::make_function(&SolverCSQP::get_alpha),
-                    bp::make_function(&SolverCSQP::set_alpha),
-                    "get and set alpha (relaxed update)")
-
       .add_property("use_filter_line_search",
                     bp::make_function(&SolverCSQP::get_use_filter_line_search),
                     bp::make_function(&SolverCSQP::set_use_filter_line_search),
@@ -215,29 +181,84 @@ void exposeSolverCSQP() {
           bp::make_function(&SolverCSQP::get_termination_tolerance),
           bp::make_function(&SolverCSQP::set_termination_tolerance),
           "Termination criteria to exit the iteration (default: 1e-6)")
-      .add_property("max_qp_iters",
-                    bp::make_function(&SolverCSQP::get_max_qp_iters),
-                    bp::make_function(&SolverCSQP::set_max_qp_iters),
-                    "get and set max qp iters")
-      .add_property("rho_update_interval",
-                    bp::make_function(&SolverCSQP::get_rho_update_interval),
-                    bp::make_function(&SolverCSQP::set_rho_update_interval),
-                    "get and set rho update interval")
       .add_property("filter_size",
                     bp::make_function(&SolverCSQP::get_filter_size),
                     bp::make_function(&SolverCSQP::set_filter_size),
                     "filter size for the line-search (default: 1)")
-      .add_property("adaptive_rho_tolerance",
-                    bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance),
-                    bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
-                    "get and set adaptive rho tolerance")
       .add_property("max_solve_time",
                     bp::make_function(&SolverCSQP::get_max_solve_time),
                     bp::make_function(&SolverCSQP::set_max_solve_time),
                     "get and set max solve time in seconds")
       .add_property("max_solve_time_reached",
                     bp::make_function(&SolverCSQP::get_max_solve_time_reached),
-                    "get if solver timed out");
+                    "get if solver timed out")
+
+      // Delegate to QP solver for backward compatibility
+      .add_property("eps_abs", bp::make_function(&SolverCSQP::get_eps_abs),
+                    bp::make_function(&SolverCSQP::set_eps_abs),
+                    "Absolute termination criteria for QP solver (delegates to "
+                    "qp.eps_abs)")
+      .add_property("eps_rel", bp::make_function(&SolverCSQP::get_eps_rel),
+                    bp::make_function(&SolverCSQP::set_eps_rel),
+                    "Relative termination criteria for QP solver (delegates to "
+                    "qp.eps_rel)")
+      .add_property("rho_sparse",
+                    bp::make_function(&SolverCSQP::get_rho_sparse),
+                    bp::make_function(&SolverCSQP::set_rho_sparse),
+                    "Rho value for QP solver (delegates to qp.rho_sparse)")
+      .add_property(
+          "equality_qp_initial_guess",
+          bp::make_function(&SolverCSQP::get_equality_qp_initial_guess),
+          bp::make_function(&SolverCSQP::set_equality_qp_initial_guess),
+          "Initialize each QP with unconstrained solution (delegates to "
+          "qp.equality_qp_initial_guess)")
+      .add_property("sigma", bp::make_function(&SolverCSQP::get_sigma),
+                    bp::make_function(&SolverCSQP::set_sigma),
+                    "Proximal term (delegates to qp.sigma)")
+      .add_property("alpha", bp::make_function(&SolverCSQP::get_alpha),
+                    bp::make_function(&SolverCSQP::set_alpha),
+                    "ADMM relaxation parameter (delegates to qp.alpha)")
+      .add_property("max_qp_iters",
+                    bp::make_function(&SolverCSQP::get_max_qp_iters),
+                    bp::make_function(&SolverCSQP::set_max_qp_iters),
+                    "Max QP iterations (delegates to qp.max_qp_iters)")
+      .add_property("rho_update_interval",
+                    bp::make_function(&SolverCSQP::get_rho_update_interval),
+                    bp::make_function(&SolverCSQP::set_rho_update_interval),
+                    "Rho update interval (delegates to qp.rho_update_interval)")
+      .add_property("adaptive_rho_tolerance",
+                    bp::make_function(&SolverCSQP::get_adaptive_rho_tolerance),
+                    bp::make_function(&SolverCSQP::set_adaptive_rho_tolerance),
+                    "Adaptive rho tolerance (delegates to "
+                    "qp.adaptive_rho_tolerance)")
+      .add_property("norm_primal",
+                    bp::make_function(&SolverCSQP::get_norm_primal),
+                    "Primal residual norm (from qp solver)")
+      .add_property("norm_dual", bp::make_function(&SolverCSQP::get_norm_dual),
+                    "Dual residual norm (from qp solver)")
+      .add_property("norm_primal_rel",
+                    bp::make_function(&SolverCSQP::get_norm_primal_rel),
+                    "Relative primal residual norm (from qp solver)")
+      .add_property("norm_dual_rel",
+                    bp::make_function(&SolverCSQP::get_norm_dual_rel),
+                    "Relative dual residual norm (from qp solver)")
+      .add_property("norm_primal_tolerance",
+                    bp::make_function(&SolverCSQP::get_norm_primal_tolerance),
+                    "Primal tolerance (from qp solver)")
+      .add_property("norm_dual_tolerance",
+                    bp::make_function(&SolverCSQP::get_norm_dual_tolerance),
+                    "Dual tolerance (from qp solver)")
+      .add_property("reset_y", bp::make_function(&SolverCSQP::get_reset_y),
+                    bp::make_function(&SolverCSQP::set_reset_y),
+                    "Reset y between SQP iterations (delegates to qp.reset_y)")
+      .add_property(
+          "reset_rho", bp::make_function(&SolverCSQP::get_reset_rho),
+          bp::make_function(&SolverCSQP::set_reset_rho),
+          "Reset rho between SQP iterations (delegates to qp.reset_rho)")
+      .add_property("with_qp_callbacks",
+                    bp::make_function(&SolverCSQP::getQPCallbacks),
+                    bp::make_function(&SolverCSQP::setQPCallbacks),
+                    "Activates the QP callbacks when true (default: False)");
 }
 
 }  // namespace mim_solvers

@@ -7,6 +7,7 @@ set(${PY_NAME}_SOURCES
     ddp.cpp
     fddp.cpp
     sqp.cpp
+    osqp_qp.cpp
     csqp.cpp
     main.cpp
     utils/callbacks.cpp

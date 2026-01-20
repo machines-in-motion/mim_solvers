@@ -63,6 +63,9 @@ namespace mim_solvers {
  * \sa SolverAbstract(), `backwardPass()` and `forwardPass()`
  */
 class SolverDDP : public crocoddyl::SolverAbstract {
+  // Allow SolverOSQP_QP to access protected members (Vxx_, Vx_, etc.)
+  friend class SolverOSQP_QP;
+
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -285,6 +288,21 @@ class SolverDDP : public crocoddyl::SolverAbstract {
    * @brief Return the feedforward gains \f$\mathbf{k}_{s}\f$
    */
   const std::vector<Eigen::VectorXd>& get_k() const;
+
+  /**
+   * @brief Return the state regularization value
+   */
+  double get_preg() const { return preg_; }
+
+  /**
+   * @brief Return the control regularization value
+   */
+  double get_dreg() const { return dreg_; }
+
+  /**
+   * @brief Return the dynamics gaps \\f$\\mathbf{\\bar{f}}_s\\f$
+   */
+  const std::vector<Eigen::VectorXd>& get_fs() const { return fs_; }
 
   /**
    * @brief Modify the regularization factor used to increase the damping value
