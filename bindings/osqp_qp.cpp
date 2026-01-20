@@ -140,7 +140,72 @@ void exposeSolverOSQP_QP() {
           "rho_vec",
           make_function(&SolverOSQP_QP::get_rho_vec,
                         bp::return_value_policy<bp::copy_const_reference>()),
-          "Per-constraint rho values");
+          "Per-constraint rho values")
+      
+      // Regularization parameters
+      .add_property("preg", bp::make_function(&SolverOSQP_QP::get_preg),
+                    "State regularization value")
+      .add_property("dreg", bp::make_function(&SolverOSQP_QP::get_dreg),
+                    "Control regularization value")
+      .add_property("reg_min", bp::make_function(&SolverOSQP_QP::get_reg_min),
+                    "Minimum regularization value (default: 1e-9)")
+      .add_property("reg_max", bp::make_function(&SolverOSQP_QP::get_reg_max),
+                    "Maximum regularization value (default: 1e9)")
+      .add_property("reg_incfactor", bp::make_function(&SolverOSQP_QP::get_reg_incfactor),
+                    "Factor to increase regularization (default: 10.0)")
+      .add_property("reg_decfactor", bp::make_function(&SolverOSQP_QP::get_reg_decfactor),
+                    "Factor to decrease regularization (default: 10.0)")
+      
+      // DDP data - Value function
+      .add_property(
+          "Vxx",
+          make_function(&SolverOSQP_QP::get_Vxx,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Hessian of the value function (read-only)")
+      .add_property(
+          "Vx",
+          make_function(&SolverOSQP_QP::get_Vx,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Gradient of the value function (read-only)")
+      
+      // DDP data - Hamiltonian/Q-function
+      .add_property(
+          "Qxx",
+          make_function(&SolverOSQP_QP::get_Qxx,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Hessian of the Hamiltonian w.r.t. state (read-only)")
+      .add_property(
+          "Qxu",
+          make_function(&SolverOSQP_QP::get_Qxu,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Hessian of the Hamiltonian w.r.t. state and control (read-only)")
+      .add_property(
+          "Quu",
+          make_function(&SolverOSQP_QP::get_Quu,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Hessian of the Hamiltonian w.r.t. control (read-only)")
+      .add_property(
+          "Qx",
+          make_function(&SolverOSQP_QP::get_Qx,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Gradient of the Hamiltonian w.r.t. state (read-only)")
+      .add_property(
+          "Qu",
+          make_function(&SolverOSQP_QP::get_Qu,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Gradient of the Hamiltonian w.r.t. control (read-only)")
+      
+      // DDP data - Gains
+      .add_property(
+          "K",
+          make_function(&SolverOSQP_QP::get_K,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Feedback gains (read-only)")
+      .add_property(
+          "k",
+          make_function(&SolverOSQP_QP::get_k,
+                        bp::return_value_policy<bp::copy_const_reference>()),
+          "Feedforward terms (read-only)");
 }
 
 }  // namespace mim_solvers

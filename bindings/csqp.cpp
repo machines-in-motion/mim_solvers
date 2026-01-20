@@ -19,10 +19,44 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_solves, SolverCSQP::solve, 0,
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(SolverCSQP_computeDirections,
                                        SolverCSQP::computeDirection, 0, 1)
 
+// Raw function wrapper for setCallbacks to properly override base class method
+static bp::object setCallbacks_wrapper(bp::tuple args, bp::dict kwargs) {
+  if (bp::len(args) != 2) {
+    PyErr_SetString(PyExc_TypeError, "setCallbacks() takes exactly 2 arguments");
+    bp::throw_error_already_set();
+  }
+  
+  SolverCSQP& self = bp::extract<SolverCSQP&>(args[0]);
+  bp::object callbacks_list = args[1];
+  
+  std::vector<std::shared_ptr<CallbackAbstract>> callbacks;
+  
+  // Check if it's a list
+  if (PyList_Check(callbacks_list.ptr())) {
+    bp::ssize_t n = PyList_Size(callbacks_list.ptr());
+    for (bp::ssize_t i = 0; i < n; ++i) {
+      PyObject* item = PyList_GetItem(callbacks_list.ptr(), i);
+      bp::object item_obj(bp::handle<>(bp::borrowed(item)));
+      bp::extract<std::shared_ptr<CallbackAbstract>> extractor(item_obj);
+      if (extractor.check()) {
+        callbacks.push_back(extractor());
+      } else {
+        PyErr_SetString(PyExc_TypeError, "Invalid callback object in list");
+        bp::throw_error_already_set();
+      }
+    }
+  } else {
+    PyErr_SetString(PyExc_TypeError, "setCallbacks expects a list");
+    bp::throw_error_already_set();
+  }
+  self.setCallbacks(callbacks);
+  return bp::object();  // Return None
+}
+
 void exposeSolverCSQP() {
   bp::register_ptr_to_python<std::shared_ptr<SolverCSQP> >();
 
-  bp::class_<SolverCSQP, bp::bases<SolverDDP>, boost::noncopyable>(
+  bp::class_<SolverCSQP, bp::bases<crocoddyl::SolverAbstract>, boost::noncopyable>(
       "SolverCSQP",
       "CSQP solver.\n\n"
       "The CSQP solver computes an optimal trajectory and control commands by "
@@ -258,7 +292,19 @@ void exposeSolverCSQP() {
       .add_property("with_qp_callbacks",
                     bp::make_function(&SolverCSQP::getQPCallbacks),
                     bp::make_function(&SolverCSQP::setQPCallbacks),
-                    "Activates the QP callbacks when true (default: False)");
+                    "Activates the QP callbacks when true (default: False)")
+
+      // Override setCallbacks with a version that accepts mim_solvers callbacks
+      .def("setCallbacks",
+           bp::raw_function(&setCallbacks_wrapper),
+           "Set callbacks for SQP solver iteration monitoring.\n\n"
+           ":param callbacks: list of CallbackAbstract or derived objects "
+           "(CallbackVerbose, CallbackLogger, etc.)")
+      .def("getCallbacks",
+           static_cast<const std::vector<std::shared_ptr<CallbackAbstract>>&
+               (SolverCSQP::*)() const>(&SolverCSQP::getCallbacks),
+           bp::return_value_policy<bp::copy_const_reference>(),
+           "Get the callbacks");
 }
 
 }  // namespace mim_solvers

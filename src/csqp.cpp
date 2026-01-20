@@ -16,14 +16,15 @@
 #include <iostream>
 
 #include "mim_solvers/csqp.hpp"
-#include <iostream>
 
 using namespace crocoddyl;
 
 namespace mim_solvers {
 
 SolverCSQP::SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
-    : SolverDDP(problem) {
+    : crocoddyl::SolverAbstract(problem),
+      remove_reg_(false),
+      th_acceptnegstep_(0.01) {
   const std::size_t T = this->problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
 
@@ -87,15 +88,16 @@ SolverCSQP::SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
   for (std::size_t n = 0; n < n_alphas; ++n) {
     alphas_[n] = 1. / pow(2., static_cast<double>(n));
   }
-  if (th_stepinc_ < alphas_[n_alphas - 1]) {
-    th_stepinc_ = alphas_[n_alphas - 1];
+  double th_stepinc = 0.01;
+  if (th_stepinc < alphas_[n_alphas - 1]) {
+    th_stepinc = alphas_[n_alphas - 1];
     std::cerr << "Warning: th_stepinc has higher value than lowest alpha "
                  "value, set to "
               << std::to_string(alphas_[n_alphas - 1]) << std::endl;
   }
 
   // Create the inner QP solver
-  qp_solver_ = std::make_unique<SolverOSQP_QP>(problem, this);
+  qp_solver_ = std::make_unique<SolverOSQP_QP>(problem);
 }
 
 SolverCSQP::~SolverCSQP() {}
@@ -107,6 +109,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
   START_PROFILER("SolverCSQP::solve");
 
   start_time_ = crocoddyl::getProfiler().take_time();
+  qp_solver_->set_start_time(start_time_);
 
   if (problem_->is_updated()) {
     resizeData();
@@ -120,15 +123,15 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
 
   // Optionally remove Crocoddyl's regularization
   if (remove_reg_) {
-    preg_ = 0.;
-    dreg_ = 0.;
+    qp_solver_->set_preg(0.);
+    qp_solver_->set_dreg(0.);
   } else {
     if (std::isnan(reginit)) {
-      preg_ = reg_min_;
-      dreg_ = reg_min_;
+      qp_solver_->set_preg(qp_solver_->get_reg_min());
+      qp_solver_->set_dreg(qp_solver_->get_reg_min());
     } else {
-      preg_ = reginit;
-      dreg_ = reginit;
+      qp_solver_->set_preg(reginit);
+      qp_solver_->set_dreg(reginit);
     }
   }
 
@@ -155,6 +158,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
       qp_solver_->reset_rho_vec();
     }
     std::cout << "SolverCSQP::solve: rho_vec[1] BEFORE QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
+    std::cout << "SolverCSQP::solve: reset rho = " << qp_solver_->get_reset_rho() << std::endl;
 
     // Solve QP
     if (remove_reg_) {
@@ -165,7 +169,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
           computeDirection(true);
         } catch (std::exception& e) {
           increaseRegularization();
-          if (preg_ >= reg_max_) {
+          if (qp_solver_->get_preg() >= qp_solver_->get_reg_max()) {
             STOP_PROFILER("SolverCSQP::solve");
             return false;
           } else {
@@ -266,7 +270,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
       } else {
         increaseRegularization();
         // preg_ equal to reg_max_
-        if (preg_ >= reg_max_) {
+        if (qp_solver_->get_preg() >= qp_solver_->get_reg_max()) {
           STOP_PROFILER("SolverCSQP::solve");
           return false;
         }
@@ -289,7 +293,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         } catch (std::exception& e) {
           increaseRegularization();
           // preg_ equal to reg_max_
-          if (preg_ >= reg_max_) {
+          if (qp_solver_->get_preg() >= qp_solver_->get_reg_max()) {
             return false;
           } else {
             continue;
@@ -386,10 +390,14 @@ void SolverCSQP::checkKKTConditions() {
   const std::vector<Eigen::VectorXd>& dxtilde = qp_solver_->get_dx_tilde();
   const std::vector<Eigen::VectorXd>& dutilde = qp_solver_->get_du_tilde();
   const std::vector<Eigen::VectorXd>& y = qp_solver_->get_y();
+  
+  // Access Vx and Vxx from the QP solver's internal data
+  const std::vector<Eigen::VectorXd>& Vx = qp_solver_->get_Vx();
+  const std::vector<Eigen::MatrixXd>& Vxx = qp_solver_->get_Vxx();
 
   for (std::size_t t = 0; t < T + 1; ++t) {
-    lag_mul_[t] = Vx_[t];
-    lag_mul_[t].noalias() += Vxx_[t] * dxtilde[t];
+    lag_mul_[t] = Vx[t];
+    lag_mul_[t].noalias() += Vxx[t] * dxtilde[t];
   }
 
   const std::size_t ndx = problem_->get_ndx();
@@ -524,6 +532,33 @@ double SolverCSQP::tryStep(const double steplength) {
   profiler_tryStep.stop();
 
   return merit_try_;
+}
+
+void SolverCSQP::increaseRegularization() {
+  // Delegate to QP solver
+  qp_solver_->increaseRegularization();
+}
+
+void SolverCSQP::decreaseRegularization() {
+  // Delegate to QP solver
+  // Note: QP solver doesn't have a decreaseRegularization method yet, 
+  // so we implement it inline
+  double preg = qp_solver_->get_preg() / qp_solver_->get_reg_decfactor();
+  if (preg < qp_solver_->get_reg_min()) {
+    preg = qp_solver_->get_reg_min();
+  }
+  qp_solver_->set_preg(preg);
+  qp_solver_->set_dreg(preg);
+}
+
+double SolverCSQP::stoppingCriteria() {
+  // Return the KKT condition residual
+  return KKT_;
+}
+
+const Eigen::Vector2d& SolverCSQP::expectedImprovement() {
+  // Return the expected improvement vector (already computed in solve)
+  return expected_improvement_;
 }
 
 }  // namespace mim_solvers

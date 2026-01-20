@@ -18,9 +18,6 @@
 
 namespace mim_solvers {
 
-// Forward declaration
-class SolverDDP;
-
 // Type alias for row-major matrices (matching SolverDDP)
 typedef typename crocoddyl::MathBaseTpl<double>::MatrixXsRowMajor
     MatrixXdRowMajor;
@@ -47,10 +44,8 @@ class SolverOSQP_QP {
    * @brief Initialize the OSQP_QP solver
    *
    * @param[in] problem  Shooting problem (for dimensions and constraint bounds)
-   * @param[in] ddp      Parent DDP solver (provides Vx, Vxx, Qx, Quu, k, K, fs)
    */
-  SolverOSQP_QP(std::shared_ptr<crocoddyl::ShootingProblem> problem,
-                SolverDDP* ddp);
+  explicit SolverOSQP_QP(std::shared_ptr<crocoddyl::ShootingProblem> problem);
   virtual ~SolverOSQP_QP();
 
   /**
@@ -103,6 +98,23 @@ class SolverOSQP_QP {
   virtual void apply_rho_update(const double rho_sparse);
 
   /**
+   * @brief Compute the feedforward and feedback terms using Cholesky decomposition
+   *
+   * Computes k and K from Quu, Qu, Qxu using LLT factorization.
+   */
+  virtual void computeGains(const std::size_t t);
+
+  /**
+   * @brief Increase state and control regularization values
+   */
+  void increaseRegularization();
+
+  /**
+   * @brief Allocate internal data structures for the QP solver
+   */
+  void allocateData();
+
+  /**
    * @brief Print QP iteration information
    */
   void printQPCallbacks(const int iter);
@@ -141,8 +153,8 @@ class SolverOSQP_QP {
   double get_alpha() const { return alpha_; }
   void set_alpha(const double alpha) { alpha_ = alpha; }
 
+  void set_rho_sparse(const double rho_sparse) { rho_sparse_ = rho_sparse; }
   double get_rho_sparse() const { return rho_sparse_; }
-  void set_rho_sparse(const double rho_sparse);
 
   double get_rho_min() const { return rho_min_; }
   double get_rho_max() const { return rho_max_; }
@@ -191,6 +203,29 @@ class SolverOSQP_QP {
   void set_max_solve_time(double t) { max_solve_time_ = t; }
   bool get_max_solve_time_reached() const { return max_solve_time_reached_; }
 
+  // Regularization getters/setters
+  double get_preg() const { return preg_; }
+  void set_preg(const double preg) { preg_ = preg; }
+  
+  double get_dreg() const { return dreg_; }
+  void set_dreg(const double dreg) { dreg_ = dreg; }
+  
+  double get_reg_min() const { return reg_min_; }
+  double get_reg_max() const { return reg_max_; }
+  double get_reg_incfactor() const { return reg_incfactor_; }
+  double get_reg_decfactor() const { return reg_decfactor_; }
+
+  // DDP data getters (for advanced users)
+  const std::vector<Eigen::MatrixXd>& get_Vxx() const { return Vxx_; }
+  const std::vector<Eigen::VectorXd>& get_Vx() const { return Vx_; }
+  const std::vector<Eigen::MatrixXd>& get_Qxx() const { return Qxx_; }
+  const std::vector<Eigen::MatrixXd>& get_Qxu() const { return Qxu_; }
+  const std::vector<Eigen::MatrixXd>& get_Quu() const { return Quu_; }
+  const std::vector<Eigen::VectorXd>& get_Qx() const { return Qx_; }
+  const std::vector<Eigen::VectorXd>& get_Qu() const { return Qu_; }
+  const std::vector<MatrixXdRowMajor>& get_K() const { return K_; }
+  const std::vector<Eigen::VectorXd>& get_k() const { return k_; }
+
  public:
   // ========================
   // ADMM Variables (public for direct access from bindings)
@@ -199,6 +234,7 @@ class SolverOSQP_QP {
   std::vector<Eigen::VectorXd> du_;       //!< Descent direction for u (output)
   std::vector<Eigen::VectorXd> dxtilde_;  //!< ADMM x-tilde variable
   std::vector<Eigen::VectorXd> dutilde_;  //!< ADMM u-tilde variable
+  std::vector<Eigen::VectorXd> fs_;       //!< Dynamics gaps
 
   std::vector<Eigen::VectorXd> y_;            //!< ADMM dual variable
   std::vector<Eigen::VectorXd> z_;            //!< ADMM z variable
@@ -220,8 +256,56 @@ class SolverOSQP_QP {
 
  protected:
   std::shared_ptr<crocoddyl::ShootingProblem> problem_;  //!< Shooting problem
-  SolverDDP* ddp_;  //!< Parent DDP solver (for Vx, Vxx, Qx, Quu, k, K, fs)
 
+  // ========================
+  // DDP Data (Value Function, Hamiltonian, and Gains)
+  // ========================
+  std::vector<Eigen::MatrixXd>
+      Vxx_;  //!< Hessian of the Value function \f$\mathbf{V_{xx}}\f$
+  Eigen::MatrixXd
+      Vxx_tmp_;  //!< Temporary variable for ensuring symmetry of Vxx
+  std::vector<Eigen::VectorXd>
+      Vx_;  //!< Gradient of the Value function \f$\mathbf{V_x}\f$
+  std::vector<Eigen::MatrixXd>
+      Qxx_;  //!< Hessian of the Hamiltonian \f$\mathbf{Q_{xx}}\f$
+  std::vector<Eigen::MatrixXd>
+      Qxu_;  //!< Hessian of the Hamiltonian \f$\mathbf{Q_{xu}}\f$
+  std::vector<Eigen::MatrixXd>
+      Quu_;  //!< Hessian of the Hamiltonian \f$\mathbf{Q_{uu}}\f$
+  std::vector<Eigen::VectorXd>
+      Qx_;  //!< Gradient of the Hamiltonian \f$\mathbf{Q_x}\f$
+  std::vector<Eigen::VectorXd>
+      Qu_;  //!< Gradient of the Hamiltonian \f$\mathbf{Q_u}\f$
+  std::vector<MatrixXdRowMajor> K_;  //!< Feedback gains \f$\mathbf{K}\f$
+  std::vector<Eigen::VectorXd> k_;   //!< Feed-forward terms \f$\mathbf{k}\f$
+
+  // Temporary/working data for backward pass
+  Eigen::VectorXd xnext_;      //!< Next state \f$\mathbf{x}^{'}\f$
+  MatrixXdRowMajor FxTVxx_p_;  //!< Store the value of
+                               //!< \f$\mathbf{f_x}^T\mathbf{V_{xx}}^{'}\f$
+  std::vector<MatrixXdRowMajor>
+      FuTVxx_p_;             //!< Store the values of
+                             //!< \f$\mathbf{f_u}^T\mathbf{V_{xx}}^{'}\f$
+                             //!< per each running node
+  Eigen::VectorXd fTVxx_p_;  //!< Store the value of
+                             //!< \f$\mathbf{\bar{f}}^T\mathbf{V_{xx}}^{'}\f$
+  std::vector<Eigen::LLT<Eigen::MatrixXd> > Quu_llt_;  //!< Cholesky LLT solver
+  std::vector<Eigen::VectorXd>
+      Quuk_;  //!< Store the values of \f$\mathbf{Q_{uu}\mathbf{k}}\f$
+
+  // ========================
+  // Regularization Parameters (copied from SolverDDP)
+  // ========================
+  double preg_ = 0.0;           //!< State regularization
+  double dreg_ = 0.0;           //!< Control regularization
+  double reg_min_ = 1e-9;       //!< Minimum regularization value
+  double reg_max_ = 1e9;        //!< Maximum regularization value
+  double reg_incfactor_ = 10.0; //!< Factor to increase regularization
+  double reg_decfactor_ = 10.0; //!< Factor to decrease regularization
+
+  // ========================
+  // ADMM Parameters
+  // ========================
   double sigma_ = 1e-6;   //!< Proximal term
   double alpha_ = 1.6;    //!< ADMM relaxation parameter (over-relaxation)
 

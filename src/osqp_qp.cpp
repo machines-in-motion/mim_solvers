@@ -10,19 +10,23 @@
 #include <omp.h>
 #endif  // CROCODDYL_WITH_MULTITHREADING
 
+#include <iomanip>
 #include <crocoddyl/core/utils/exception.hpp>
 
 
 #include "mim_solvers/osqp_qp.hpp"
-#include "mim_solvers/ddp.hpp"
 
 using namespace crocoddyl;
 
 namespace mim_solvers {
 
 SolverOSQP_QP::SolverOSQP_QP(
-    std::shared_ptr<crocoddyl::ShootingProblem> problem, SolverDDP* ddp)
-    : problem_(problem), ddp_(ddp) {
+    std::shared_ptr<crocoddyl::ShootingProblem> problem)
+    : problem_(problem) {
+  allocateData();
+}
+
+void SolverOSQP_QP::allocateData() {
   const std::size_t T = problem_->get_T();
   const std::size_t ndx = problem_->get_ndx();
 
@@ -52,7 +56,9 @@ SolverOSQP_QP::SolverOSQP_QP(
   tmp_rhoGx_mat_.resize(T + 1);
   tmp_rhoGu_mat_.resize(T);
   tmp_vec_u_.resize(T);
+  tmp_vec_u_.resize(T);
   Vxx_fs_.resize(T);
+  fs_.resize(T + 1);
 
   const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
@@ -92,12 +98,55 @@ SolverOSQP_QP::SolverOSQP_QP(
     tmp_vec_u_[t].setZero();
     Vxx_fs_[t].resize(ndx);
     Vxx_fs_[t].setZero();
+    fs_[t].resize(ndx);
+    fs_[t].setZero();
 
     rho_vec_[t].resize(nc);
     rho_vec_[t].setZero();
     inv_rho_vec_[t].resize(nc);
     inv_rho_vec_[t].setZero();
   }
+
+  // ========================
+  // Allocate DDP data (Vxx_, Qxx_, K_, k, etc.)
+  // ========================
+  Vxx_.resize(T + 1);
+  Vx_.resize(T + 1);
+  Qxx_.resize(T);
+  Qxu_.resize(T);
+  Quu_.resize(T);
+  Qx_.resize(T);
+  Qu_.resize(T);
+  K_.resize(T);
+  k_.resize(T);
+
+  FuTVxx_p_.resize(T);
+  Quu_llt_.resize(T);
+  Quuk_.resize(T);
+
+  for (std::size_t t = 0; t < T; ++t) {
+    const std::shared_ptr<crocoddyl::ActionModelAbstract>& model = models[t];
+    const std::size_t nu = model->get_nu();
+    Vxx_[t] = Eigen::MatrixXd::Zero(ndx, ndx);
+    Vx_[t] = Eigen::VectorXd::Zero(ndx);
+    Qxx_[t] = Eigen::MatrixXd::Zero(ndx, ndx);
+    Qxu_[t] = Eigen::MatrixXd::Zero(ndx, nu);
+    Quu_[t] = Eigen::MatrixXd::Zero(nu, nu);
+    Qx_[t] = Eigen::VectorXd::Zero(ndx);
+    Qu_[t] = Eigen::VectorXd::Zero(nu);
+    K_[t] = MatrixXdRowMajor::Zero(nu, ndx);
+    k_[t] = Eigen::VectorXd::Zero(nu);
+
+    FuTVxx_p_[t] = MatrixXdRowMajor::Zero(nu, ndx);
+    Quu_llt_[t] = Eigen::LLT<Eigen::MatrixXd>(nu);
+    Quuk_[t] = Eigen::VectorXd(nu);
+  }
+  Vxx_.back() = Eigen::MatrixXd::Zero(ndx, ndx);
+  Vxx_tmp_ = Eigen::MatrixXd::Zero(ndx, ndx);
+  Vx_.back() = Eigen::VectorXd::Zero(ndx);
+
+  FxTVxx_p_ = MatrixXdRowMajor::Zero(ndx, ndx);
+  fTVxx_p_ = Eigen::VectorXd::Zero(ndx);
 
   // Terminal state
   dx_.back().resize(ndx);
@@ -127,6 +176,8 @@ SolverOSQP_QP::SolverOSQP_QP(
   rho_vec_.back().setZero();
   inv_rho_vec_.back().resize(nc);
   inv_rho_vec_.back().setZero();
+  fs_.back().resize(ndx);
+  fs_.back().setZero();
 }
 
 SolverOSQP_QP::~SolverOSQP_QP() {}
@@ -154,12 +205,6 @@ void SolverOSQP_QP::reset_params() {
   if (reset_y_) {
     y_.back().setZero();
   }
-}
-
-void SolverOSQP_QP::set_rho_sparse(const double rho_sparse) {
-  rho_sparse_ = rho_sparse;
-  rho_sparse_base_ = rho_sparse;
-  apply_rho_update(rho_sparse_);
 }
 
 void SolverOSQP_QP::reset_rho_vec() {
@@ -228,8 +273,6 @@ void SolverOSQP_QP::computeDirection() {
     printQPCallbacks(0);
   }
 
-  max_solve_time_reached_ = false;
-
   for (qp_iters_ = 1; qp_iters_ < max_qp_iters_ + 1; ++qp_iters_) {
     if (crocoddyl::getProfiler().take_time() - start_time_ >= max_solve_time_) {
       qp_iters_--;
@@ -242,20 +285,22 @@ void SolverOSQP_QP::computeDirection() {
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
       else
-#endif
+#endif // CROCODDYL_WITH_MULTITHREADING
         backwardPass();
     } else {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_without_rho_update_mt();
       else
-#endif
+#endif // CROCODDYL_WITH_MULTITHREADING
         backwardPass_without_rho_update();
     }
 
     forwardPass();
     update_lagrangian_parameters(qp_iters_);
     update_rho_vec(qp_iters_);
+
+    // Because (eps_rel=0) x inf = NaN
 
     if (qp_iters_ % rho_update_interval_ == 0) {
       if (with_qp_callbacks_) {
@@ -284,7 +329,7 @@ void SolverOSQP_QP::update_rho_vec(const int iter) {
   rho_estimate_sparse_ =
       std::min(std::max(scale * rho_sparse_, rho_min_), rho_max_);
 
-  if (iter % rho_update_interval_ == 0 && iter > 1) {
+  if (iter % rho_update_interval_ == 0) { //&& iter > 1) {
     if (rho_estimate_sparse_ > rho_sparse_ * adaptive_rho_tolerance_ ||
         rho_estimate_sparse_ < rho_sparse_ / adaptive_rho_tolerance_) {
       rho_sparse_ = rho_estimate_sparse_;
@@ -300,16 +345,13 @@ void SolverOSQP_QP::forwardPass() {
   const std::size_t T = problem_->get_T();
   const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
-  const std::vector<Eigen::VectorXd>& k = ddp_->get_k();
-  const auto& K = ddp_->K_;  // MatrixXdRowMajor
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
 
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-    dutilde_[t] = -k[t];
-    dutilde_[t].noalias() -= K[t] * dxtilde_[t];
-    dxtilde_[t + 1] = fs[t + 1];
+    dutilde_[t] = -k_[t];
+    dutilde_[t].noalias() -= K_[t] * dxtilde_[t];
+    dxtilde_[t + 1] = fs_[t + 1];
     dxtilde_[t + 1].noalias() += d->Fx * dxtilde_[t];
     dxtilde_[t + 1].noalias() += d->Fu * dutilde_[t];
   }
@@ -324,16 +366,13 @@ void SolverOSQP_QP::forwardPass_without_constraints() {
   const std::size_t T = problem_->get_T();
   const std::vector<std::shared_ptr<crocoddyl::ActionDataAbstract>>& datas =
       problem_->get_runningDatas();
-  const std::vector<Eigen::VectorXd>& k = ddp_->get_k();
-  const auto& K = ddp_->K_;  // MatrixXdRowMajor
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
 
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-    du_[t] = -k[t];
-    du_[t].noalias() -= K[t] * dx_[t];
-    dx_[t + 1] = fs[t + 1];
+    du_[t] = -k_[t];
+    du_[t].noalias() -= K_[t] * dx_[t];
+    dx_[t + 1] = fs_[t + 1];
     dx_[t + 1].noalias() += d->Fx * dx_[t];
     dx_[t + 1].noalias() += d->Fu * du_[t];
   }
@@ -349,38 +388,20 @@ void SolverOSQP_QP::backwardPass() {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
-  // Access DDP matrices via parent pointer
-  std::vector<Eigen::MatrixXd>& Vxx = ddp_->Vxx_;
-  std::vector<Eigen::VectorXd>& Vx = ddp_->Vx_;
-  std::vector<Eigen::MatrixXd>& Qxx = ddp_->Qxx_;
-  std::vector<Eigen::VectorXd>& Qx = ddp_->Qx_;
-  std::vector<Eigen::MatrixXd>& Quu = ddp_->Quu_;
-  std::vector<Eigen::VectorXd>& Qu = ddp_->Qu_;
-  std::vector<Eigen::MatrixXd>& Qxu = ddp_->Qxu_;
-  std::vector<Eigen::VectorXd>& k = ddp_->k_;
-  auto& K = ddp_->K_;  // MatrixXdRowMajor
-  auto& FuTVxx_p = ddp_->FuTVxx_p_;  // MatrixXdRowMajor
-  MatrixXdRowMajor& FxTVxx_p = ddp_->FxTVxx_p_;
-  Eigen::MatrixXd& Vxx_tmp = ddp_->Vxx_tmp_;
-  std::vector<Eigen::LLT<Eigen::MatrixXd>>& Quu_llt = ddp_->Quu_llt_;
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
-  const double preg = ddp_->get_preg();
-  const double dreg = ddp_->get_dreg();
-
-  Vxx.back() = d_T->Lxx;
-  Vxx.back().diagonal().array() += sigma_;
-  Vx.back() = d_T->Lx;
-  Vx.back().noalias() -= sigma_ * dx_.back();
+  Vxx_.back() = d_T->Lxx;
+  Vxx_.back().diagonal().array() += sigma_;
+  Vx_.back() = d_T->Lx;
+  Vx_.back().noalias() -= sigma_ * dx_.back();
 
   if (problem_->get_terminalModel()->get_ng()) {
     tmp_rhoGx_mat_.back().noalias() = rho_vec_.back().asDiagonal() * d_T->Gx;
-    Vxx.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
+    Vxx_.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
     tmp_dual_cwise_.back() =
         y_.back() - rho_vec_.back().cwiseProduct(z_.back());
-    Vx.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
-  if (!std::isnan(preg)) {
-    Vxx.back().diagonal().array() += preg;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   const std::size_t T = problem_->get_T();
@@ -392,74 +413,74 @@ void SolverOSQP_QP::backwardPass() {
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
     const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-    const Eigen::MatrixXd& Vxx_p = Vxx[t + 1];
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
 
-    Vxx_fs_[t].noalias() = Vxx[t + 1] * fs[t + 1];
-    tmp_Vx_ = Vxx_fs_[t] + Vx[t + 1];
+    Vxx_fs_[t].noalias() = Vxx_[t + 1] * fs_[t + 1];
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
 
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
-    FxTVxx_p.noalias() = d->Fx.transpose() * Vxx_p;
+    FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
 
-    Qx[t] = d->Lx;
-    Qx[t].noalias() -= sigma_ * dx_[t];
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dx_[t];
     if (nc != 0) {
       if (t > 0 || nu != 0) {
         tmp_dual_cwise_[t] = y_[t];
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
-    Qx[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
 
-    Qxx[t] = d->Lxx;
-    Qxx[t].diagonal().array() += sigma_;
+    Qxx_[t] = d->Lxx;
+    Qxx_[t].diagonal().array() += sigma_;
     if (t > 0 && nc != 0) {
       tmp_rhoGx_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gx;
-      Qxx[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
+      Qxx_[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
     }
-    Qxx[t].noalias() += FxTVxx_p * d->Fx;
+    Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
 
     if (nu != 0) {
-      FuTVxx_p[t].noalias() = d->Fu.transpose() * Vxx_p;
-      Qu[t] = d->Lu - sigma_ * du_[t];
+      FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
+      Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0) {
-        Qu[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
+        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
-      Qu[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
 
-      Quu[t] = d->Luu;
-      Quu[t].diagonal().array() += sigma_;
-      Quu[t].noalias() += FuTVxx_p[t] * d->Fu;
+      Quu_[t] = d->Luu;
+      Quu_[t].diagonal().array() += sigma_;
+      Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
       if (nc != 0) {
         tmp_rhoGu_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gu;
-        Quu[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
+        Quu_[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
       }
-      if (!std::isnan(dreg)) {
-        Quu[t].diagonal().array() += dreg;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
 
-      Qxu[t] = d->Lxu;
+      Qxu_[t] = d->Lxu;
       if (t > 0 && nc != 0) {
-        Qxu[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
+        Qxu_[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
       }
-      Qxu[t].noalias() += FxTVxx_p * d->Fu;
+      Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
     }
 
-    ddp_->computeGains(t);
+    computeGains(t);
 
-    Vx[t] = Qx[t];
-    Vxx[t] = Qxx[t];
+    Vx_[t] = Qx_[t];
+    Vxx_[t] = Qxx_[t];
     if (nu != 0) {
-      Vx[t].noalias() -= K[t].transpose() * Qu[t];
-      Vxx[t].noalias() -= Qxu[t] * K[t];
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+      Vxx_[t].noalias() -= Qxu_[t] * K_[t];
     }
-    Vxx_tmp = 0.5 * (Vxx[t] + Vxx[t].transpose());
-    Vxx[t] = Vxx_tmp;
-    if (!std::isnan(preg)) {
-      Vxx[t].diagonal().array() += preg;
+    Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
+    Vxx_[t] = Vxx_tmp_;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
   }
   profiler_all.stop();
@@ -473,26 +494,11 @@ void SolverOSQP_QP::backwardPass_without_constraints() {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
-  // Access DDP matrices
-  std::vector<Eigen::MatrixXd>& Vxx = ddp_->Vxx_;
-  std::vector<Eigen::VectorXd>& Vx = ddp_->Vx_;
-  std::vector<Eigen::MatrixXd>& Qxx = ddp_->Qxx_;
-  std::vector<Eigen::VectorXd>& Qx = ddp_->Qx_;
-  std::vector<Eigen::MatrixXd>& Quu = ddp_->Quu_;
-  std::vector<Eigen::VectorXd>& Qu = ddp_->Qu_;
-  std::vector<Eigen::MatrixXd>& Qxu = ddp_->Qxu_;
-  auto& FuTVxx_p = ddp_->FuTVxx_p_;  // MatrixXdRowMajor
-  MatrixXdRowMajor& FxTVxx_p = ddp_->FxTVxx_p_;
-  Eigen::MatrixXd& Vxx_tmp = ddp_->Vxx_tmp_;
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
-  const double preg = ddp_->get_preg();
-  const double dreg = ddp_->get_dreg();
+  Vxx_.back() = d_T->Lxx;
+  Vx_.back() = d_T->Lx;
 
-  Vxx.back() = d_T->Lxx;
-  Vx.back() = d_T->Lx;
-
-  if (!std::isnan(preg)) {
-    Vxx.back().diagonal().array() += preg;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   const std::size_t T = problem_->get_T();
@@ -504,48 +510,49 @@ void SolverOSQP_QP::backwardPass_without_constraints() {
   for (int t = static_cast<int>(T - 1); t >= 0; --t) {
     const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
-    const Eigen::MatrixXd& Vxx_p = Vxx[t + 1];
-    tmp_Vx_.noalias() = Vxx[t + 1] * fs[t + 1];
-    tmp_Vx_ += Vx[t + 1];
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
+    tmp_Vx_.noalias() = Vxx_[t + 1] * fs_[t + 1];
+    tmp_Vx_ += Vx_[t + 1];
 
     const std::size_t nu = m->get_nu();
-    FxTVxx_p.noalias() = d->Fx.transpose() * Vxx_p;
+    FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
 
-    Qx[t] = d->Lx;
-    Qx[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dxtilde_[t];
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
 
-    Qxx[t] = d->Lxx;
-    Qxx[t].noalias() += FxTVxx_p * d->Fx;
+    Qxx_[t] = d->Lxx;
+    Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
 
     if (nu != 0) {
-      FuTVxx_p[t].noalias() = d->Fu.transpose() * Vxx_p;
-      Qu[t] = d->Lu;
-      Qu[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      FuTVxx_p_[t].noalias() = d->Fu.transpose() * Vxx_p;
+      Qu_[t] = d->Lu;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
 
-      Quu[t] = d->Luu;
-      Quu[t].noalias() += FuTVxx_p[t] * d->Fu;
+      Quu_[t] = d->Luu;
+      Quu_[t].noalias() += FuTVxx_p_[t] * d->Fu;
 
-      Qxu[t] = d->Lxu;
-      Qxu[t].noalias() += FxTVxx_p * d->Fu;
+      Qxu_[t] = d->Lxu;
+      Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
 
-      if (!std::isnan(dreg)) {
-        Quu[t].diagonal().array() += dreg;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
     }
 
-    ddp_->computeGains(t);
+    computeGains(t);
 
-    Vx[t] = Qx[t];
-    Vxx[t] = Qxx[t];
+    Vx_[t] = Qx_[t];
+    Vxx_[t] = Qxx_[t];
     if (nu != 0) {
-      Vx[t].noalias() -= ddp_->K_[t].transpose() * Qu[t];
-      Vxx[t].noalias() -= Qxu[t] * ddp_->K_[t];
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+      Vxx_[t].noalias() -= Qxu_[t] * K_[t];
     }
-    Vxx_tmp = 0.5 * (Vxx[t] + Vxx[t].transpose());
-    Vxx[t] = Vxx_tmp;
+    Vxx_tmp_ = 0.5 * (Vxx_[t] + Vxx_[t].transpose());
+    Vxx_[t] = Vxx_tmp_;
 
-    if (!std::isnan(preg)) {
-      Vxx[t].diagonal().array() += preg;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
   }
   profiler_all.stop();
@@ -561,21 +568,13 @@ void SolverOSQP_QP::backwardPass_without_rho_update() {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
-  std::vector<Eigen::VectorXd>& Vx = ddp_->Vx_;
-  std::vector<Eigen::VectorXd>& Qx = ddp_->Qx_;
-  std::vector<Eigen::VectorXd>& Qu = ddp_->Qu_;
-  std::vector<Eigen::VectorXd>& k = ddp_->k_;
-  auto& K = ddp_->K_;  // MatrixXdRowMajor
-  std::vector<Eigen::LLT<Eigen::MatrixXd>>& Quu_llt = ddp_->Quu_llt_;
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
-
-  Vx.back() = d_T->Lx;
-  Vx.back().noalias() -= sigma_ * dx_.back();
+  Vx_.back() = d_T->Lx;
+  Vx_.back().noalias() -= sigma_ * dx_.back();
 
   if (m_T->get_ng()) {
     tmp_dual_cwise_.back() = y_.back();
     tmp_dual_cwise_.back().noalias() -= rho_vec_.back().cwiseProduct(z_.back());
-    Vx.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
 
   const std::size_t T = problem_->get_T();
@@ -590,35 +589,35 @@ void SolverOSQP_QP::backwardPass_without_rho_update() {
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
-    tmp_Vx_ = Vxx_fs_[t] + Vx[t + 1];
-    Qx[t] = d->Lx;
-    Qx[t].noalias() -= sigma_ * dx_[t];
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dx_[t];
     if (nc != 0) {
       if (t > 0 || nu != 0) {
         tmp_dual_cwise_[t] = y_[t];
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
-    Qx[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
 
     if (nu != 0) {
-      Qu[t] = d->Lu;
-      Qu[t].noalias() -= sigma_ * du_[t];
+      Qu_[t] = d->Lu;
+      Qu_[t].noalias() -= sigma_ * du_[t];
       if (nc != 0) {
-        Qu[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
+        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
-      Qu[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
     }
 
-    k[t] = Qu[t];
-    Quu_llt[t].solveInPlace(k[t]);
+    k_[t] = Qu_[t];
+    Quu_llt_[t].solveInPlace(k_[t]);
 
-    Vx[t] = Qx[t];
+    Vx_[t] = Qx_[t];
     if (nu != 0) {
-      Vx[t].noalias() -= K[t].transpose() * Qu[t];
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
     }
   }
   profiler_all.stop();
@@ -635,34 +634,20 @@ void SolverOSQP_QP::backwardPass_mt() {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
-  std::vector<Eigen::MatrixXd>& Vxx = ddp_->Vxx_;
-  std::vector<Eigen::VectorXd>& Vx = ddp_->Vx_;
-  std::vector<Eigen::MatrixXd>& Qxx = ddp_->Qxx_;
-  std::vector<Eigen::VectorXd>& Qx = ddp_->Qx_;
-  std::vector<Eigen::MatrixXd>& Quu = ddp_->Quu_;
-  std::vector<Eigen::VectorXd>& Qu = ddp_->Qu_;
-  std::vector<Eigen::MatrixXd>& Qxu = ddp_->Qxu_;
-  auto& FuTVxx_p = ddp_->FuTVxx_p_;  // MatrixXdRowMajor
-  MatrixXdRowMajor& FxTVxx_p = ddp_->FxTVxx_p_;
-  Eigen::MatrixXd& Vxx_tmp = ddp_->Vxx_tmp_;
-  const std::vector<Eigen::VectorXd>& fs = ddp_->get_fs();
-  const double preg = ddp_->get_preg();
-  const double dreg = ddp_->get_dreg();
-
-  Vxx.back() = d_T->Lxx;
-  Vxx.back().diagonal().array() += sigma_;
-  Vx.back() = d_T->Lx;
-  Vx.back().noalias() -= sigma_ * dx_.back();
+  Vxx_.back() = d_T->Lxx;
+  Vxx_.back().diagonal().array() += sigma_;
+  Vx_.back() = d_T->Lx;
+  Vx_.back().noalias() -= sigma_ * dx_.back();
 
   if (problem_->get_terminalModel()->get_ng()) {
     tmp_rhoGx_mat_.back().noalias() = rho_vec_.back().asDiagonal() * d_T->Gx;
-    Vxx.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
+    Vxx_.back().noalias() += d_T->Gx.transpose() * tmp_rhoGx_mat_.back();
     tmp_dual_cwise_.back() =
         y_.back() - rho_vec_.back().cwiseProduct(z_.back());
-    Vx.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
-  if (!std::isnan(preg)) {
-    Vxx.back().diagonal().array() += preg;
+  if (!std::isnan(preg_)) {
+    Vxx_.back().diagonal().array() += preg_;
   }
 
   const std::size_t T = problem_->get_T();
@@ -678,44 +663,44 @@ void SolverOSQP_QP::backwardPass_mt() {
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
-    Qx[t] = d->Lx;
-    Qx[t].noalias() -= sigma_ * dx_[t];
+    Qx_[t] = d->Lx;
+    Qx_[t].noalias() -= sigma_ * dx_[t];
     if (nc != 0) {
       if (t > 0 || nu != 0) {
         tmp_dual_cwise_[t] = y_[t];
         tmp_dual_cwise_[t].noalias() -= rho_vec_[t].cwiseProduct(z_[t]);
       }
       if (t > 0) {
-        Qx[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+        Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
       }
     }
 
-    Qxx[t] = d->Lxx;
-    Qxx[t].diagonal().array() += sigma_;
+    Qxx_[t] = d->Lxx;
+    Qxx_[t].diagonal().array() += sigma_;
     if (t > 0 && nc != 0) {
       tmp_rhoGx_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gx;
-      Qxx[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
+      Qxx_[t].noalias() += d->Gx.transpose() * tmp_rhoGx_mat_[t];
     }
 
     if (nu != 0) {
-      Qu[t] = d->Lu - sigma_ * du_[t];
+      Qu_[t] = d->Lu - sigma_ * du_[t];
       if (nc != 0) {
-        Qu[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
+        Qu_[t] += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
 
-      Quu[t] = d->Luu;
-      Quu[t].diagonal().array() += sigma_;
+      Quu_[t] = d->Luu;
+      Quu_[t].diagonal().array() += sigma_;
       if (nc != 0) {
         tmp_rhoGu_mat_[t].noalias() = rho_vec_[t].asDiagonal() * d->Gu;
-        Quu[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
+        Quu_[t].noalias() += d->Gu.transpose() * tmp_rhoGu_mat_[t];
       }
-      if (!std::isnan(dreg)) {
-        Quu[t].diagonal().array() += dreg;
+      if (!std::isnan(dreg_)) {
+        Quu_[t].diagonal().array() += dreg_;
       }
 
-      Qxu[t] = d->Lxu;
+      Qxu_[t] = d->Lxu;
       if (t > 0 && nc != 0) {
-        Qxu[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
+        Qxu_[t].noalias() += d->Gx.transpose() * tmp_rhoGu_mat_[t];
       }
     }
   }
@@ -726,33 +711,33 @@ void SolverOSQP_QP::backwardPass_mt() {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
-    const Eigen::MatrixXd& Vxx_p = Vxx[t + 1];
-    FxTVxx_p.noalias() = d->Fx.transpose() * Vxx_p;
-    Qxx[t].noalias() += FxTVxx_p * d->Fx;
+    const Eigen::MatrixXd& Vxx_p = Vxx_[t + 1];
+    FxTVxx_p_.noalias() = d->Fx.transpose() * Vxx_p;
+    Qxx_[t].noalias() += FxTVxx_p_ * d->Fx;
 
-    Vxx_fs_[t].noalias() = Vxx[t + 1] * fs[t + 1];
-    tmp_Vx_ = Vxx_fs_[t] + Vx[t + 1];
-    Qx[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Vxx_fs_[t].noalias() = Vxx_[t + 1] * fs_[t + 1];
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
     if (nu != 0) {
-      FuTVxx_p[0].noalias() = d->Fu.transpose() * Vxx_p;
-      Quu[t].noalias() += FuTVxx_p[0] * d->Fu;
-      Qu[t].noalias() += d->Fu.transpose() * tmp_Vx_;
-      Qxu[t].noalias() += FxTVxx_p * d->Fu;
+      FuTVxx_p_[0].noalias() = d->Fu.transpose() * Vxx_p;
+      Quu_[t].noalias() += FuTVxx_p_[0] * d->Fu;
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Qxu_[t].noalias() += FxTVxx_p_ * d->Fu;
     }
 
-    ddp_->computeGains(t);
-    Vx[t] = Qx[t];
-    Vxx[t] = Qxx[t];
+    computeGains(t);
+    Vx_[t] = Qx_[t];
+    Vxx_[t] = Qxx_[t];
     if (nu != 0) {
-      Vx[t].noalias() -= ddp_->K_[t].transpose() * Qu[t];
-      Vxx[t].noalias() -= Qxu[t] * ddp_->K_[t];
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
+      Vxx_[t].noalias() -= Qxu_[t] * K_[t];
     }
-    Vxx_tmp.triangularView<Eigen::Upper>() =
-        (0.5 * (Vxx[t] + Vxx[t].transpose())).triangularView<Eigen::Upper>();
-    Vxx[t] = Vxx_tmp.selfadjointView<Eigen::Upper>();
+    Vxx_tmp_.triangularView<Eigen::Upper>() =
+        (0.5 * (Vxx_[t] + Vxx_[t].transpose())).triangularView<Eigen::Upper>();
+    Vxx_[t] = Vxx_tmp_.selfadjointView<Eigen::Upper>();
 
-    if (!std::isnan(preg)) {
-      Vxx[t].diagonal().array() += preg;
+    if (!std::isnan(preg_)) {
+      Vxx_[t].diagonal().array() += preg_;
     }
   }
   profiler_lock.stop();
@@ -781,19 +766,12 @@ void SolverOSQP_QP::backwardPass_without_rho_update_mt() {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_T =
       problem_->get_terminalData();
 
-  std::vector<Eigen::VectorXd>& Vx = ddp_->Vx_;
-  std::vector<Eigen::VectorXd>& Qx = ddp_->Qx_;
-  std::vector<Eigen::VectorXd>& Qu = ddp_->Qu_;
-  std::vector<Eigen::VectorXd>& k = ddp_->k_;
-  auto& K = ddp_->K_;  // MatrixXdRowMajor
-  std::vector<Eigen::LLT<Eigen::MatrixXd>>& Quu_llt = ddp_->Quu_llt_;
-
-  Vx.back().noalias() = d_T->Lx - sigma_ * dx_.back();
+  Vx_.back().noalias() = d_T->Lx - sigma_ * dx_.back();
 
   if (m_T->get_ng()) {
     tmp_dual_cwise_.back().noalias() =
         y_.back() - rho_vec_.back().cwiseProduct(z_.back());
-    Vx.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
+    Vx_.back().noalias() += d_T->Gx.transpose() * tmp_dual_cwise_.back();
   }
 
   profiler_mt1.start();
@@ -804,18 +782,18 @@ void SolverOSQP_QP::backwardPass_without_rho_update_mt() {
     const std::size_t nu = m->get_nu();
     const std::size_t nc = m->get_ng();
 
-    Qx[t].noalias() = d->Lx - sigma_ * dx_[t];
+    Qx_[t].noalias() = d->Lx - sigma_ * dx_[t];
     if (nc != 0 && (t > 0 || nu != 0)) {
       tmp_dual_cwise_[t].noalias() = y_[t] - rho_vec_[t].cwiseProduct(z_[t]);
     }
     if (nc != 0 && t > 0) {
-      Qx[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
+      Qx_[t].noalias() += d->Gx.transpose() * tmp_dual_cwise_[t];
     }
 
     if (nu != 0) {
-      Qu[t].noalias() = d->Lu - sigma_ * du_[t];
+      Qu_[t].noalias() = d->Lu - sigma_ * du_[t];
       if (nc != 0) {
-        Qu[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
+        Qu_[t].noalias() += d->Gu.transpose() * tmp_dual_cwise_[t];
       }
     }
   }
@@ -827,13 +805,13 @@ void SolverOSQP_QP::backwardPass_without_rho_update_mt() {
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
     const std::size_t nu = m->get_nu();
 
-    tmp_Vx_ = Vxx_fs_[t] + Vx[t + 1];
-    Qx[t].noalias() += d->Fx.transpose() * tmp_Vx_;
-    Vx[t] = Qx[t];
+    tmp_Vx_ = Vxx_fs_[t] + Vx_[t + 1];
+    Qx_[t].noalias() += d->Fx.transpose() * tmp_Vx_;
+    Vx_[t] = Qx_[t];
 
     if (nu != 0) {
-      Qu[t].noalias() += d->Fu.transpose() * tmp_Vx_;
-      Vx[t].noalias() -= K[t].transpose() * Qu[t];
+      Qu_[t].noalias() += d->Fu.transpose() * tmp_Vx_;
+      Vx_[t].noalias() -= K_[t].transpose() * Qu_[t];
     }
   }
   profiler_pass.stop();
@@ -841,8 +819,8 @@ void SolverOSQP_QP::backwardPass_without_rho_update_mt() {
   profiler_mt2.start();
 #pragma omp parallel for num_threads(problem_->get_nthreads())
   for (std::size_t t = 0; t < T; ++t) {
-    k[t] = Qu[t];
-    Quu_llt[t].solveInPlace(k[t]);
+    k_[t] = Qu_[t];
+    Quu_llt_[t].solveInPlace(k_[t]);
   }
   profiler_mt2.stop();
   profiler_all.stop();
@@ -1009,6 +987,44 @@ void SolverOSQP_QP::printQPCallbacks(const int iter) {
 
 void SolverOSQP_QP::setQPCallbacks(const bool inQPCallbacks) {
   with_qp_callbacks_ = inQPCallbacks;
+}
+
+void SolverOSQP_QP::computeGains(const std::size_t t) {
+  static auto profiler_all =
+      crocoddyl::getProfiler().watcher("SolverOSQP_QP::computeGains");
+  static auto profiler_Quu_inv =
+      crocoddyl::getProfiler().watcher("SolverOSQP_QP::computeGains::Quu_inv");
+  static auto profiler_Quu_inv_Qux = crocoddyl::getProfiler().watcher(
+      "SolverOSQP_QP::computeGains::Quu_inv_Qux");
+  profiler_all.start();
+
+  const std::size_t nu = problem_->get_runningModels()[t]->get_nu();
+  if (nu > 0) {
+    profiler_Quu_inv.start();
+    Quu_llt_[t].compute(Quu_[t]);
+    profiler_Quu_inv.stop();
+    const Eigen::ComputationInfo& info = Quu_llt_[t].info();
+    if (info != Eigen::Success) {
+      profiler_all.stop();
+      throw_pretty("backward_error");
+    }
+    K_[t] = Qxu_[t].transpose();
+
+    profiler_Quu_inv_Qux.start();
+    Quu_llt_[t].solveInPlace(K_[t]);
+    profiler_Quu_inv_Qux.stop();
+    k_[t] = Qu_[t];
+    Quu_llt_[t].solveInPlace(k_[t]);
+  }
+  profiler_all.stop();
+}
+
+void SolverOSQP_QP::increaseRegularization() {
+  preg_ *= reg_incfactor_;
+  if (preg_ > reg_max_) {
+    preg_ = reg_max_;
+  }
+  dreg_ = preg_;
 }
 
 }  // namespace mim_solvers

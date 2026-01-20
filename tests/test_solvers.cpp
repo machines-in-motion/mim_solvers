@@ -78,7 +78,7 @@ void test_csqp_core() {
       std::static_pointer_cast<mim_solvers::SolverCSQP>(solver);
 
   // Test initial & default attributes
-  std::vector<std::shared_ptr<crocoddyl::CallbackAbstract>> empty_callbacks;
+  std::vector<std::shared_ptr<mim_solvers::CallbackAbstract>> empty_callbacks;
 
   BOOST_CHECK_EQUAL(solver_cast->get_KKT(),
                     std::numeric_limits<double>::infinity());

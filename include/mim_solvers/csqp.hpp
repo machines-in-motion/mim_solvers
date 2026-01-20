@@ -34,9 +34,13 @@ namespace mim_solvers {
  * The QP solver is encapsulated in the SolverOSQP_QP class, which uses
  * an ADMM algorithm exploiting the temporal sparsity of optimal control.
  *
- * \sa `SolverDDP()`, `SolverOSQP_QP()`
+ * SolverCSQP is now independent of SolverDDP, inheriting directly from
+ * crocoddyl::SolverAbstract. All DDP-related data (Vxx, Qxx, etc.) is now
+ * managed by the internal SolverOSQP_QP solver.
+ *
+ * \sa `SolverOSQP_QP()`
  */
-class SolverCSQP : public SolverDDP {
+class SolverCSQP : public crocoddyl::SolverAbstract {
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -63,6 +67,16 @@ class SolverCSQP : public SolverDDP {
   virtual double tryStep(const double stepLength);
 
   virtual void calc(const bool recalc = true);
+
+  /**
+   * @brief Compute the stopping criteria
+   */
+  virtual double stoppingCriteria();
+
+  /**
+   * @brief Get expected improvement
+   */
+  virtual const Eigen::Vector2d& expectedImprovement();
 
   /**
    * @brief Compute the KKT conditions residual
@@ -215,6 +229,23 @@ class SolverCSQP : public SolverDDP {
   void set_reset_rho(const bool val) { qp_solver_->set_reset_rho(val); }
 
   /**
+   * @brief Set callbacks for solver iteration monitoring (mim_solvers callbacks)
+   *
+   * @param[in] callbacks vector of mim_solvers callback objects
+   */
+  void setCallbacks(
+      const std::vector<std::shared_ptr<CallbackAbstract>>& callbacks) {
+    callbacks_ = callbacks;
+  }
+
+  /**
+   * @brief Get the callbacks
+   */
+  const std::vector<std::shared_ptr<CallbackAbstract>>& getCallbacks() const {
+    return callbacks_;
+  }
+
+  /**
    * @brief Get access to the inner QP solver for advanced configuration
    */
   SolverOSQP_QP& get_qp_solver() { return *qp_solver_; }
@@ -226,13 +257,11 @@ class SolverCSQP : public SolverDDP {
   boost::circular_buffer<double> gap_list_;
   boost::circular_buffer<double> cost_list_;
 
-  using SolverDDP::cost_try_;
-  using SolverDDP::us_try_;
-  using SolverDDP::xs_try_;
-
   std::vector<Eigen::VectorXd> fs_try_;  //!< Gaps/defects for trial trajectory
   std::vector<Eigen::VectorXd>
       lag_mul_;  //!< Lagrange multipliers for dynamics constraint
+  std::vector<Eigen::VectorXd> xs_try_;  //!< Trial state trajectory
+  std::vector<Eigen::VectorXd> us_try_;  //!< Trial control trajectory
 
   double lag_mul_inf_norm_;  //!< Infinity norm of Lagrange multipliers
   double lag_mul_inf_norm_coef_ = 10.;  //!< Merit function coefficient
@@ -243,7 +272,12 @@ class SolverCSQP : public SolverDDP {
   // Keep public access to QP solver ADMM variables for compatibility
   bool remove_reg_ = false;  //!< Remove Crocoddyl's regularization
 
+  // Cost and merit function values (for Python bindings)
+  double cost_try_ = 0;         //!< Cost function for trial step
+
  protected:
+  // SQP-specific state
+  // ========================
   std::unique_ptr<SolverOSQP_QP> qp_solver_;  //!< Inner QP solver
 
   double merit_ = 0;            //!< Merit function at nominal trajectory
@@ -256,13 +290,30 @@ class SolverCSQP : public SolverDDP {
   double gap_norm_try_ = 0;     //!< Gap norm for trial
   double mu_dynamic_ = 1e1;     //!< Merit penalty for dynamics violation
   double mu_constraint_ = 1e1;  //!< Merit penalty for constraint violation
+  double termination_tol_ = 1e-6;  //!< Termination tolerance for KKT
 
   bool extra_iteration_for_last_kkt_ = false;
   std::size_t filter_size_ = 1;  //!< Filter size for line search
   double KKT_ = std::numeric_limits<double>::infinity();
+  Eigen::Vector2d expected_improvement_ = Eigen::Vector2d::Zero();  //!< Expected improvement
 
- private:
+  std::vector<std::shared_ptr<CallbackAbstract>>
+      callbacks_;  //!< Callbacks for iteration monitoring
+
+protected:
+  /**
+   * @brief Increase state and control regularization values
+   */
+  void increaseRegularization();
+
+  /**
+   * @brief Decrease state and control regularization values
+   */
+  void decreaseRegularization();
+
+private:
   double th_acceptnegstep_;
+  double th_stepdec_ = 0.1;     //!< Step length threshold for decreasing filter
   bool is_worse_than_memory_ = false;
 
   Eigen::VectorXd tmp_vec_x_;
@@ -271,7 +322,8 @@ class SolverCSQP : public SolverDDP {
   double start_time_ = 0.0;
   bool max_solve_time_reached_ = false;
   double max_solve_time_ = std::numeric_limits<double>::infinity();
-};
+  std::vector<double> alphas_;      //!< Step lengths for line search
+};  // class SolverCSQP
 
 }  // namespace mim_solvers
 
