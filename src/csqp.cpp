@@ -157,8 +157,8 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
     if (iter_ == 0 && !qp_solver_->get_reset_rho()) {
       qp_solver_->reset_rho_vec();
     }
-    std::cout << "SolverCSQP::solve: rho_vec[1] BEFORE QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
-    std::cout << "SolverCSQP::solve: reset rho = " << qp_solver_->get_reset_rho() << std::endl;
+    // std::cout << "SolverCSQP::solve: rho_vec[1] BEFORE QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
+    // std::cout << "SolverCSQP::solve: reset rho = " << qp_solver_->get_reset_rho() << std::endl;
 
     // Solve QP
     if (remove_reg_) {
@@ -179,7 +179,7 @@ bool SolverCSQP::solve(const std::vector<Eigen::VectorXd>& init_xs,
         break;
       }
     }
-    std::cout << "SolverCSQP::solve: rho_vec[1] AFTER QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
+    // std::cout << "SolverCSQP::solve: rho_vec[1] AFTER QP SOLVE = " << qp_solver_->get_rho_vec()[1] << std::endl;
 
     if (qp_solver_->get_qp_iters() == 0) {
       STOP_PROFILER("SolverCSQP::solve");
@@ -340,9 +340,10 @@ void SolverCSQP::calc(const bool recalc) {
     const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
     const std::shared_ptr<crocoddyl::ActionDataAbstract>& d = datas[t];
 
-    m->get_state()->diff(xs_[t + 1], d->xnext, fs_[t + 1]);
+    auto& fs = qp_solver_->fs_[t + 1];
+    m->get_state()->diff(xs_[t + 1], d->xnext, fs);
 
-    gap_norm_ += fs_[t + 1].lpNorm<1>();
+    gap_norm_ += fs.lpNorm<1>();
 
     const std::size_t nc = m->get_ng();
     constraint_norm_ +=
@@ -417,12 +418,12 @@ void SolverCSQP::checkKKTConditions() {
     tmp_vec_u_[t].noalias() += d->Fu.transpose() * lag_mul_[t + 1];
     tmp_vec_u_[t].noalias() += d->Gu.transpose() * y[t];
     KKT_ = std::max(KKT_, tmp_vec_u_[t].lpNorm<Eigen::Infinity>());
-    fs_flat_.segment(t * ndx, ndx) = fs_[t];
+    fs_flat_.segment(t * ndx, ndx) = qp_solver_->fs_[t];
     x_grad_norm_ += dxtilde[t].lpNorm<1>();
     u_grad_norm_ += dutilde[t].lpNorm<1>();
   }
 
-  fs_flat_.tail(ndx) = fs_.back();
+  fs_flat_.tail(ndx) = qp_solver_->fs_.back();
   const std::shared_ptr<ActionDataAbstract>& d_ter =
       problem_->get_terminalData();
   tmp_vec_x_ = d_ter->Lx;

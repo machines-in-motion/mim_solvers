@@ -91,6 +91,7 @@ class SolverCSQP : public crocoddyl::SolverAbstract {
 
   const std::vector<Eigen::VectorXd>& get_xs() const { return xs_; }
   const std::vector<Eigen::VectorXd>& get_us() const { return us_; }
+  const std::vector<Eigen::VectorXd>& get_fs() const { return qp_solver_->get_fs(); }
 
   // Delegate to QP solver
   const std::vector<Eigen::VectorXd>& get_dx_tilde() const {

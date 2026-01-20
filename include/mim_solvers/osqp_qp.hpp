@@ -225,6 +225,7 @@ class SolverOSQP_QP {
   const std::vector<Eigen::VectorXd>& get_Qu() const { return Qu_; }
   const std::vector<MatrixXdRowMajor>& get_K() const { return K_; }
   const std::vector<Eigen::VectorXd>& get_k() const { return k_; }
+  const std::vector<Eigen::VectorXd>& get_fs() const { return fs_; }
 
  public:
   // ========================
