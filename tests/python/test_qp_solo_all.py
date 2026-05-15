@@ -10,8 +10,6 @@ on the solo CoM example (with constraints)
 """
 
 import importlib.util
-import os
-import pathlib
 import time
 
 import crocoddyl
@@ -20,9 +18,6 @@ import mim_solvers
 import numpy as np
 import pinocchio
 import pinocchio as pin
-
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from csqp import CSQP  # noqa: E402
 

@@ -8,14 +8,8 @@ All rights reserved.
 This file checks that the python and c++ sqp implementation match without regularization.
 """
 
-import os
-import pathlib
-
 import mim_solvers
 import numpy as np
-
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from problems import (  # noqa: E402
     create_double_pendulum_problem,

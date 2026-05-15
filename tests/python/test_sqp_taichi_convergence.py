@@ -8,15 +8,10 @@ All rights reserved.
 This file checks that all methods converge to the same solution on the taichi example.
 """
 
-import os
-import pathlib
-
 import mim_solvers
 import numpy as np
 
 np.set_printoptions(precision=4, linewidth=180)
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from problems import create_taichi  # noqa: E402
 from sqp import SQP  # noqa: E402

@@ -8,8 +8,10 @@
     inputs.gepetto.lib.mkFlakoboros inputs (
       { lib, ... }:
       {
-        extraDevPyPackages = [ "mim-solvers" ];
-        overrideAttrs.mim-solvers = {
+        # extraDevPyPackages = [ "mim-solvers" ];
+        extraPyPackages = [ "pytest" ];
+        extraPackages = [ "colcon" ];
+        pyOverrideAttrs.mim-solvers = {
           patches = [ ];
           src = lib.fileset.toSource {
             root = ./.;

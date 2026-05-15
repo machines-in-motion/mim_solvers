@@ -9,14 +9,9 @@ This file checks that all methods converge in one iteration on a constrained LQR
 """
 
 import importlib.util
-import os
-import pathlib
 
 import mim_solvers
 import numpy as np
-
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from csqp import CSQP  # noqa: E402
 from problems import create_clqr_problem  # noqa: E402

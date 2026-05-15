@@ -8,14 +8,8 @@ All rights reserved.
 This file checks that all the custom OSQP implementation matches the official one.
 """
 
-import os
-import pathlib
-
 import numpy as np
 import unittest
-
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from csqp import CSQP  # noqa: E402
 from problems import create_clqr_problem  # noqa: E402
