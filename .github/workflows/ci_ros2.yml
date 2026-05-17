@@ -1,0 +1,34 @@
+name: ROS2 Continuous Integration
+on:
+  push:
+    branches:
+      - devel
+      - main
+  pull_request:
+jobs:
+  build:
+    strategy:
+      matrix:
+        env:
+          - {ROS_DISTRO: humble}
+          - {ROS_DISTRO: jazzy}
+          - {ROS_DISTRO: kilted}
+          - {ROS_DISTRO: rolling}
+    env:
+      UPSTREAM_WORKSPACE: github:gepetto/example-robot-data#devel
+      ROSDEP_SKIP_KEYS: example_robot_data
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: 'ros-industrial/industrial_ci@c553397753252d630e88e7e91aa69c6c8a478ee0'
+        env: ${{ matrix.env }}
+  check:
+    if: always()
+    name: check-ros-ci
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: re-actors/alls-green@release/v1
+        with:
+          jobs: ${{ toJSON(needs) }}

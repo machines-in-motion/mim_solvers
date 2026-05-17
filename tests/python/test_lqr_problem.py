@@ -8,14 +8,8 @@ All rights reserved.
 This file checks that all methods converge in one iteration on a LQR problem.
 """
 
-import os
-import pathlib
-
 import mim_solvers
 import numpy as np
-
-python_path = pathlib.Path(".").absolute().parent.parent / "python"
-os.sys.path.insert(1, str(python_path))
 
 from problems import create_lqr_problem  # noqa: E402
 from sqp import SQP  # noqa: E402

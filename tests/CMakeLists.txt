@@ -25,34 +25,43 @@ if(NOT BUILD_STANDALONE_PYTHON_INTERFACE)
 endif()
 
 if(BUILD_PYTHON_INTERFACE)
-    add_python_unit_test("py-test-clqr-convergence-all"
-                         "tests/python/test_clqr_convergence_all.py" bindings
-    )
-    add_python_unit_test("py-test-clqr-osqp" "tests/python/test_clqr_osqp.py"
-                         bindings
-    )
-    add_python_unit_test("py-test-clqr-stagewise-admm"
-                         "tests/python/test_clqr_stagewise_admm.py" bindings
-    )
     add_python_unit_test("py-test-lqr-sqp" "tests/python/test_lqr_problem.py"
                          bindings
     )
-    # TODO: ActuationModelMultiCopterBase was removed in crocoddyl 3.1.0
-    # add_python_unit_test("py-test-sqp-no-reg" "tests/python/test_sqp.py"
-    # bindings)
     add_python_unit_test("py-test-sqp-taichi-convergence"
                          "tests/python/test_sqp_taichi_convergence.py" bindings
     )
     add_python_unit_test("py-test-sqp-ur5-convergence"
                          "tests/python/test_sqp_ur5_convergence.py" bindings
     )
-    add_python_unit_test("py-test-csqp-ur5" "tests/python/test_ur5_csqp.py"
-                         bindings
+
+    # TODO: ActuationModelMultiCopterBase was removed in crocoddyl 3.1.0
+    # add_python_unit_test("py-test-sqp-no-reg" "tests/python/test_sqp.py"
+    # bindings)
+
+    # Those ones require osqp python module, which is not available on ROS
+    execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" "-c" "import osqp"
+        RESULT_VARIABLE osqp
     )
-    add_python_unit_test("py-test-qp-ur5-all" "tests/python/test_qp_ur5_all.py"
-                         bindings
-    )
-    add_python_unit_test("py-test-qp-solo-all" "tests/python/test_qp_solo_all.py"
-                         bindings
-    )
+    if(osqp EQUAL 0)
+        add_python_unit_test("py-test-clqr-convergence-all"
+                             "tests/python/test_clqr_convergence_all.py" bindings
+        )
+        add_python_unit_test("py-test-clqr-osqp" "tests/python/test_clqr_osqp.py"
+                             bindings
+        )
+        add_python_unit_test("py-test-clqr-stagewise-admm"
+                             "tests/python/test_clqr_stagewise_admm.py" bindings
+        )
+        add_python_unit_test("py-test-csqp-ur5" "tests/python/test_ur5_csqp.py"
+                             bindings
+        )
+        add_python_unit_test("py-test-qp-ur5-all" "tests/python/test_qp_ur5_all.py"
+                             bindings
+        )
+        add_python_unit_test("py-test-qp-solo-all" "tests/python/test_qp_solo_all.py"
+                             bindings
+        )
+    endif()
 endif()
