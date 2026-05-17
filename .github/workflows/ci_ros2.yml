@@ -15,7 +15,7 @@ jobs:
           - {ROS_DISTRO: kilted}
           - {ROS_DISTRO: rolling}
     env:
-      UPSTREAM_WORKSPACE: github:gepetto/example-robot-data#master
+      UPSTREAM_WORKSPACE: github:gepetto/example-robot-data#devel
       ROSDEP_SKIP_KEYS: example_robot_data
     runs-on: ubuntu-latest
     steps:
