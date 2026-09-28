@@ -17,7 +17,7 @@
 
   <depend>crocoddyl</depend>
   <depend>eigenpy</depend>
-  <depend>example_robot_data</depend>
+  <depend>example_robot_descriptions</depend>
   <depend>jrl_cmakemodules</depend>
 
   <buildtool_depend>cmake</buildtool_depend>
