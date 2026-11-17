@@ -532,7 +532,8 @@ void SolverCSQP::set_rho_max(const double rho_max) {
 
 void SolverCSQP::set_rho_sparse_base(const double rho_sparse_base) {
   if (rho_sparse_base < rho_min_ || rho_sparse_base > rho_max_) {
-    throw_pretty("Invalid argument: rho_sparse_base must be in [rho_min, rho_max]");
+    throw_pretty(
+        "Invalid argument: rho_sparse_base must be in [rho_min, rho_max]");
   }
   rho_sparse_base_ = rho_sparse_base;
 }

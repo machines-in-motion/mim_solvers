@@ -9,7 +9,9 @@ import mim_solvers
 import numpy as np
 
 model = crocoddyl.ActionModelLQR(2, 1)
-problem = crocoddyl.ShootingProblem(np.zeros(2), [model] * 3, crocoddyl.ActionModelLQR(2, 0))
+problem = crocoddyl.ShootingProblem(
+    np.zeros(2), [model] * 3, crocoddyl.ActionModelLQR(2, 0)
+)
 solver = mim_solvers.SolverCSQP(problem)
 
 assert (solver.rho_min, solver.rho_max, solver.rho_sparse_base) == (1e-6, 1e3, 1e-1)
@@ -18,8 +20,13 @@ solver.rho_min = 100.0
 solver.rho_sparse_base = 100.0
 assert (solver.rho_min, solver.rho_max, solver.rho_sparse_base) == (100.0, 1e4, 100.0)
 
-for name, value in (("rho_min", 0.0), ("rho_min", 1e5), ("rho_max", 1.0),
-                    ("rho_sparse_base", 1.0), ("rho_sparse_base", 1e5)):
+for name, value in (
+    ("rho_min", 0.0),
+    ("rho_min", 1e5),
+    ("rho_max", 1.0),
+    ("rho_sparse_base", 1.0),
+    ("rho_sparse_base", 1e5),
+):
     try:
         setattr(solver, name, value)
     except Exception:
