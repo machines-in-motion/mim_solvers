@@ -233,6 +233,12 @@ void exposeSolverCSQP() {
                     bp::make_function(&SolverCSQP::get_rho_sparse_base),
                     bp::make_function(&SolverCSQP::set_rho_sparse_base),
                     "rho at the start of each solve (default: 1e-1)")
+      .add_property(
+          "termination_check_interval",
+          bp::make_function(&SolverCSQP::get_termination_check_interval),
+          bp::make_function(&SolverCSQP::set_termination_check_interval),
+          "QP iterations between two checks of the ADMM residuals (default: "
+          "0, every rho_update_interval iterations)")
       .add_property("rho_update_interval",
                     bp::make_function(&SolverCSQP::get_rho_update_interval),
                     bp::make_function(&SolverCSQP::set_rho_update_interval),

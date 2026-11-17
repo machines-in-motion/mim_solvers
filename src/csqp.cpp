@@ -498,7 +498,7 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
     update_rho_vec(qp_iters_);
 
     // Because (eps_rel=0) x inf = NaN
-    if (qp_iters_ % rho_update_interval_ == 0) {
+    if (is_termination_check(qp_iters_)) {
       if (with_qp_callbacks_) {
         printQPCallbacks(qp_iters_);
       }
@@ -562,6 +562,13 @@ void SolverCSQP::update_rho_vec(const int iter) {
       apply_rho_update(rho_sparse_);
     }
   }
+}
+
+bool SolverCSQP::is_termination_check(const int iter) const {
+  const std::size_t interval = termination_check_interval_ != 0
+                                   ? termination_check_interval_
+                                   : rho_update_interval_;
+  return iter % static_cast<int>(interval) == 0;
 }
 
 void SolverCSQP::reset_rho_vec() {
@@ -1276,7 +1283,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
     dx_[t] = dxtilde_[t];
     du_[t] = dutilde_[t];
 
-    if (iter % rho_update_interval_ == 0) {
+    if (iter % rho_update_interval_ == 0 || is_termination_check(iter)) {
       if (update_rho_with_heuristic_) {
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ =
@@ -1335,7 +1342,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
                     .cwiseMin(m_T->get_g_ub() - d_T->g);
     y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
 
-    if (iter % rho_update_interval_ == 0) {
+    if (iter % rho_update_interval_ == 0 || is_termination_check(iter)) {
       if (update_rho_with_heuristic_) {
         tmp_dual_cwise_.back() =
             rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());

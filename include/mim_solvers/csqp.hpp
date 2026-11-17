@@ -173,6 +173,9 @@ class SolverCSQP : public SolverDDP {
   std::size_t get_filter_size() const { return filter_size_; };
 
   std::size_t get_rho_update_interval() const { return rho_update_interval_; };
+  std::size_t get_termination_check_interval() const {
+    return termination_check_interval_;
+  };
   std::size_t get_adaptive_rho_tolerance() const {
     return adaptive_rho_tolerance_;
   };
@@ -201,6 +204,12 @@ class SolverCSQP : public SolverDDP {
 
   void setQPCallbacks(const bool inCallbacks);
 
+  /** QP iterations between two checks of the ADMM residuals (0, default:
+   * every rho_update_interval iterations). Checking more often stops the QP
+   * as soon as it converged, for the cost of the residual norms. */
+  void set_termination_check_interval(const std::size_t interval) {
+    termination_check_interval_ = interval;
+  };
   void set_rho_update_interval(const std::size_t interval) {
     rho_update_interval_ = interval;
   };
@@ -249,6 +258,8 @@ class SolverCSQP : public SolverDDP {
    * the proximal centre of the next QP. */
   void reset_direction();
   void update_rho_vec(const int iter);
+  /** Whether QP iteration iter computes and checks the ADMM residuals. */
+  bool is_termination_check(const int iter) const;
   void apply_rho_update(const double rho_sparse);
 
   void set_max_qp_iters(const int iters) { max_qp_iters_ = iters; };
@@ -336,6 +347,8 @@ class SolverCSQP : public SolverDDP {
   double rho_min_ = 1e-6;                 //!< rho min
   double rho_max_ = 1e3;                  //!< rho max
   std::size_t rho_update_interval_ = 25;  //!< frequency of update of rho
+  std::size_t termination_check_interval_ =
+      0;  //!< frequency of the residual checks (0: rho_update_interval_)
   bool rho_changed_ = true;  //!< rho_vec_ changed since the last factorization
   double adaptive_rho_tolerance_ = 5;
   double eps_abs_ = 1e-4;  //!< absolute termination criteria
