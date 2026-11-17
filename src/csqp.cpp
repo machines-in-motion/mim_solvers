@@ -657,7 +657,8 @@ void SolverCSQP::checkKKTConditions() {
 }
 
 void SolverCSQP::forwardPass(const double /*stepLength*/) {
-  auto profiler = crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass");
+  static auto profiler =
+      crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass");
   profiler.start();
 
   const std::size_t T = problem_->get_T();
@@ -676,7 +677,7 @@ void SolverCSQP::forwardPass(const double /*stepLength*/) {
 }
 
 void SolverCSQP::forwardPass_without_constraints() {
-  auto profiler = crocoddyl::getProfiler().watcher(
+  static auto profiler = crocoddyl::getProfiler().watcher(
       "SolverCSQP::forwardPass_without_constraints");
   profiler.start();
 
