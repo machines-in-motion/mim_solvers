@@ -45,10 +45,7 @@ jobs:
       # (MemoryError in ResidualModelControlGrav, segfaults)
       - run: python -m pip install crocoddyl[build] proxsuite[build] "libpinocchio<4.1"
       - run: echo "CMAKE_PREFIX_PATH=$(cmeel cmake)" >> $GITHUB_ENV
-      # The wheels are built for the x86-64 baseline. The Ubuntu 26.04 runner's
-      # gcc defaults to -march=x86-64-v3 (AVX2), which changes Eigen's alignment
-      # and makes our code incompatible with the wheels (crashes in the tests).
-      - run: cmake -B build -S . -DCMAKE_CXX_FLAGS="-march=x86-64"
+      - run: cmake -B build -S .
       - run: cmake --build build -j 4
 
       - run: python -m pip install osqp
