@@ -41,9 +41,7 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      # crocoddyl 3.2.1 is built against pinocchio 4.0: with 4.1 it crashes
-      # (MemoryError in ResidualModelControlGrav, segfaults)
-      - run: python -m pip install crocoddyl[build] proxsuite[build] "libpinocchio<4.1"
+      - run: python -m pip install crocoddyl[build] proxsuite[build]
       - run: echo "CMAKE_PREFIX_PATH=$(cmeel cmake)" >> $GITHUB_ENV
       - run: cmake -B build -S .
       - run: cmake --build build -j 4
