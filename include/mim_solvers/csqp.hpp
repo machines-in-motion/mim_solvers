@@ -336,6 +336,7 @@ class SolverCSQP : public SolverDDP {
   double rho_min_ = 1e-6;                 //!< rho min
   double rho_max_ = 1e3;                  //!< rho max
   std::size_t rho_update_interval_ = 25;  //!< frequency of update of rho
+  bool rho_changed_ = true;  //!< rho_vec_ changed since the last factorization
   double adaptive_rho_tolerance_ = 5;
   double eps_abs_ = 1e-4;  //!< absolute termination criteria
   double eps_rel_ = 1e-4;  //!< relative termination criteria

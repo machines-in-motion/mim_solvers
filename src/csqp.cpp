@@ -475,13 +475,16 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       max_solve_time_reached_ = true;
       break;
     }
-    if (qp_iters_ % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
+    // Factorize for a new linearization (first iteration) or a new rho; the
+    // other iterations reuse the factorization.
+    if (qp_iters_ == 1 || rho_changed_) {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
       else
 #endif  // CROCODDYL_WITH_MULTITHREADING
         backwardPass();
+      rho_changed_ = false;
     } else {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
@@ -568,6 +571,7 @@ void SolverCSQP::reset_rho_vec() {
 
 void SolverCSQP::apply_rho_update(const double rho_sparse_tmp) {
   START_PROFILER("SolverCSQP::apply_rho_update");
+  rho_changed_ = true;
   const std::size_t T = this->problem_->get_T();
   const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
