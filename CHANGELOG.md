@@ -9,6 +9,7 @@ Releases are available on the [github repository](https://github.com/machines-in
 
 ## [Unreleased]
 
+- csqp: `equality_qp_initial_guess` member is a `bool`
 ## [0.3.0] - 2026-04-18
 
 - python: fix compatibility with numpy 2.4
