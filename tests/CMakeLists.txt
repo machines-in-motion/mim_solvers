@@ -31,6 +31,9 @@ if(BUILD_PYTHON_INTERFACE)
     add_python_unit_test("py-test-csqp-rho-bounds"
                          "tests/python/test_csqp_rho_bounds.py" bindings
     )
+    add_python_unit_test("py-test-csqp-termination-check"
+                         "tests/python/test_csqp_termination_check.py" bindings
+    )
     add_python_unit_test("py-test-sqp-taichi-convergence"
                          "tests/python/test_sqp_taichi_convergence.py" bindings
     )
