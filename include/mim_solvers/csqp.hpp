@@ -191,6 +191,7 @@ class SolverCSQP : public SolverDDP {
   double get_reset_rho() const { return reset_rho_; };
   double get_rho_min() const { return rho_min_; };
   double get_rho_max() const { return rho_max_; };
+  double get_rho_sparse_base() const { return rho_sparse_base_; };
   double get_max_solve_time() const { return max_solve_time_; };
   bool get_max_solve_time_reached() const { return max_solve_time_reached_; };
 
@@ -237,6 +238,16 @@ class SolverCSQP : public SolverDDP {
 
   void update_lagrangian_parameters(const int iter);
   void set_rho_sparse(const double rho_sparse) { rho_sparse_ = rho_sparse; };
+  /** Bounds of the adaptive rho (equality rows use 1e3 times rho). */
+  void set_rho_min(const double rho_min);
+  void set_rho_max(const double rho_max);
+  /** rho at the start of a solve, when the rho vector is reset. */
+  void set_rho_sparse_base(const double rho_sparse_base);
+  /** Zero the search direction (dx, du) and its ADMM copies (dx_tilde,
+   * du_tilde). From a callback, it rejects the step just computed: the line
+   * search then finds no better point and the solve stops; it also clears
+   * the proximal centre of the next QP. */
+  void reset_direction();
   void update_rho_vec(const int iter);
   void apply_rho_update(const double rho_sparse);
 

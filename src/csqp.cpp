@@ -516,6 +516,34 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
   // MIM_SOLVERS_EIGEN_MALLOC_ALLOWED();
 }
 
+void SolverCSQP::set_rho_min(const double rho_min) {
+  if (rho_min <= 0. || rho_min > rho_max_) {
+    throw_pretty("Invalid argument: rho_min must be in (0, rho_max]");
+  }
+  rho_min_ = rho_min;
+}
+
+void SolverCSQP::set_rho_max(const double rho_max) {
+  if (rho_max < rho_min_) {
+    throw_pretty("Invalid argument: rho_max must be at least rho_min");
+  }
+  rho_max_ = rho_max;
+}
+
+void SolverCSQP::set_rho_sparse_base(const double rho_sparse_base) {
+  if (rho_sparse_base < rho_min_ || rho_sparse_base > rho_max_) {
+    throw_pretty("Invalid argument: rho_sparse_base must be in [rho_min, rho_max]");
+  }
+  rho_sparse_base_ = rho_sparse_base;
+}
+
+void SolverCSQP::reset_direction() {
+  for (auto& v : dx_) v.setZero();
+  for (auto& v : du_) v.setZero();
+  for (auto& v : dxtilde_) v.setZero();
+  for (auto& v : dutilde_) v.setZero();
+}
+
 void SolverCSQP::update_rho_vec(const int iter) {
   const double scale = std::sqrt((norm_primal_ * norm_dual_rel_) /
                                  (norm_dual_ * norm_primal_rel_));
