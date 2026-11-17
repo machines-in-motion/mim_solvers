@@ -1289,10 +1289,10 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ = std::max(
             norm_dual_,
-            (d->Gx.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
+            d->Gx.transpose().lazyProduct(tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
         norm_dual_ = std::max(
             norm_dual_,
-            (d->Gu.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
+            d->Gu.transpose().lazyProduct(tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
         norm_primal_ = std::max(
             norm_primal_, (tmp_Cdx_Cdu_[t] - z_[t]).lpNorm<Eigen::Infinity>());
 
@@ -1302,10 +1302,10 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
             std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
         norm_dual_rel_ =
             std::max(norm_dual_rel_,
-                     (d->Gx.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+                     d->Gx.transpose().lazyProduct(y_[t]).lpNorm<Eigen::Infinity>());
         norm_dual_rel_ =
             std::max(norm_dual_rel_,
-                     (d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+                     d->Gu.transpose().lazyProduct(y_[t]).lpNorm<Eigen::Infinity>());
       }
     }
   }
@@ -1350,8 +1350,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
         tmp_dual_cwise_.back() =
             rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
         norm_dual_ =
-            std::max(norm_dual_, (d_T->Gx.transpose() * tmp_dual_cwise_.back())
-                                     .lpNorm<Eigen::Infinity>());
+            std::max(norm_dual_, d_T->Gx.transpose().lazyProduct(tmp_dual_cwise_.back()).lpNorm<Eigen::Infinity>());
         norm_primal_ = std::max(
             norm_primal_,
             (tmp_Cdx_Cdu_.back() - z_.back()).lpNorm<Eigen::Infinity>());
@@ -1362,7 +1361,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
             std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
         norm_dual_rel_ = std::max(
             norm_dual_rel_,
-            (d_T->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
+            d_T->Gx.transpose().lazyProduct(y_.back()).lpNorm<Eigen::Infinity>());
       }
     }
   }
