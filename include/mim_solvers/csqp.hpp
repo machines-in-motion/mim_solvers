@@ -272,6 +272,7 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::VectorXd>
       fs_try_;                       //!< Gaps/defects between shooting nodes
   std::vector<Eigen::VectorXd> dx_;  //!< the descent direction for x
+  Eigen::VectorXd dx_step_;  //!< steplength * dx_[t] in tryStep (no temporary)
   std::vector<Eigen::VectorXd> du_;  //!< the descent direction for u
   std::vector<Eigen::VectorXd>
       lag_mul_;  //!< the Lagrange multiplier of the dynamics constraint

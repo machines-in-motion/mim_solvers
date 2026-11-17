@@ -53,6 +53,7 @@ SolverCSQP::SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
   tmp_Vx_.resize(ndx);
   tmp_Vx_.setZero();
   tmp_vec_x_.resize(ndx);
+  dx_step_.resize(ndx);
   tmp_vec_x_.setZero();
 
   tmp_Cdx_Cdu_.resize(T + 1);
@@ -1390,7 +1391,8 @@ double SolverCSQP::tryStep(const double steplength) {
 
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    m->get_state()->integrate(xs_[t], steplength * dx_[t], xs_try_[t]);
+    dx_step_.noalias() = steplength * dx_[t];
+    m->get_state()->integrate(xs_[t], dx_step_, xs_try_[t]);
     const std::size_t nu = m->get_nu();
 
     if (nu != 0) {
@@ -1403,8 +1405,8 @@ double SolverCSQP::tryStep(const double steplength) {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter =
       problem_->get_terminalData();
 
-  m_ter->get_state()->integrate(xs_.back(), steplength * dx_.back(),
-                                xs_try_.back());
+  dx_step_.noalias() = steplength * dx_.back();
+  m_ter->get_state()->integrate(xs_.back(), dx_step_, xs_try_.back());
 
 #ifdef CROCODDYL_WITH_MULTITHREADING
 #pragma omp parallel for num_threads(problem_->get_nthreads()) \

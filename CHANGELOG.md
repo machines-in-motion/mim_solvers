@@ -14,6 +14,8 @@ Releases are available on the [github repository](https://github.com/machines-in
 - csqp: `reset_direction()` zeroes the search direction (rejects a step from
   a callback)
 - csqp: `equality_qp_initial_guess` member is a `bool`
+- csqp: no heap allocation in an SQP iteration (profiler watchers built
+  once, residual norms and line-search step without temporaries)
 
 ## [0.3.0] - 2026-04-18
 
