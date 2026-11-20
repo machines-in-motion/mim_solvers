@@ -219,6 +219,26 @@ void exposeSolverCSQP() {
                     bp::make_function(&SolverCSQP::get_max_qp_iters),
                     bp::make_function(&SolverCSQP::set_max_qp_iters),
                     "get and set max qp iters")
+      .def("reset_direction", &SolverCSQP::reset_direction, bp::args("self"),
+           "Zero the search direction (dx, du, dx_tilde, du_tilde): called "
+           "from a callback, it rejects the step just computed.")
+      .add_property("rho_min", bp::make_function(&SolverCSQP::get_rho_min),
+                    bp::make_function(&SolverCSQP::set_rho_min),
+                    "lower bound of the adaptive rho (equality rows use 1e3 "
+                    "times rho) (default: 1e-6)")
+      .add_property("rho_max", bp::make_function(&SolverCSQP::get_rho_max),
+                    bp::make_function(&SolverCSQP::set_rho_max),
+                    "upper bound of the adaptive rho (default: 1e3)")
+      .add_property("rho_sparse_base",
+                    bp::make_function(&SolverCSQP::get_rho_sparse_base),
+                    bp::make_function(&SolverCSQP::set_rho_sparse_base),
+                    "rho at the start of each solve (default: 1e-1)")
+      .add_property(
+          "termination_check_interval",
+          bp::make_function(&SolverCSQP::get_termination_check_interval),
+          bp::make_function(&SolverCSQP::set_termination_check_interval),
+          "QP iterations between two checks of the ADMM residuals (default: "
+          "0, every rho_update_interval iterations)")
       .add_property("rho_update_interval",
                     bp::make_function(&SolverCSQP::get_rho_update_interval),
                     bp::make_function(&SolverCSQP::set_rho_update_interval),

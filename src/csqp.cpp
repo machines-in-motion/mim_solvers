@@ -53,6 +53,7 @@ SolverCSQP::SolverCSQP(std::shared_ptr<crocoddyl::ShootingProblem> problem)
   tmp_Vx_.resize(ndx);
   tmp_Vx_.setZero();
   tmp_vec_x_.resize(ndx);
+  dx_step_.resize(ndx);
   tmp_vec_x_.setZero();
 
   tmp_Cdx_Cdu_.resize(T + 1);
@@ -474,13 +475,16 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
       max_solve_time_reached_ = true;
       break;
     }
-    if (qp_iters_ % rho_update_interval_ == 1 || rho_update_interval_ == 1) {
+    // Factorize for a new linearization (first iteration) or a new rho; the
+    // other iterations reuse the factorization.
+    if (qp_iters_ == 1 || rho_changed_) {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
         backwardPass_mt();
       else
 #endif  // CROCODDYL_WITH_MULTITHREADING
         backwardPass();
+      rho_changed_ = false;
     } else {
 #ifdef CROCODDYL_WITH_MULTITHREADING
       if (problem_->get_nthreads() > 1)
@@ -494,7 +498,7 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
     update_rho_vec(qp_iters_);
 
     // Because (eps_rel=0) x inf = NaN
-    if (qp_iters_ % rho_update_interval_ == 0) {
+    if (is_termination_check(qp_iters_)) {
       if (with_qp_callbacks_) {
         printQPCallbacks(qp_iters_);
       }
@@ -516,6 +520,35 @@ void SolverCSQP::computeDirection(const bool /*recalcDiff*/) {
   // MIM_SOLVERS_EIGEN_MALLOC_ALLOWED();
 }
 
+void SolverCSQP::set_rho_min(const double rho_min) {
+  if (rho_min <= 0. || rho_min > rho_max_) {
+    throw_pretty("Invalid argument: rho_min must be in (0, rho_max]");
+  }
+  rho_min_ = rho_min;
+}
+
+void SolverCSQP::set_rho_max(const double rho_max) {
+  if (rho_max < rho_min_) {
+    throw_pretty("Invalid argument: rho_max must be at least rho_min");
+  }
+  rho_max_ = rho_max;
+}
+
+void SolverCSQP::set_rho_sparse_base(const double rho_sparse_base) {
+  if (rho_sparse_base < rho_min_ || rho_sparse_base > rho_max_) {
+    throw_pretty(
+        "Invalid argument: rho_sparse_base must be in [rho_min, rho_max]");
+  }
+  rho_sparse_base_ = rho_sparse_base;
+}
+
+void SolverCSQP::reset_direction() {
+  for (auto& v : dx_) v.setZero();
+  for (auto& v : du_) v.setZero();
+  for (auto& v : dxtilde_) v.setZero();
+  for (auto& v : dutilde_) v.setZero();
+}
+
 void SolverCSQP::update_rho_vec(const int iter) {
   const double scale = std::sqrt((norm_primal_ * norm_dual_rel_) /
                                  (norm_dual_ * norm_primal_rel_));
@@ -531,6 +564,13 @@ void SolverCSQP::update_rho_vec(const int iter) {
   }
 }
 
+bool SolverCSQP::is_termination_check(const int iter) const {
+  const std::size_t interval = termination_check_interval_ != 0
+                                   ? termination_check_interval_
+                                   : rho_update_interval_;
+  return iter % static_cast<int>(interval) == 0;
+}
+
 void SolverCSQP::reset_rho_vec() {
   rho_sparse_ = rho_sparse_base_;
   apply_rho_update(rho_sparse_);
@@ -538,6 +578,7 @@ void SolverCSQP::reset_rho_vec() {
 
 void SolverCSQP::apply_rho_update(const double rho_sparse_tmp) {
   START_PROFILER("SolverCSQP::apply_rho_update");
+  rho_changed_ = true;
   const std::size_t T = this->problem_->get_T();
   const std::vector<std::shared_ptr<crocoddyl::ActionModelAbstract>>& models =
       problem_->get_runningModels();
@@ -628,7 +669,8 @@ void SolverCSQP::checkKKTConditions() {
 }
 
 void SolverCSQP::forwardPass(const double /*stepLength*/) {
-  auto profiler = crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass");
+  static auto profiler =
+      crocoddyl::getProfiler().watcher("SolverCSQP::forwardPass");
   profiler.start();
 
   const std::size_t T = problem_->get_T();
@@ -647,7 +689,7 @@ void SolverCSQP::forwardPass(const double /*stepLength*/) {
 }
 
 void SolverCSQP::forwardPass_without_constraints() {
-  auto profiler = crocoddyl::getProfiler().watcher(
+  static auto profiler = crocoddyl::getProfiler().watcher(
       "SolverCSQP::forwardPass_without_constraints");
   profiler.start();
 
@@ -1241,7 +1283,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
     dx_[t] = dxtilde_[t];
     du_[t] = dutilde_[t];
 
-    if (iter % rho_update_interval_ == 0) {
+    if (iter % rho_update_interval_ == 0 || is_termination_check(iter)) {
       if (update_rho_with_heuristic_) {
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
         norm_dual_ =
@@ -1257,12 +1299,12 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
             std::max(norm_dual_rel_, y_[t].lpNorm<Eigen::Infinity>());
       } else {
         tmp_dual_cwise_[t] = rho_vec_[t].cwiseProduct(z_[t] - z_prev_[t]);
-        norm_dual_ = std::max(
-            norm_dual_,
-            (d->Gx.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
-        norm_dual_ = std::max(
-            norm_dual_,
-            (d->Gu.transpose() * tmp_dual_cwise_[t]).lpNorm<Eigen::Infinity>());
+        norm_dual_ = std::max(norm_dual_, d->Gx.transpose()
+                                              .lazyProduct(tmp_dual_cwise_[t])
+                                              .lpNorm<Eigen::Infinity>());
+        norm_dual_ = std::max(norm_dual_, d->Gu.transpose()
+                                              .lazyProduct(tmp_dual_cwise_[t])
+                                              .lpNorm<Eigen::Infinity>());
         norm_primal_ = std::max(
             norm_primal_, (tmp_Cdx_Cdu_[t] - z_[t]).lpNorm<Eigen::Infinity>());
 
@@ -1270,12 +1312,12 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
                                     tmp_Cdx_Cdu_[t].lpNorm<Eigen::Infinity>());
         norm_primal_rel_ =
             std::max(norm_primal_rel_, z_[t].lpNorm<Eigen::Infinity>());
-        norm_dual_rel_ =
-            std::max(norm_dual_rel_,
-                     (d->Gx.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
-        norm_dual_rel_ =
-            std::max(norm_dual_rel_,
-                     (d->Gu.transpose() * y_[t]).lpNorm<Eigen::Infinity>());
+        norm_dual_rel_ = std::max(
+            norm_dual_rel_,
+            d->Gx.transpose().lazyProduct(y_[t]).lpNorm<Eigen::Infinity>());
+        norm_dual_rel_ = std::max(
+            norm_dual_rel_,
+            d->Gu.transpose().lazyProduct(y_[t]).lpNorm<Eigen::Infinity>());
       }
     }
   }
@@ -1300,7 +1342,7 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
                     .cwiseMin(m_T->get_g_ub() - d_T->g);
     y_.back() += rho_vec_.back().cwiseProduct(z_relaxed_.back() - z_.back());
 
-    if (iter % rho_update_interval_ == 0) {
+    if (iter % rho_update_interval_ == 0 || is_termination_check(iter)) {
       if (update_rho_with_heuristic_) {
         tmp_dual_cwise_.back() =
             rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
@@ -1320,7 +1362,8 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
         tmp_dual_cwise_.back() =
             rho_vec_.back().cwiseProduct(z_.back() - z_prev_.back());
         norm_dual_ =
-            std::max(norm_dual_, (d_T->Gx.transpose() * tmp_dual_cwise_.back())
+            std::max(norm_dual_, d_T->Gx.transpose()
+                                     .lazyProduct(tmp_dual_cwise_.back())
                                      .lpNorm<Eigen::Infinity>());
         norm_primal_ = std::max(
             norm_primal_,
@@ -1330,9 +1373,10 @@ void SolverCSQP::update_lagrangian_parameters(const int iter) {
             norm_primal_rel_, tmp_Cdx_Cdu_.back().lpNorm<Eigen::Infinity>());
         norm_primal_rel_ =
             std::max(norm_primal_rel_, z_.back().lpNorm<Eigen::Infinity>());
-        norm_dual_rel_ = std::max(
-            norm_dual_rel_,
-            (d_T->Gx.transpose() * y_.back()).lpNorm<Eigen::Infinity>());
+        norm_dual_rel_ =
+            std::max(norm_dual_rel_, d_T->Gx.transpose()
+                                         .lazyProduct(y_.back())
+                                         .lpNorm<Eigen::Infinity>());
       }
     }
   }
@@ -1361,7 +1405,8 @@ double SolverCSQP::tryStep(const double steplength) {
 
   for (std::size_t t = 0; t < T; ++t) {
     const std::shared_ptr<crocoddyl::ActionModelAbstract>& m = models[t];
-    m->get_state()->integrate(xs_[t], steplength * dx_[t], xs_try_[t]);
+    dx_step_.noalias() = steplength * dx_[t];
+    m->get_state()->integrate(xs_[t], dx_step_, xs_try_[t]);
     const std::size_t nu = m->get_nu();
 
     if (nu != 0) {
@@ -1374,8 +1419,8 @@ double SolverCSQP::tryStep(const double steplength) {
   const std::shared_ptr<crocoddyl::ActionDataAbstract>& d_ter =
       problem_->get_terminalData();
 
-  m_ter->get_state()->integrate(xs_.back(), steplength * dx_.back(),
-                                xs_try_.back());
+  dx_step_.noalias() = steplength * dx_.back();
+  m_ter->get_state()->integrate(xs_.back(), dx_step_, xs_try_.back());
 
 #ifdef CROCODDYL_WITH_MULTITHREADING
 #pragma omp parallel for num_threads(problem_->get_nthreads()) \

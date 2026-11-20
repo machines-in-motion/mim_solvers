@@ -173,6 +173,9 @@ class SolverCSQP : public SolverDDP {
   std::size_t get_filter_size() const { return filter_size_; };
 
   std::size_t get_rho_update_interval() const { return rho_update_interval_; };
+  std::size_t get_termination_check_interval() const {
+    return termination_check_interval_;
+  };
   std::size_t get_adaptive_rho_tolerance() const {
     return adaptive_rho_tolerance_;
   };
@@ -191,6 +194,7 @@ class SolverCSQP : public SolverDDP {
   double get_reset_rho() const { return reset_rho_; };
   double get_rho_min() const { return rho_min_; };
   double get_rho_max() const { return rho_max_; };
+  double get_rho_sparse_base() const { return rho_sparse_base_; };
   double get_max_solve_time() const { return max_solve_time_; };
   bool get_max_solve_time_reached() const { return max_solve_time_reached_; };
 
@@ -200,6 +204,12 @@ class SolverCSQP : public SolverDDP {
 
   void setQPCallbacks(const bool inCallbacks);
 
+  /** QP iterations between two checks of the ADMM residuals (0, default:
+   * every rho_update_interval iterations). Checking more often stops the QP
+   * as soon as it converged, for the cost of the residual norms. */
+  void set_termination_check_interval(const std::size_t interval) {
+    termination_check_interval_ = interval;
+  };
   void set_rho_update_interval(const std::size_t interval) {
     rho_update_interval_ = interval;
   };
@@ -237,7 +247,19 @@ class SolverCSQP : public SolverDDP {
 
   void update_lagrangian_parameters(const int iter);
   void set_rho_sparse(const double rho_sparse) { rho_sparse_ = rho_sparse; };
+  /** Bounds of the adaptive rho (equality rows use 1e3 times rho). */
+  void set_rho_min(const double rho_min);
+  void set_rho_max(const double rho_max);
+  /** rho at the start of a solve, when the rho vector is reset. */
+  void set_rho_sparse_base(const double rho_sparse_base);
+  /** Zero the search direction (dx, du) and its ADMM copies (dx_tilde,
+   * du_tilde). From a callback, it rejects the step just computed: the line
+   * search then finds no better point and the solve stops; it also clears
+   * the proximal centre of the next QP. */
+  void reset_direction();
   void update_rho_vec(const int iter);
+  /** Whether QP iteration iter computes and checks the ADMM residuals. */
+  bool is_termination_check(const int iter) const;
   void apply_rho_update(const double rho_sparse);
 
   void set_max_qp_iters(const int iters) { max_qp_iters_ = iters; };
@@ -261,6 +283,7 @@ class SolverCSQP : public SolverDDP {
   std::vector<Eigen::VectorXd>
       fs_try_;                       //!< Gaps/defects between shooting nodes
   std::vector<Eigen::VectorXd> dx_;  //!< the descent direction for x
+  Eigen::VectorXd dx_step_;  //!< steplength * dx_[t] in tryStep (no temporary)
   std::vector<Eigen::VectorXd> du_;  //!< the descent direction for u
   std::vector<Eigen::VectorXd>
       lag_mul_;  //!< the Lagrange multiplier of the dynamics constraint
@@ -324,10 +347,13 @@ class SolverCSQP : public SolverDDP {
   double rho_min_ = 1e-6;                 //!< rho min
   double rho_max_ = 1e3;                  //!< rho max
   std::size_t rho_update_interval_ = 25;  //!< frequency of update of rho
+  std::size_t termination_check_interval_ =
+      0;  //!< frequency of the residual checks (0: rho_update_interval_)
+  bool rho_changed_ = true;  //!< rho_vec_ changed since the last factorization
   double adaptive_rho_tolerance_ = 5;
   double eps_abs_ = 1e-4;  //!< absolute termination criteria
   double eps_rel_ = 1e-4;  //!< relative termination criteria
-  double equality_qp_initial_guess_ =
+  bool equality_qp_initial_guess_ =
       true;  //!< warm-start the QP with unconstrained solution
   std::size_t filter_size_ =
       1;  //!< Filter size for line-search (do not change the default value !)
