@@ -9,6 +9,12 @@ Releases are available on the [github repository](https://github.com/machines-in
 
 ## [Unreleased]
 
+- csqp: expose `rho_min`, `rho_max` and `rho_sparse_base` (getters, setters
+  and python properties)
+- csqp: `reset_direction()` zeroes the search direction (rejects a step from
+  a callback)
+- csqp: `equality_qp_initial_guess` member is a `bool`
+
 ## [0.3.0] - 2026-04-18
 
 - python: fix compatibility with numpy 2.4
